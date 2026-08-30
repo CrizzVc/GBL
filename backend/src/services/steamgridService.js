@@ -62,6 +62,15 @@ export async function getGrids(gameId) {
 }
 
 /**
+ * Get square grids (1:1 cover art) for a game
+ * @param {number} gameId - SteamGridDB game ID
+ * @returns {Promise<Array>} Array of square grid images
+ */
+export async function getSquareGrids(gameId) {
+  return apiFetch(`/grids/game/${gameId}?dimensions=1:1`);
+}
+
+/**
  * Get heroes (horizontal banner art) for a game
  * @param {number} gameId - SteamGridDB game ID
  * @returns {Promise<Array>} Array of hero images

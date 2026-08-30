@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   searchGames,
   getGrids,
+  getSquareGrids,
   getHeroes,
   getLogos,
   getIcons
@@ -32,6 +33,18 @@ router.get('/grids/:gameId', async (req, res) => {
     res.json(grids);
   } catch (error) {
     console.error('[SteamGrid] Error obteniendo grids:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get square grids for a game
+router.get('/square_grids/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const grids = await getSquareGrids(gameId);
+    res.json(grids);
+  } catch (error) {
+    console.error('[SteamGrid] Error obteniendo square grids:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

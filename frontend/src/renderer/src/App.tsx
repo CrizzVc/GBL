@@ -67,7 +67,7 @@ interface SteamGridImage {
   height: number
 }
 
-type SteamGridArtType = 'grids' | 'heroes' | 'logos' | 'icons'
+type SteamGridArtType = 'grids' | 'square_grids' | 'heroes' | 'logos' | 'icons'
 
 /* ────────────────────────────────────────────
    Helpers
@@ -253,7 +253,7 @@ function App(): React.JSX.Element {
   }, [formName])
 
   // ── Add game ──
-  const handleAddGame = useCallback(() => {
+  const handleAddGame = useCallback(async () => {
     if (!formName.trim()) return
     const newGame: Game = {
       id: generateId(),
@@ -268,12 +268,49 @@ function App(): React.JSX.Element {
       heroImageUrl: null,
       logoImageUrl: null
     }
-    const newGames = [...games, newGame]
-    saveGames(newGames)
+
+    // Auto-fetch artwork
+    try {
+      const searchRes = await fetch(`${BACKEND_URL}/api/steamgrid/search?term=${encodeURIComponent(newGame.name)}`)
+      if (searchRes.ok) {
+        const searchData = await searchRes.json()
+        if (Array.isArray(searchData) && searchData.length > 0) {
+          const gameId = searchData[0].id
+          newGame.steamGridId = gameId
+
+          const [gridsRes, heroesRes, logosRes] = await Promise.all([
+            fetch(`${BACKEND_URL}/api/steamgrid/grids/${gameId}`),
+            fetch(`${BACKEND_URL}/api/steamgrid/heroes/${gameId}`),
+            fetch(`${BACKEND_URL}/api/steamgrid/logos/${gameId}`)
+          ])
+
+          if (gridsRes.ok) {
+            const grids = await gridsRes.json()
+            if (grids && grids.length > 0) newGame.gridImageUrl = grids[0].url
+          }
+          if (heroesRes.ok) {
+            const heroes = await heroesRes.json()
+            if (heroes && heroes.length > 0) newGame.heroImageUrl = heroes[0].url
+          }
+          if (logosRes.ok) {
+            const logos = await logosRes.json()
+            if (logos && logos.length > 0) newGame.logoImageUrl = logos[0].url
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error auto-fetching artwork:', err)
+    }
+
+    setGames((prevGames) => {
+      const newGames = [...prevGames, newGame]
+      window.api.saveGames(newGames)
+      return newGames
+    })
     setSelectedGameId(newGame.id)
     setModal(null)
     resetForm()
-  }, [formName, formExePath, formIconUrl, games, saveGames])
+  }, [formName, formExePath, formIconUrl])
 
   // ── Edit game ──
   const handleEditGame = useCallback(() => {
@@ -445,7 +482,7 @@ function App(): React.JSX.Element {
 
   const handleSgdbApplyImage = useCallback((image: SteamGridImage) => {
     if (!sgdbTargetGameId || !sgdbSelectedGame) return
-    const artField = sgdbArtType === 'grids' ? 'gridImageUrl'
+    const artField = (sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? 'gridImageUrl'
       : sgdbArtType === 'heroes' ? 'heroImageUrl'
       : sgdbArtType === 'logos' ? 'logoImageUrl'
       : 'iconDataUrl'
@@ -456,8 +493,8 @@ function App(): React.JSX.Element {
             ...g,
             [artField]: image.url,
             steamGridId: sgdbSelectedGame.id,
-            // Also set the grid as the card image if it's a grid
-            ...(sgdbArtType === 'grids' ? { gridImageUrl: image.url } : {}),
+            // Also set the grid as the card image if it's a grid or square_grid
+            ...((sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? { gridImageUrl: image.url } : {}),
             ...(sgdbArtType === 'icons' ? { iconDataUrl: image.url } : {})
           }
         : g
@@ -484,13 +521,20 @@ function App(): React.JSX.Element {
   }, [games])
 
   // ── Background style ──
-  const bgStyle = backgroundImage
-    ? { backgroundImage: `url(${backgroundImage})` }
-    : selectedGame
-      ? {
-          background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
-        }
-      : {}
+  const bgStyle = selectedGame?.heroImageUrl
+    ? {
+        backgroundImage: `url(${selectedGame.heroImageUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }
+    : backgroundImage
+      ? { backgroundImage: `url(${backgroundImage})` }
+      : selectedGame
+        ? {
+            background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
+          }
+        : {}
 
   return (
     <div className="launcher">
@@ -1095,13 +1139,14 @@ function App(): React.JSX.Element {
                 </div>
 
                 <div className="sgdb-tabs">
-                  {(['grids', 'heroes', 'logos', 'icons'] as SteamGridArtType[]).map((type) => (
+                  {(['grids', 'square_grids', 'heroes', 'logos', 'icons'] as SteamGridArtType[]).map((type) => (
                     <button
                       key={type}
                       className={`sgdb-tab ${sgdbArtType === type ? 'active' : ''}`}
                       onClick={() => handleSgdbChangeArtType(type)}
                     >
                       {type === 'grids' ? 'Portadas' :
+                       type === 'square_grids' ? 'Grids 1:1' :
                        type === 'heroes' ? 'Banners' :
                        type === 'logos' ? 'Logos' : 'Iconos'}
                     </button>
