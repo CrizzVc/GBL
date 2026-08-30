@@ -236,8 +236,8 @@
 
 .game-card {
   flex-shrink: 0;
-  width: 100px;
-  height: 100px;
+  width: 20.5vh;
+  height: 200px;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
   border: 2px solid var(--gbl-border);
@@ -254,7 +254,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.03), transparent);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent);
   opacity: 0;
   transition: opacity var(--gbl-transition-normal);
 }
@@ -271,7 +271,6 @@
 
 .game-card.selected {
   border-color: var(--gbl-accent);
-  box-shadow: var(--gbl-shadow-glow), var(--gbl-shadow-md);
   transform: translateY(-6px);
 }
 
@@ -361,7 +360,7 @@
 }
 
 .bottom-card {
-  height: 72px;
+  height: 200px;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
   border: 1px solid var(--gbl-border);
@@ -433,13 +432,25 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal {
@@ -813,8 +824,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ══════════════════════════════════════════
