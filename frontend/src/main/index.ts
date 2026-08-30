@@ -197,6 +197,76 @@ app.whenReady().then(() => {
     }
   })
 
+  // ── Background image handlers ──
+  const getBackgroundPath = (): string => {
+    return join(app.getPath('userData'), 'background')
+  }
+
+  ipcMain.handle('select-background-image', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Imágenes', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] }
+      ]
+    })
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+
+    const srcPath = result.filePaths[0]
+    const ext = extname(srcPath).toLowerCase()
+    const destPath = getBackgroundPath() + ext
+
+    // Remove any existing background files
+    const bgBase = getBackgroundPath()
+    for (const possibleExt of ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']) {
+      const p = bgBase + possibleExt
+      if (fs.existsSync(p)) {
+        fs.unlinkSync(p)
+      }
+    }
+
+    // Copy the new image to userData
+    fs.copyFileSync(srcPath, destPath)
+
+    // Read and return as data URL
+    const data = fs.readFileSync(destPath)
+    const mimeType = ext === '.png' ? 'image/png'
+      : ext === '.webp' ? 'image/webp'
+      : ext === '.gif' ? 'image/gif'
+      : ext === '.bmp' ? 'image/bmp'
+      : 'image/jpeg'
+    return `data:${mimeType};base64,${data.toString('base64')}`
+  })
+
+  ipcMain.handle('get-background-image', async () => {
+    const bgBase = getBackgroundPath()
+    for (const ext of ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']) {
+      const p = bgBase + ext
+      if (fs.existsSync(p)) {
+        const data = fs.readFileSync(p)
+        const mimeType = ext === '.png' ? 'image/png'
+          : ext === '.webp' ? 'image/webp'
+          : ext === '.gif' ? 'image/gif'
+          : ext === '.bmp' ? 'image/bmp'
+          : 'image/jpeg'
+        return `data:${mimeType};base64,${data.toString('base64')}`
+      }
+    }
+    return null
+  })
+
+  ipcMain.handle('clear-background-image', async () => {
+    const bgBase = getBackgroundPath()
+    for (const ext of ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']) {
+      const p = bgBase + ext
+      if (fs.existsSync(p)) {
+        fs.unlinkSync(p)
+      }
+    }
+    return { success: true }
+  })
+
   createWindow()
 
   app.on('activate', function () {

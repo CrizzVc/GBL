@@ -1,24 +1,24 @@
 :root {
-  /* ── Color Palette ── */
-  --gbl-bg-primary: #0a0a0f;
-  --gbl-bg-secondary: #12121a;
-  --gbl-bg-card: #1a1a28;
-  --gbl-bg-card-hover: #22223a;
-  --gbl-bg-glass: rgba(20, 20, 35, 0.75);
+  /* ── Color Palette (Grayscale) ── */
+  --gbl-bg-primary: #0c0c0c;
+  --gbl-bg-secondary: #141414;
+  --gbl-bg-card: #1c1c1c;
+  --gbl-bg-card-hover: #262626;
+  --gbl-bg-glass: rgba(18, 18, 18, 0.75);
   --gbl-bg-overlay: rgba(0, 0, 0, 0.7);
 
   --gbl-border: rgba(255, 255, 255, 0.06);
   --gbl-border-hover: rgba(255, 255, 255, 0.12);
-  --gbl-border-active: rgba(120, 130, 255, 0.4);
+  --gbl-border-active: rgba(200, 200, 200, 0.4);
 
-  --gbl-text-primary: rgba(255, 255, 250, 0.92);
-  --gbl-text-secondary: rgba(200, 200, 220, 0.6);
-  --gbl-text-muted: rgba(180, 180, 200, 0.38);
+  --gbl-text-primary: rgba(255, 255, 255, 0.92);
+  --gbl-text-secondary: rgba(200, 200, 200, 0.6);
+  --gbl-text-muted: rgba(160, 160, 160, 0.38);
 
-  --gbl-accent: #6366f1;
-  --gbl-accent-glow: rgba(99, 102, 241, 0.35);
-  --gbl-accent-hover: #818cf8;
-  --gbl-accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+  --gbl-accent: #a0a0a0;
+  --gbl-accent-glow: rgba(180, 180, 180, 0.25);
+  --gbl-accent-hover: #c0c0c0;
+  --gbl-accent-gradient: linear-gradient(135deg, #888, #aaa, #ccc);
 
   --gbl-success: #34d399;
   --gbl-warning: #fbbf24;

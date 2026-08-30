@@ -26,9 +26,14 @@ interface Game {
   playtimeMinutes: number
   lastPlayed: string | null
   color: string
+  // SteamGridDB fields
+  steamGridId?: number | null
+  gridImageUrl?: string | null
+  heroImageUrl?: string | null
+  logoImageUrl?: string | null
 }
 
-type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | null
+type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | 'steamgrid' | null
 
 interface SystemInfo {
   platform: string
@@ -46,13 +51,33 @@ interface ContextMenuState {
   gameId: string | null
 }
 
+interface SteamGridGame {
+  id: number
+  name: string
+  types: string[]
+  verified: boolean
+}
+
+interface SteamGridImage {
+  id: number
+  url: string
+  thumb: string
+  style: string
+  width: number
+  height: number
+}
+
+type SteamGridArtType = 'grids' | 'heroes' | 'logos' | 'icons'
+
 /* ────────────────────────────────────────────
    Helpers
    ──────────────────────────────────────────── */
 const GAME_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316',
-  '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'
+  '#6b7280', '#9ca3af', '#d1d5db', '#4b5563', '#374151',
+  '#a3a3a3', '#737373', '#525252', '#e5e7eb', '#78716c'
 ]
+
+const BACKEND_URL = 'http://localhost:3000'
 
 function randomColor(): string {
   return GAME_COLORS[Math.floor(Math.random() * GAME_COLORS.length)]
@@ -67,6 +92,28 @@ function formatPlaytime(minutes: number): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+/* ────────────────────────────────────────────
+   SearchIcon component (inline)
+   ──────────────────────────────────────────── */
+function SearchIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  )
+}
+
+function ImageIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  )
 }
 
 /* ────────────────────────────────────────────
@@ -86,11 +133,24 @@ function App(): React.JSX.Element {
     gameId: null
   })
 
+  // Background image state
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
+
   // Add / Edit game form state
   const [formName, setFormName] = useState('')
   const [formExePath, setFormExePath] = useState('')
   const [formIconUrl, setFormIconUrl] = useState<string | null>(null)
   const [editingGameId, setEditingGameId] = useState<string | null>(null)
+
+  // SteamGridDB state
+  const [sgdbSearch, setSgdbSearch] = useState('')
+  const [sgdbResults, setSgdbResults] = useState<SteamGridGame[]>([])
+  const [sgdbLoading, setSgdbLoading] = useState(false)
+  const [sgdbSelectedGame, setSgdbSelectedGame] = useState<SteamGridGame | null>(null)
+  const [sgdbArtType, setSgdbArtType] = useState<SteamGridArtType>('grids')
+  const [sgdbImages, setSgdbImages] = useState<SteamGridImage[]>([])
+  const [sgdbImagesLoading, setSgdbImagesLoading] = useState(false)
+  const [sgdbTargetGameId, setSgdbTargetGameId] = useState<string | null>(null)
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
@@ -123,6 +183,19 @@ function App(): React.JSX.Element {
       }
     }
     load()
+  }, [])
+
+  // ── Load background image ──
+  useEffect(() => {
+    const loadBg = async (): Promise<void> => {
+      try {
+        const bg = await window.api.getBackgroundImage()
+        if (bg) setBackgroundImage(bg)
+      } catch (err) {
+        console.error('Error loading background:', err)
+      }
+    }
+    loadBg()
   }, [])
 
   // ── Listen for game-exited events from main process ──
@@ -189,7 +262,11 @@ function App(): React.JSX.Element {
       iconDataUrl: formIconUrl,
       playtimeMinutes: 0,
       lastPlayed: null,
-      color: randomColor()
+      color: randomColor(),
+      steamGridId: null,
+      gridImageUrl: null,
+      heroImageUrl: null,
+      logoImageUrl: null
     }
     const newGames = [...games, newGame]
     saveGames(newGames)
@@ -293,17 +370,135 @@ function App(): React.JSX.Element {
     []
   )
 
-  // ── Background gradient based on selected game ──
-  const bgStyle = selectedGame
-    ? {
-        background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
+  // ── Background image handlers ──
+  const handleSelectBackground = useCallback(async () => {
+    try {
+      const dataUrl = await window.api.selectBackgroundImage()
+      if (dataUrl) {
+        setBackgroundImage(dataUrl)
       }
-    : {}
+    } catch (err) {
+      console.error('Error selecting background:', err)
+    }
+  }, [])
+
+  const handleClearBackground = useCallback(async () => {
+    try {
+      await window.api.clearBackgroundImage()
+      setBackgroundImage(null)
+    } catch (err) {
+      console.error('Error clearing background:', err)
+    }
+  }, [])
+
+  // ── SteamGridDB handlers ──
+  const handleSgdbSearch = useCallback(async () => {
+    if (!sgdbSearch.trim()) return
+    setSgdbLoading(true)
+    setSgdbResults([])
+    setSgdbSelectedGame(null)
+    setSgdbImages([])
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/steamgrid/search?term=${encodeURIComponent(sgdbSearch.trim())}`)
+      if (!res.ok) throw new Error('Error buscando en SteamGridDB')
+      const data = await res.json()
+      setSgdbResults(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('SteamGridDB search error:', err)
+    } finally {
+      setSgdbLoading(false)
+    }
+  }, [sgdbSearch])
+
+  const handleSgdbSelectGame = useCallback(async (game: SteamGridGame) => {
+    setSgdbSelectedGame(game)
+    setSgdbImagesLoading(true)
+    setSgdbImages([])
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/steamgrid/${sgdbArtType}/${game.id}`)
+      if (!res.ok) throw new Error('Error obteniendo imágenes')
+      const data = await res.json()
+      setSgdbImages(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('SteamGridDB images error:', err)
+    } finally {
+      setSgdbImagesLoading(false)
+    }
+  }, [sgdbArtType])
+
+  const handleSgdbChangeArtType = useCallback(async (type: SteamGridArtType) => {
+    setSgdbArtType(type)
+    if (!sgdbSelectedGame) return
+    setSgdbImagesLoading(true)
+    setSgdbImages([])
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/steamgrid/${type}/${sgdbSelectedGame.id}`)
+      if (!res.ok) throw new Error('Error obteniendo imágenes')
+      const data = await res.json()
+      setSgdbImages(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('SteamGridDB images error:', err)
+    } finally {
+      setSgdbImagesLoading(false)
+    }
+  }, [sgdbSelectedGame])
+
+  const handleSgdbApplyImage = useCallback((image: SteamGridImage) => {
+    if (!sgdbTargetGameId || !sgdbSelectedGame) return
+    const artField = sgdbArtType === 'grids' ? 'gridImageUrl'
+      : sgdbArtType === 'heroes' ? 'heroImageUrl'
+      : sgdbArtType === 'logos' ? 'logoImageUrl'
+      : 'iconDataUrl'
+
+    const newGames = games.map((g) =>
+      g.id === sgdbTargetGameId
+        ? {
+            ...g,
+            [artField]: image.url,
+            steamGridId: sgdbSelectedGame.id,
+            // Also set the grid as the card image if it's a grid
+            ...(sgdbArtType === 'grids' ? { gridImageUrl: image.url } : {}),
+            ...(sgdbArtType === 'icons' ? { iconDataUrl: image.url } : {})
+          }
+        : g
+    )
+    saveGames(newGames)
+    setModal(null)
+    setSgdbSearch('')
+    setSgdbResults([])
+    setSgdbSelectedGame(null)
+    setSgdbImages([])
+    setSgdbTargetGameId(null)
+  }, [sgdbTargetGameId, sgdbSelectedGame, sgdbArtType, games, saveGames])
+
+  const openSteamGridModal = useCallback((gameId: string) => {
+    const game = games.find((g) => g.id === gameId)
+    if (!game) return
+    setSgdbTargetGameId(gameId)
+    setSgdbSearch(game.name)
+    setSgdbArtType('grids')
+    setSgdbResults([])
+    setSgdbSelectedGame(null)
+    setSgdbImages([])
+    setModal('steamgrid')
+  }, [games])
+
+  // ── Background style ──
+  const bgStyle = backgroundImage
+    ? { backgroundImage: `url(${backgroundImage})` }
+    : selectedGame
+      ? {
+          background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
+        }
+      : {}
 
   return (
     <div className="launcher">
       {/* Animated background */}
-      <div className="launcher-bg" style={bgStyle} />
+      <div
+        className={`launcher-bg ${backgroundImage ? 'has-custom-bg' : ''}`}
+        style={bgStyle}
+      />
 
       {/* ── Header ── */}
       <header className="header-bar">
@@ -379,7 +574,14 @@ function App(): React.JSX.Element {
               id={`game-card-${game.id}`}
             >
               {runningGameId === game.id && <div className="running-badge" />}
-              {game.iconDataUrl ? (
+              {game.gridImageUrl ? (
+                <img
+                  src={game.gridImageUrl}
+                  alt={game.name}
+                  className="game-card-cover"
+                  draggable={false}
+                />
+              ) : game.iconDataUrl ? (
                 <img
                   src={game.iconDataUrl}
                   alt={game.name}
@@ -485,6 +687,14 @@ function App(): React.JSX.Element {
             }}
           >
             <EditIcon size={16} /> Editar
+          </button>
+          <button
+            className="context-menu-item"
+            onClick={() => {
+              if (contextMenu.gameId) openSteamGridModal(contextMenu.gameId)
+            }}
+          >
+            <ImageIcon size={16} /> Buscar Artwork
           </button>
           <div className="context-menu-separator" />
           <button
@@ -656,6 +866,14 @@ function App(): React.JSX.Element {
               >
                 Eliminar
               </button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  if (editingGameId) openSteamGridModal(editingGameId)
+                }}
+              >
+                <ImageIcon size={14} /> Artwork
+              </button>
               <button className="btn-secondary" onClick={() => setModal(null)}>
                 Cancelar
               </button>
@@ -728,6 +946,16 @@ function App(): React.JSX.Element {
                         <EditIcon size={14} />
                       </button>
                       <button
+                        className="library-action-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openSteamGridModal(game.id)
+                        }}
+                        title="Buscar Artwork"
+                      >
+                        <ImageIcon size={14} />
+                      </button>
+                      <button
                         className="library-action-btn delete"
                         onClick={(e) => {
                           e.stopPropagation()
@@ -772,6 +1000,138 @@ function App(): React.JSX.Element {
                 </div>
               </div>
             </div>
+
+            {/* Background settings */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">Fondo de pantalla</h3>
+              <div className="settings-bg-preview">
+                {backgroundImage ? (
+                  <img src={backgroundImage} alt="Fondo actual" className="settings-bg-thumb" />
+                ) : (
+                  <div className="settings-bg-placeholder">
+                    <ImageIcon size={24} />
+                    <span>Sin fondo personalizado</span>
+                  </div>
+                )}
+              </div>
+              <div className="settings-bg-actions">
+                <button className="btn-secondary" onClick={handleSelectBackground}>
+                  <ImageIcon size={14} /> Cambiar fondo
+                </button>
+                {backgroundImage && (
+                  <button className="btn-danger" onClick={handleClearBackground}>
+                    Restaurar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SteamGridDB Modal ── */}
+      {modal === 'steamgrid' && (
+        <div className="modal-overlay" onClick={() => setModal(null)}>
+          <div className="modal sgdb-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Buscar Artwork en SteamGridDB</h2>
+              <button className="modal-close" onClick={() => setModal(null)}>
+                <CloseIcon size={20} />
+              </button>
+            </div>
+
+            {/* Search bar */}
+            <div className="sgdb-search-row">
+              <div className="form-file-row">
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="Buscar juego..."
+                  value={sgdbSearch}
+                  onChange={(e) => setSgdbSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSgdbSearch()
+                  }}
+                  autoFocus
+                />
+                <button className="btn-browse" onClick={handleSgdbSearch} disabled={sgdbLoading}>
+                  <SearchIcon size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Search results */}
+            {sgdbLoading && <div className="sgdb-loading">Buscando...</div>}
+
+            {!sgdbSelectedGame && sgdbResults.length > 0 && (
+              <div className="sgdb-results">
+                {sgdbResults.map((game) => (
+                  <button
+                    key={game.id}
+                    className="sgdb-result-item"
+                    onClick={() => handleSgdbSelectGame(game)}
+                  >
+                    <span className="sgdb-result-name">{game.name}</span>
+                    {game.verified && <span className="sgdb-verified">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Art type tabs + images */}
+            {sgdbSelectedGame && (
+              <>
+                <div className="sgdb-game-header">
+                  <span className="sgdb-game-name">{sgdbSelectedGame.name}</span>
+                  <button
+                    className="btn-secondary sgdb-back-btn"
+                    onClick={() => {
+                      setSgdbSelectedGame(null)
+                      setSgdbImages([])
+                    }}
+                  >
+                    ← Volver
+                  </button>
+                </div>
+
+                <div className="sgdb-tabs">
+                  {(['grids', 'heroes', 'logos', 'icons'] as SteamGridArtType[]).map((type) => (
+                    <button
+                      key={type}
+                      className={`sgdb-tab ${sgdbArtType === type ? 'active' : ''}`}
+                      onClick={() => handleSgdbChangeArtType(type)}
+                    >
+                      {type === 'grids' ? 'Portadas' :
+                       type === 'heroes' ? 'Banners' :
+                       type === 'logos' ? 'Logos' : 'Iconos'}
+                    </button>
+                  ))}
+                </div>
+
+                {sgdbImagesLoading && <div className="sgdb-loading">Cargando imágenes...</div>}
+
+                <div className="sgdb-images-grid">
+                  {sgdbImages.map((img) => (
+                    <div
+                      key={img.id}
+                      className="sgdb-image-card"
+                      onClick={() => handleSgdbApplyImage(img)}
+                      title="Clic para aplicar"
+                    >
+                      <img
+                        src={img.thumb || img.url}
+                        alt="Artwork"
+                        draggable={false}
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
+                  {!sgdbImagesLoading && sgdbImages.length === 0 && (
+                    <div className="sgdb-no-images">No se encontraron imágenes</div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

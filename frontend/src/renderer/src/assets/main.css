@@ -37,9 +37,35 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
   pointer-events: none;
+}
+
+/* Custom background image */
+.launcher-bg.has-custom-bg {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+.launcher-bg.has-custom-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(12, 12, 12, 0.55) 0%,
+    rgba(12, 12, 12, 0.4) 40%,
+    rgba(12, 12, 12, 0.7) 70%,
+    rgba(12, 12, 12, 0.92) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.launcher-bg.has-custom-bg::after {
+  z-index: 2;
 }
 
 /* ══════════════════════════════════════════
@@ -285,7 +311,7 @@
   width: 56px;
   height: 56px;
   border-radius: var(--gbl-radius-sm);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,7 +328,7 @@
 
 .game-card.add-card:hover {
   border-color: var(--gbl-accent);
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .add-card-content {
@@ -836,6 +862,234 @@
 }
 
 /* ══════════════════════════════════════════
+   GAME CARD COVER IMAGE (from SteamGridDB)
+   ══════════════════════════════════════════ */
+.game-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS - BACKGROUND
+   ══════════════════════════════════════════ */
+.settings-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gbl-border);
+}
+
+.settings-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gbl-text-primary);
+  margin-bottom: 12px;
+}
+
+.settings-bg-preview {
+  border-radius: var(--gbl-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--gbl-border);
+  margin-bottom: 12px;
+}
+
+.settings-bg-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.settings-bg-placeholder {
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--gbl-text-muted);
+  background: var(--gbl-bg-card);
+  font-size: 12px;
+}
+
+.settings-bg-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-bg-actions .btn-secondary,
+.settings-bg-actions .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 8px 14px;
+}
+
+/* ══════════════════════════════════════════
+   STEAMGRIDDB MODAL
+   ══════════════════════════════════════════ */
+.sgdb-modal {
+  min-width: 580px;
+  max-width: 680px;
+}
+
+.sgdb-search-row {
+  margin-bottom: 16px;
+}
+
+.sgdb-loading {
+  text-align: center;
+  color: var(--gbl-text-muted);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.sgdb-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.sgdb-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gbl-text-primary);
+  transition: background var(--gbl-transition-fast);
+  border: none;
+  background: none;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+}
+
+.sgdb-result-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sgdb-result-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sgdb-verified {
+  color: var(--gbl-success);
+  font-size: 14px;
+  font-weight: 700;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.sgdb-game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sgdb-game-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gbl-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.sgdb-back-btn {
+  font-size: 11px !important;
+  padding: 6px 12px !important;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.sgdb-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--gbl-bg-card);
+  border-radius: var(--gbl-radius-sm);
+  padding: 4px;
+  border: 1px solid var(--gbl-border);
+}
+
+.sgdb-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gbl-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all var(--gbl-transition-fast);
+}
+
+.sgdb-tab:hover {
+  color: var(--gbl-text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sgdb-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gbl-text-primary);
+  font-weight: 600;
+}
+
+.sgdb-images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.sgdb-image-card {
+  border-radius: var(--gbl-radius-sm);
+  overflow: hidden;
+  border: 2px solid var(--gbl-border);
+  cursor: pointer;
+  transition: all var(--gbl-transition-normal);
+  aspect-ratio: auto;
+}
+
+.sgdb-image-card:hover {
+  border-color: var(--gbl-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--gbl-shadow-md);
+}
+
+.sgdb-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sgdb-no-images {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gbl-text-muted);
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════ */
 @media (max-width: 700px) {
@@ -845,5 +1099,13 @@
 
   .hero-title {
     font-size: 24px;
+  }
+
+  .sgdb-modal {
+    min-width: auto;
+  }
+
+  .sgdb-images-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

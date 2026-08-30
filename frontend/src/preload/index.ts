@@ -15,7 +15,11 @@ const api = {
     return () => {
       ipcRenderer.removeListener('game-exited', subscription)
     }
-  }
+  },
+  // Background image APIs
+  selectBackgroundImage: () => ipcRenderer.invoke('select-background-image'),
+  getBackgroundImage: () => ipcRenderer.invoke('get-background-image'),
+  clearBackgroundImage: () => ipcRenderer.invoke('clear-background-image')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
