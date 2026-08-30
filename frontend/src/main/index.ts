@@ -1,7 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { join, dirname, extname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import * as fs from 'fs'
+import { spawn } from 'child_process'
 
 function createWindow(): void {
   // Create the browser window.
@@ -64,23 +66,134 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.handle('launch-game', async (event, gameName: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender)
-    if (win) {
-      // Minimizar launcher para simular inicio de juego
-      win.minimize()
+  const getGamesPath = (): string => {
+    return join(app.getPath('userData'), 'games.json')
+  }
 
-      // Esperar 4 segundos (simulación de tiempo de juego)
-      await new Promise((resolve) => setTimeout(resolve, 4000))
-
-      // Restaurar launcher
-      win.restore()
-      win.focus()
+  ipcMain.handle('get-games', async () => {
+    const gamesPath = getGamesPath()
+    if (fs.existsSync(gamesPath)) {
+      try {
+        const data = fs.readFileSync(gamesPath, 'utf8')
+        return JSON.parse(data)
+      } catch (e) {
+        console.error('Error reading games.json', e)
+        return []
+      }
     }
-    return {
-      gameName,
-      status: 'closed',
-      sessionPlaytimeMinutes: Math.floor(Math.random() * 45) + 15 // 15 a 60 minutos simulados
+    return []
+  })
+
+  ipcMain.handle('save-games', async (_event, games) => {
+    try {
+      const gamesPath = getGamesPath()
+      fs.writeFileSync(gamesPath, JSON.stringify(games, null, 2), 'utf8')
+      return { success: true }
+    } catch (e: any) {
+      console.error('Error writing games.json', e)
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('select-game-file', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Ejecutables y Accesos Directos', extensions: ['exe', 'lnk', 'bat', 'cmd', 'sh', 'app'] },
+        { name: 'Todos los archivos', extensions: ['*'] }
+      ]
+    })
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0]
+    }
+    return null
+  })
+
+  ipcMain.handle('get-file-icon', async (_event, filePath: string) => {
+    try {
+      if (!fs.existsSync(filePath)) return null
+      const iconImage = await app.getFileIcon(filePath, { size: 'large' })
+      return iconImage.toDataURL()
+    } catch (err) {
+      console.error('Error getting file icon:', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('launch-game', async (event, gameId: string, exePath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    
+    try {
+      const hasExecutable = exePath && exePath.trim() !== ''
+      const fileExists = hasExecutable ? fs.existsSync(exePath) : false
+
+      if (win) {
+        win.minimize()
+      }
+
+      const startTime = Date.now()
+
+      if (!hasExecutable || !fileExists) {
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+            const simulatedMinutes = Math.floor(Math.random() * 4) + 2
+            win.webContents.send('game-exited', { gameId, durationMinutes: simulatedMinutes })
+          }
+        }, 4000)
+        return { success: true, tracked: false, startTime, simulated: true }
+      }
+
+      const ext = extname(exePath).toLowerCase()
+      
+      if (ext === '.lnk' || ext === '.url') {
+        await shell.openPath(exePath)
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+            const simulatedMinutes = Math.floor(Math.random() * 8) + 3
+            win.webContents.send('game-exited', { gameId, durationMinutes: simulatedMinutes })
+          }
+        }, 6000)
+        return { success: true, tracked: false, startTime }
+      } else {
+        const child = spawn(`"${exePath}"`, [], {
+          detached: true,
+          shell: true,
+          cwd: dirname(exePath)
+        })
+
+        child.unref()
+
+        let exited = false
+        child.on('exit', () => {
+          exited = true
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+            const durationMinutes = Math.round((Date.now() - startTime) / 60000)
+            win.webContents.send('game-exited', { gameId, durationMinutes: Math.max(1, durationMinutes) })
+          }
+        })
+
+        setTimeout(() => {
+          if (!exited && win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+          }
+        }, 8000)
+
+        return { success: true, tracked: true, startTime }
+      }
+    } catch (error: any) {
+      console.error('Error launching game:', error)
+      if (win && !win.isDestroyed()) {
+        win.restore()
+        win.focus()
+      }
+      return { success: false, error: error.message }
     }
   })
 
