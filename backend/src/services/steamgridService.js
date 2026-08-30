@@ -67,7 +67,7 @@ export async function getGrids(gameId) {
  * @returns {Promise<Array>} Array of square grid images
  */
 export async function getSquareGrids(gameId) {
-  return apiFetch(`/grids/game/${gameId}?dimensions=1:1`);
+  return apiFetch(`/grids/game/${gameId}?dimensions=512x512,1024x1024`);
 }
 
 /**
