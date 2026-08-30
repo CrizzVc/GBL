@@ -12,7 +12,8 @@ import {
   PowerIcon,
   TrashIcon,
   EditIcon,
-  FolderIcon
+  FolderIcon,
+  BooksIcon
 } from './components/Icons'
 
 /* ────────────────────────────────────────────
@@ -133,6 +134,9 @@ function App(): React.JSX.Element {
     gameId: null
   })
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarIndex, setSidebarIndex] = useState(0)
+
   // Background image state
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
 
@@ -168,6 +172,8 @@ function App(): React.JSX.Element {
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
   }, [])
+
+
 
   // ── Load games from disk ──
   useEffect(() => {
@@ -520,6 +526,59 @@ function App(): React.JSX.Element {
     setModal('steamgrid')
   }, [games])
 
+  // ── Keyboard Navigation ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (modal !== null) return
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      if (sidebarOpen) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setSidebarIndex(prev => Math.min(prev + 1, 4))
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setSidebarIndex(prev => Math.max(prev - 1, 0))
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          if (sidebarIndex === 0) openAddGameModal()
+          else if (sidebarIndex === 1) { /* Store action */ }
+          else if (sidebarIndex === 2) handleOpenSpecs()
+          else if (sidebarIndex === 3) setModal('settings')
+          else if (sidebarIndex === 4) window.close()
+          setSidebarOpen(false)
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
+          setSidebarOpen(false)
+        }
+      } else {
+        const gameIds = ['library', ...games.map(g => g.id)]
+        const currentIndex = gameIds.indexOf(selectedGameId || 'library')
+
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          if (currentIndex < gameIds.length - 1) {
+            setSelectedGameId(gameIds[currentIndex + 1])
+          }
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          if (currentIndex > 0) {
+            setSelectedGameId(gameIds[currentIndex - 1])
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          if (selectedGameId === 'library' || !selectedGameId) {
+            setModal('library')
+          } else {
+            handleLaunchGame()
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [sidebarOpen, sidebarIndex, modal, games, selectedGameId, handleLaunchGame, openAddGameModal, handleOpenSpecs])
+
   // ── Background style ──
   const bgStyle = selectedGame?.heroImageUrl
     ? {
@@ -538,6 +597,32 @@ function App(): React.JSX.Element {
 
   return (
     <div className="launcher">
+      {/* ── Sidebar ── */}
+      <div 
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} 
+        onClick={() => setSidebarOpen(false)} 
+      />
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-title">GBL Launcher</div>
+        <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><PlusIcon size={18} /></div> Agregar juego
+        </button>
+        <button className={`sidebar-item ${sidebarIndex === 1 ? 'focused' : ''}`} onClick={() => { setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><StoreIcon size={18} /></div> Tienda
+        </button>
+        <button className={`sidebar-item ${sidebarIndex === 2 ? 'focused' : ''}`} onClick={() => { handleOpenSpecs(); setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><SystemIcon size={18} /></div> Especificaciones
+        </button>
+        <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> Ajustes
+        </button>
+        <div style={{ marginTop: 'auto' }}>
+          <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => window.close()}>
+            <div className="sidebar-item-icon"><PowerIcon size={18} /></div> Salir
+          </button>
+        </div>
+      </div>
+
       {/* Animated background */}
       <div
         className={`launcher-bg ${backgroundImage ? 'has-custom-bg' : ''}`}
@@ -547,7 +632,7 @@ function App(): React.JSX.Element {
       {/* ── Header ── */}
       <header className="header-bar">
         <div className="header-left">
-          <div className="user-avatar">G</div>
+          <div className="user-avatar" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ cursor: 'pointer' }}>G</div>
           <div className="header-greeting">
             <span className="header-greeting-name">GBL Launcher</span>
             <span className="header-greeting-sub">
@@ -607,6 +692,25 @@ function App(): React.JSX.Element {
       {/* ── Game cards row ── */}
       <div className="games-row-container">
         <div className="games-row" ref={gamesRowRef}>
+          {/* Library card */}
+          <div
+            className={`game-card library-card ${selectedGameId === 'library' || (!selectedGameId && games.length === 0) ? 'selected' : ''}`}
+            onClick={() => {
+              if (selectedGameId === 'library') setModal('library');
+              else setSelectedGameId('library');
+            }}
+            onDoubleClick={() => setModal('library')}
+            id="btn-library"
+            title="Biblioteca"
+          >
+            <div className="library-card-content">
+              <div className="library-card-icon-wrapper">
+                <BooksIcon size={64} />
+              </div>
+              <span className="library-card-label">My games & apps</span>
+            </div>
+          </div>
+
           {games.map((game) => (
             <div
               key={game.id}
@@ -642,34 +746,6 @@ function App(): React.JSX.Element {
               )}
             </div>
           ))}
-
-          {/* Add game card */}
-          <div
-            className="game-card add-card"
-            onClick={openAddGameModal}
-            id="btn-add-game"
-            title="Agregar juego"
-          >
-            <div className="add-card-content">
-              <PlusIcon size={28} />
-              <span className="add-card-label">Agregar</span>
-            </div>
-          </div>
-
-          {/* Library card */}
-          {games.length > 0 && (
-            <div
-              className="game-card library-card"
-              onClick={() => setModal('library')}
-              id="btn-library"
-              title="Biblioteca"
-            >
-              <div className="library-card-content">
-                <LibraryIcon size={28} />
-                <span className="library-card-label">Biblioteca</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

@@ -349,25 +349,112 @@
 
 /* Library card */
 .game-card.library-card {
-  background: var(--gbl-bg-card);
+  background: #1e1e1e;
+  border: 2px solid transparent;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 16px;
+}
+.game-card.library-card.selected {
+  border-color: var(--gbl-accent);
 }
 
 .library-card-content {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
   color: var(--gbl-text-secondary);
   transition: color var(--gbl-transition-normal);
 }
 
-.game-card.library-card:hover .library-card-content {
+.game-card.library-card:hover .library-card-content,
+.game-card.library-card.selected .library-card-content {
   color: var(--gbl-text-primary);
 }
 
+.library-card-icon-wrapper {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
 .library-card-label {
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 500;
+  margin-top: auto;
+}
+
+/* ══════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════ */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--gbl-transition-normal);
+}
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100vh;
+  background: var(--gbl-bg-secondary);
+  border-right: 1px solid var(--gbl-border);
+  z-index: 1001;
+  transition: left var(--gbl-transition-normal);
+  display: flex;
+  flex-direction: column;
+  padding: 40px 20px;
+}
+.sidebar.open {
+  left: 0;
+}
+.sidebar-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gbl-text-primary);
+  margin-bottom: 30px;
+  margin-left: 10px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: var(--gbl-radius-sm);
+  color: var(--gbl-text-secondary);
+  cursor: pointer;
+  transition: all var(--gbl-transition-normal);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+}
+.sidebar-item:hover, .sidebar-item.focused {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--gbl-text-primary);
+}
+.sidebar-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ══════════════════════════════════════════

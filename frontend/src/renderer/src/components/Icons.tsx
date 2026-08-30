@@ -313,3 +313,22 @@ export const PowerIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
     <line x1="12" y1="2" x2="12" y2="12" />
   </svg>
 )
+
+export const BooksIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <rect x="4" y="4" width="4" height="16" rx="1" />
+    <rect x="10" y="4" width="4" height="16" rx="1" />
+    <path d="M16 4l4 2-4.5 14-4-2 4.5-14z" />
+  </svg>
+)
