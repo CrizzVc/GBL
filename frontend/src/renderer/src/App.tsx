@@ -181,6 +181,7 @@ function App(): React.JSX.Element {
   const [runningGameId, setRunningGameId] = useState<string | null>(null)
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
+  const [libraryView, setLibraryView] = useState(false)
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
@@ -646,6 +647,11 @@ function App(): React.JSX.Element {
     setModal('addGame')
   }, [])
 
+  const openLibraryView = useCallback(() => {
+    setDetailGameId(null)
+    setLibraryView(true)
+  }, [])
+
   // ── Open edit game modal ──
   const openEditGameModal = useCallback(
     (gameId: string) => {
@@ -836,7 +842,11 @@ function App(): React.JSX.Element {
 
   // ── Keyboard Navigation ──
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (libraryView) {
+        if (e.key === 'Escape') setLibraryView(false)
+        return
+      }
       if (modal !== null) return
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
@@ -875,7 +885,7 @@ function App(): React.JSX.Element {
         } else if (e.key === 'Enter') {
           e.preventDefault()
           if (selectedGameId === 'library' || !selectedGameId) {
-            setModal('library')
+            openLibraryView()
           } else {
             handleLaunchGame()
           }
@@ -885,7 +895,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [sidebarOpen, sidebarIndex, modal, visibleGames, selectedGameId, handleLaunchGame, openAddGameModal, handleOpenSpecs])
+  }, [libraryView, sidebarOpen, sidebarIndex, modal, visibleGames, selectedGameId, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs])
 
   // ── Detail view handlers ──
   const handleCloseDetail = useCallback(() => {
@@ -1066,10 +1076,10 @@ function App(): React.JSX.Element {
           <div
             className={`game-card library-card ${selectedGameId === 'library' || (!selectedGameId && games.length === 0) ? 'selected' : ''}`}
             onClick={() => {
-              if (selectedGameId === 'library') setModal('library');
+              if (selectedGameId === 'library') openLibraryView()
               else setSelectedGameId('library');
             }}
-            onDoubleClick={() => setModal('library')}
+            onDoubleClick={openLibraryView}
             id="btn-library"
             title="Biblioteca"
           >
@@ -1123,7 +1133,7 @@ function App(): React.JSX.Element {
       <div className="bottom-row">
         <div
           className="dashboard-container bottom-card"
-          onClick={() => setModal('library')}
+          onClick={openLibraryView}
           style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
         >
           <div className="dashboard">
@@ -1736,89 +1746,60 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* ── Library Modal ── */}
-      {modal === 'library' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: 520 }}>
-            <div className="modal-header">
-              <h2 className="modal-title">Biblioteca ({games.length})</h2>
-              <button className="modal-close" onClick={() => setModal(null)}>
-                <CloseIcon size={20} />
+      {/* ── Library View ── */}
+      {libraryView && (
+        <section className="library-view" aria-label="Biblioteca">
+          <div className="library-view-header">
+            <div>
+              <button className="library-back-button" onClick={() => setLibraryView(false)}>
+                <ChevronLeftIcon size={20} /> Volver
               </button>
+              <h1 className="library-view-title">Mis juegos y aplicaciones</h1>
+              <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'} en tu biblioteca</p>
             </div>
-            {games.length === 0 ? (
-              <div className="library-empty">
-                No hay juegos en tu biblioteca. ¡Agrega uno para comenzar!
-              </div>
-            ) : (
-              <div className="library-grid">
-                {games.map((game) => (
-                  <div
-                    key={game.id}
-                    className="library-item"
-                    onClick={() => {
-                      setSelectedGameId(game.id)
-                      setModal(null)
-                    }}
-                  >
-                    {game.iconDataUrl ? (
-                      <img
-                        src={game.iconDataUrl}
-                        alt={game.name}
-                        className="library-item-icon"
-                        draggable={false}
-                      />
+            <button className="btn-primary library-add-button" onClick={openAddGameModal}>
+              <PlusIcon size={16} /> Agregar juego
+            </button>
+          </div>
+          {games.length === 0 ? (
+            <div className="library-empty library-view-empty">
+              No hay juegos en tu biblioteca. ¡Agrega uno para comenzar!
+            </div>
+          ) : (
+            <div className="library-grid library-view-grid">
+              {games.map((game) => (
+                <article key={game.id} className="library-item" onClick={() => { setLibraryView(false); openDetailView(game.id) }}>
+                  <div className="library-item-art">
+                    {game.gridImageUrl ? (
+                      <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
+                    ) : game.iconDataUrl ? (
+                      <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
                     ) : (
-                      <div
-                        className="game-card-placeholder"
-                        style={{
-                          width: 48,
-                          height: 48,
-                          background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)`
-                        }}
-                      >
+                      <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
                         {game.name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <span className="library-item-name">{game.name}</span>
-                    <div className="library-item-actions">
-                      <button
-                        className="library-action-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openEditGameModal(game.id)
-                        }}
-                        title="Editar"
-                      >
-                        <EditIcon size={14} />
-                      </button>
-                      <button
-                        className="library-action-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openSteamGridModal(game.id)
-                        }}
-                        title="Buscar Artwork"
-                      >
-                        <ImageIcon size={14} />
-                      </button>
-                      <button
-                        className="library-action-btn delete"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteGame(game.id)
-                        }}
-                        title="Eliminar"
-                      >
-                        <TrashIcon size={14} />
-                      </button>
-                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                  <div className="library-item-info">
+                    <span className="library-item-name">{game.name}</span>
+                    <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
+                  </div>
+                  <div className="library-item-actions">
+                    <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }} title="Editar">
+                      <EditIcon size={14} />
+                    </button>
+                    <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }} title="Buscar Artwork">
+                      <ImageIcon size={14} />
+                    </button>
+                    <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }} title="Eliminar">
+                      <TrashIcon size={14} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {/* ── Settings Modal ── */}
