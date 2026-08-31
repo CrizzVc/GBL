@@ -244,9 +244,11 @@ function App(): React.JSX.Element {
   const [windowSize, setWindowSize] = useState({ width: window.outerWidth, height: window.outerHeight })
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
+  const libraryGridRef = useRef<HTMLDivElement>(null)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
+  const librarySelectedGame = games.find((g) => g.id === selectedGameId) || games[0] || null
   const detailGame = games.find((g) => g.id === detailGameId) || null
   const compactDetailReviewLayout =
     Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
@@ -649,8 +651,9 @@ function App(): React.JSX.Element {
 
   const openLibraryView = useCallback(() => {
     setDetailGameId(null)
+    setSelectedGameId((currentId) => games.some((game) => game.id === currentId) ? currentId : games[0]?.id ?? null)
     setLibraryView(true)
-  }, [])
+  }, [games])
 
   // ── Open edit game modal ──
   const openEditGameModal = useCallback(
@@ -845,6 +848,21 @@ function App(): React.JSX.Element {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (libraryView) {
         if (e.key === 'Escape') setLibraryView(false)
+        if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown') && games.length > 0) {
+          e.preventDefault()
+          const currentIndex = Math.max(0, games.findIndex((game) => game.id === selectedGameId))
+          const columnCount = libraryGridRef.current
+            ? getComputedStyle(libraryGridRef.current).gridTemplateColumns.split(' ').length
+            : 1
+          const step = e.key === 'ArrowUp' ? -columnCount : e.key === 'ArrowDown' ? columnCount : e.key === 'ArrowLeft' ? -1 : 1
+          const nextIndex = Math.max(0, Math.min(games.length - 1, currentIndex + step))
+          setSelectedGameId(games[nextIndex].id)
+        }
+        if (e.key === 'Enter' && librarySelectedGame) {
+          e.preventDefault()
+          setLibraryView(false)
+          setDetailGameId(librarySelectedGame.id)
+        }
         return
       }
       if (modal !== null) return
@@ -895,7 +913,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, sidebarOpen, sidebarIndex, modal, visibleGames, selectedGameId, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs])
 
   // ── Detail view handlers ──
   const handleCloseDetail = useCallback(() => {
@@ -1754,8 +1772,8 @@ function App(): React.JSX.Element {
               <button className="library-back-button" onClick={() => setLibraryView(false)}>
                 <ChevronLeftIcon size={20} /> Volver
               </button>
-              <h1 className="library-view-title">Mis juegos y aplicaciones</h1>
-              <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'} en tu biblioteca</p>
+              <h1 className="library-view-title">Biblioteca</h1>
+              <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'}</p>
             </div>
             <button className="btn-primary library-add-button" onClick={openAddGameModal}>
               <PlusIcon size={16} /> Agregar juego
@@ -1766,9 +1784,30 @@ function App(): React.JSX.Element {
               No hay juegos en tu biblioteca. ¡Agrega uno para comenzar!
             </div>
           ) : (
-            <div className="library-grid library-view-grid">
+            <>
+              <div
+                className="library-hero"
+                style={librarySelectedGame?.heroImageUrl ? { backgroundImage: `linear-gradient(90deg, rgba(12, 12, 12, 0.96) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.2) 100%), url(${librarySelectedGame.heroImageUrl})` } : undefined}
+              >
+                <div className="library-hero-content">
+                  {librarySelectedGame?.logoImageUrl ? (
+                    <img src={librarySelectedGame.logoImageUrl} alt={librarySelectedGame.name} className="library-hero-logo" draggable={false} />
+                  ) : (
+                    <h2 className="library-hero-title">{librarySelectedGame?.name}</h2>
+                  )}
+                  {librarySelectedGame && (
+                    <span className="library-hero-meta">{formatPlaytime(librarySelectedGame.playtimeMinutes)} jugado</span>
+                  )}
+                </div>
+              </div>
+              <div className="library-grid library-view-grid" ref={libraryGridRef}>
               {games.map((game) => (
-                <article key={game.id} className="library-item" onClick={() => { setLibraryView(false); openDetailView(game.id) }}>
+                <article
+                  key={game.id}
+                  className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedGameId(game.id)}
+                  onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
+                >
                   <div className="library-item-art">
                     {game.gridImageUrl ? (
                       <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
@@ -1797,7 +1836,8 @@ function App(): React.JSX.Element {
                   </div>
                 </article>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </section>
       )}

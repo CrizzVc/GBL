@@ -1028,19 +1028,24 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  padding: 34px 48px 42px;
+  padding: 0 48px 42px;
   overflow-y: auto;
-  background: linear-gradient(135deg, rgba(12, 12, 12, 0.97), rgba(24, 24, 24, 0.94));
+  background: #0c0c0c;
   animation: fadeIn var(--gbl-transition-normal) forwards;
 }
 
 .library-view-header {
+  position: absolute;
+  top: 34px;
+  left: 48px;
+  right: 48px;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin: 0 auto 30px;
-  width: min(100%, 1280px);
+  margin: 0 auto;
+  width: min(calc(100% - 96px), 1280px);
 }
 
 .library-back-button {
@@ -1082,36 +1087,84 @@
   flex-shrink: 0;
 }
 
+.library-hero {
+  position: relative;
+  width: calc(100% + 96px);
+  min-height: 390px;
+  margin: 0 -48px 28px;
+  overflow: hidden;
+  background-color: #171717;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.library-hero-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 34px 48px 30px;
+}
+
+.library-hero-logo {
+  max-width: min(360px, 60%);
+  max-height: 90px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.library-hero-title {
+  color: var(--gbl-text-primary);
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+.library-hero-meta {
+  color: var(--gbl-text-secondary);
+  font-size: 13px;
+}
+
 .library-view-grid {
   width: min(100%, 1280px);
   margin: 0 auto;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 20px;
   max-height: none;
   overflow: visible;
 }
 
 .library-view-grid .library-item {
+  position: relative;
   min-width: 0;
   padding: 0;
   align-items: stretch;
   gap: 0;
   overflow: hidden;
-  background: rgba(28, 28, 28, 0.86);
+  border: none;
+  border-radius: 0;
+  background: transparent;
   text-align: left;
 }
 
 .library-view-grid .library-item:hover {
   transform: translateY(-4px);
-  border-color: var(--gbl-border-active);
-  box-shadow: var(--gbl-shadow-md);
+  box-shadow: none;
+}
+
+.library-view-grid .library-item.selected {
+  box-shadow: none;
 }
 
 .library-item-art {
   width: 100%;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 1;
   overflow: hidden;
-  background: var(--gbl-bg-secondary);
+  background: #171717;
 }
 
 .library-item-cover {
@@ -1145,11 +1198,25 @@
 }
 
 .library-item-info {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
-  padding: 12px 12px 8px;
+  padding: 34px 12px 11px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--gbl-transition-fast), transform var(--gbl-transition-fast);
+}
+
+.library-view-grid .library-item:hover .library-item-info,
+.library-view-grid .library-item.selected .library-item-info {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .library-view-grid .library-item-name {
@@ -1165,7 +1232,11 @@
 }
 
 .library-view-grid .library-item-actions {
-  padding: 0 12px 11px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  padding: 0;
   opacity: 0;
 }
 
@@ -1911,13 +1982,15 @@
   }
 
   .library-view {
-    padding: 24px 20px 30px;
+    padding: 0 20px 30px;
   }
 
   .library-view-header {
+    top: 24px;
+    left: 20px;
+    right: 20px;
     align-items: flex-start;
-    flex-direction: column;
-    margin-bottom: 22px;
+    margin-bottom: 0;
   }
 
   .library-view-title {
@@ -1925,8 +1998,24 @@
   }
 
   .library-add-button {
-    width: 100%;
-    justify-content: center;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .library-hero {
+    width: calc(100% + 40px);
+    min-height: 320px;
+    margin-right: -20px;
+    margin-left: -20px;
+  }
+
+  .library-hero-content {
+    padding: 20px;
+  }
+
+  .library-hero-logo {
+    max-width: 70%;
+    max-height: 70px;
   }
 
   .library-view-grid {
