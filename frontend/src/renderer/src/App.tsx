@@ -1298,7 +1298,7 @@ function App(): React.JSX.Element {
     : backgroundImage
       ? {
         backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: 'contain',
+        backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }
