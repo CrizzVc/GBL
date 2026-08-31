@@ -8,8 +8,10 @@ import { spawn } from 'child_process'
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1380,
+    height: 830,
+    minWidth: 1380,
+    minHeight: 830,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -122,7 +124,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('launch-game', async (event, gameId: string, exePath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender)
-    
+
     try {
       const hasExecutable = exePath && exePath.trim() !== ''
       const fileExists = hasExecutable ? fs.existsSync(exePath) : false
@@ -146,7 +148,7 @@ app.whenReady().then(() => {
       }
 
       const ext = extname(exePath).toLowerCase()
-      
+
       if (ext === '.lnk' || ext === '.url') {
         await shell.openPath(exePath)
         setTimeout(() => {
@@ -233,9 +235,9 @@ app.whenReady().then(() => {
     const data = fs.readFileSync(destPath)
     const mimeType = ext === '.png' ? 'image/png'
       : ext === '.webp' ? 'image/webp'
-      : ext === '.gif' ? 'image/gif'
-      : ext === '.bmp' ? 'image/bmp'
-      : 'image/jpeg'
+        : ext === '.gif' ? 'image/gif'
+          : ext === '.bmp' ? 'image/bmp'
+            : 'image/jpeg'
     return `data:${mimeType};base64,${data.toString('base64')}`
   })
 
@@ -247,9 +249,9 @@ app.whenReady().then(() => {
         const data = fs.readFileSync(p)
         const mimeType = ext === '.png' ? 'image/png'
           : ext === '.webp' ? 'image/webp'
-          : ext === '.gif' ? 'image/gif'
-          : ext === '.bmp' ? 'image/bmp'
-          : 'image/jpeg'
+            : ext === '.gif' ? 'image/gif'
+              : ext === '.bmp' ? 'image/bmp'
+                : 'image/jpeg'
         return `data:${mimeType};base64,${data.toString('base64')}`
       }
     }
@@ -312,9 +314,9 @@ app.whenReady().then(() => {
       const ext = extname(result.filePaths[0]).toLowerCase()
       const mimeType = ext === '.png' ? 'image/png'
         : ext === '.webp' ? 'image/webp'
-        : ext === '.gif' ? 'image/gif'
-        : ext === '.bmp' ? 'image/bmp'
-        : 'image/jpeg'
+          : ext === '.gif' ? 'image/gif'
+            : ext === '.bmp' ? 'image/bmp'
+              : 'image/jpeg'
       return `data:${mimeType};base64,${data.toString('base64')}`
     } catch (err) {
       console.error('Error reading profile image:', err)
