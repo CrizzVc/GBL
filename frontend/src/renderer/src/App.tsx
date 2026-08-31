@@ -761,12 +761,39 @@ function App(): React.JSX.Element {
 
       {/* ── Bottom row ── */}
       <div className="bottom-row">
-        <div className="bottom-card" onClick={handleOpenSpecs} id="btn-specs">
-          <SystemIcon size={22} className="bottom-card-icon" />
-          <div className="bottom-card-text">
-            <span className="bottom-card-title">Especificaciones</span>
-            <span className="bottom-card-sub">Hardware del sistema</span>
+        <div 
+          className="dashboard-container bottom-card" 
+          onClick={() => setModal('library')} 
+          style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
+        >
+          <div className="dashboard">
+            {/* Tarjeta 1: Mis juegos y aplicaciones */}
+            <div className="tile apps-tile" style={{ '--layer': 4 } as React.CSSProperties}>
+              <div className="library-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            {/* Tarjeta 2: Descenders */}
+            <div className="tile game-tile" style={{ backgroundImage: "url('https://cdn2.steamgriddb.com/thumb/7dbdfd71d964683a8bcbe6f5f5b85eb9.jpg')", '--layer': 3 } as React.CSSProperties}>
+              <div className="game-overlay"></div>
+            </div>
+
+            {/* Tarjeta 3: Astroneer */}
+            <div className="tile game-tile" style={{ backgroundImage: "url('https://cdn2.steamgriddb.com/thumb/48b505846f30602aaff7e2d336720e6d.jpg')", '--layer': 2 } as React.CSSProperties}>
+              <div className="game-overlay"></div>
+            </div>
+
+            {/* Tarjeta 4: Sea of Thieves */}
+            <div className="tile game-tile" style={{ backgroundImage: "url('https://cdn2.steamgriddb.com/thumb/055c25fa28c4eb8c6bb0672e557eef80.jpg')", '--layer': 1 } as React.CSSProperties}>
+              <div className="game-overlay"></div>
+            </div>
           </div>
+
+          {/* Texto superpuesto al frente de todo */}
+          <div className="floating-title">My games & apps</div>
         </div>
         <div className="bottom-card" id="btn-store">
           <StoreIcon size={22} className="bottom-card-icon" />
