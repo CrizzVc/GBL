@@ -1700,7 +1700,7 @@
 }
 
 .detail-meta-value.link {
-  color: #66c0f4;
+  /* color: #66c0f4; */
 }
 
 .detail-meta-tags-block {
@@ -1952,7 +1952,6 @@
   flex-direction: column;
   gap: 4px;
   padding: 4px 18px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
   min-width: 0;
 }
 
@@ -1980,7 +1979,7 @@
 }
 
 .detail-meta-value.link {
-  color: #66c0f4;
+  /* color: #66c0f4; */
   cursor: default;
   transition: color var(--gbl-transition-fast);
 }
