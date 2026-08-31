@@ -1362,61 +1362,63 @@ function App(): React.JSX.Element {
                 )}
               </div>
 
-              {detailInfo?.metacritic && (
-                <a
-                  className="metacritic-widget"
-                  href={detailInfo.metacritic.url || undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => {
-                    if (!detailInfo.metacritic?.url) e.preventDefault()
-                  }}
-                >
-                  <span
-                    className={`metacritic-widget-score ${detailInfo.metacritic.score >= 75
-                      ? 'good'
-                      : detailInfo.metacritic.score >= 50
-                        ? 'mixed'
-                        : 'bad'
-                      }`}
+              <div className="detail-meta-section">
+                {detailInfo?.metacritic && (
+                  <a
+                    className="metacritic-widget"
+                    href={detailInfo.metacritic.url || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => {
+                      if (!detailInfo.metacritic?.url) e.preventDefault()
+                    }}
                   >
-                    {detailInfo.metacritic.score}
-                  </span>
-                  <div className="metacritic-widget-body">
-                    <div className="metacritic-widget-brand">
-                      <span className="metacritic-widget-logo">M</span>
-                      <span className="metacritic-widget-name">metacritic</span>
+                    <span
+                      className={`metacritic-widget-score ${detailInfo.metacritic.score >= 75
+                        ? 'good'
+                        : detailInfo.metacritic.score >= 50
+                          ? 'mixed'
+                          : 'bad'
+                        }`}
+                    >
+                      {detailInfo.metacritic.score}
+                    </span>
+                    <div className="metacritic-widget-body">
+                      <div className="metacritic-widget-brand">
+                        <span className="metacritic-widget-logo">M</span>
+                        <span className="metacritic-widget-name">metacritic</span>
+                      </div>
+                      <span className="metacritic-widget-link">Leer las reseñas ↗</span>
                     </div>
-                    <span className="metacritic-widget-link">Leer las reseñas ↗</span>
-                  </div>
-                </a>
-              )}
+                  </a>
+                )}
 
-              {detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
-                <div className="rating-widget">
-                  <div className="rating-widget-badge">
-                    <span className="rating-widget-badge-top">
-                      {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).top}
-                    </span>
-                    <span className="rating-widget-badge-letter">
-                      {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).letter}
-                    </span>
-                    <span className="rating-widget-badge-board">{detailInfo.rating.board}</span>
+                {detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
+                  <div className="rating-widget">
+                    <div className="rating-widget-badge">
+                      <span className="rating-widget-badge-top">
+                        {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).top}
+                      </span>
+                      <span className="rating-widget-badge-letter">
+                        {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).letter}
+                      </span>
+                      <span className="rating-widget-badge-board">{detailInfo.rating.board}</span>
+                    </div>
+                    <div className="rating-widget-body">
+                      {detailInfo.rating.descriptors.length > 0 && (
+                        <ul className="rating-widget-descriptors">
+                          {detailInfo.rating.descriptors.map((d) => (
+                            <li key={d}>{d}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <span className="rating-widget-caption">
+                        Clasificación por edades para: {detailInfo.rating.board}
+                      </span>
+                    </div>
                   </div>
-                  <div className="rating-widget-body">
-                    {detailInfo.rating.descriptors.length > 0 && (
-                      <ul className="rating-widget-descriptors">
-                        {detailInfo.rating.descriptors.map((d) => (
-                          <li key={d}>{d}</li>
-                        ))}
-                      </ul>
-                    )}
-                    <span className="rating-widget-caption">
-                      Clasificación por edades para: {detailInfo.rating.board}
-                    </span>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Reviews, then release info, then tags */}
