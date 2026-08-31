@@ -28,6 +28,10 @@ declare global {
       selectBackgroundImage: () => Promise<string | null>
       getBackgroundImage: () => Promise<string | null>
       clearBackgroundImage: () => Promise<{ success: boolean }>
+      // Profile APIs
+      getProfile: () => Promise<{ name: string; avatar: string | null }>
+      saveProfile: (profile: { name: string; avatar: string | null }) => Promise<{ success: boolean; error?: string }>
+      selectProfileImage: () => Promise<string | null>
     }
   }
 }

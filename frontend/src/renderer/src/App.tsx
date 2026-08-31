@@ -140,6 +140,10 @@ function App(): React.JSX.Element {
   // Background image state
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
 
+  // User profile state
+  const [profileName, setProfileName] = useState('')
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
+
   // Add / Edit game form state
   const [formName, setFormName] = useState('')
   const [formExePath, setFormExePath] = useState('')
@@ -202,6 +206,22 @@ function App(): React.JSX.Element {
       }
     }
     loadBg()
+  }, [])
+
+  // ── Load user profile ──
+  useEffect(() => {
+    const loadProfile = async (): Promise<void> => {
+      try {
+        const profile = await window.api.getProfile()
+        if (profile) {
+          setProfileName(profile.name || '')
+          setProfileAvatar(profile.avatar || null)
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err)
+      }
+    }
+    loadProfile()
   }, [])
 
   // ── Listen for game-exited events from main process ──
@@ -434,6 +454,27 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  // ── Profile handlers ──
+  const handleSelectProfileImage = useCallback(async () => {
+    try {
+      const dataUrl = await window.api.selectProfileImage()
+      if (dataUrl) {
+        setProfileAvatar(dataUrl)
+        await window.api.saveProfile({ name: profileName, avatar: dataUrl })
+      }
+    } catch (err) {
+      console.error('Error selecting profile image:', err)
+    }
+  }, [profileName])
+
+  const handleSaveProfileName = useCallback(
+    async (name: string) => {
+      setProfileName(name)
+      await window.api.saveProfile({ name, avatar: profileAvatar })
+    },
+    [profileAvatar]
+  )
+
   // ── SteamGridDB handlers ──
   const handleSgdbSearch = useCallback(async () => {
     if (!sgdbSearch.trim()) return
@@ -638,9 +679,17 @@ function App(): React.JSX.Element {
       {/* ── Header ── */}
       <header className="header-bar">
         <div className="header-left">
-          <div className="user-avatar" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ cursor: 'pointer' }}>G</div>
+          <div className="user-avatar" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ cursor: 'pointer', overflow: 'hidden' }}>
+            {profileAvatar ? (
+              <img src={profileAvatar} alt="Foto de perfil" className="user-avatar-img" draggable={false} />
+            ) : (
+              (profileName.trim() ? profileName.trim().charAt(0).toUpperCase() : 'G')
+            )}
+          </div>
           <div className="header-greeting">
-            <span className="header-greeting-name">GBL Launcher</span>
+            <span className="header-greeting-name">
+              {profileName.trim() ? profileName.trim() : 'GBL Launcher'}
+            </span>
             <span className="header-greeting-sub">
               {games.length} {games.length === 1 ? 'juego' : 'juegos'}
             </span>
@@ -1154,6 +1203,46 @@ function App(): React.JSX.Element {
                 <div className="spec-label">Tiempo Total Jugado</div>
                 <div className="spec-value">
                   {formatPlaytime(games.reduce((sum, g) => sum + g.playtimeMinutes, 0))}
+                </div>
+              </div>
+            </div>
+
+            {/* Profile settings */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">Perfil</h3>
+              <div className="settings-profile-row">
+                <div
+                  className="settings-profile-avatar"
+                  onClick={handleSelectProfileImage}
+                  title="Cambiar foto de perfil"
+                >
+                  {profileAvatar ? (
+                    <img src={profileAvatar} alt="Foto de perfil" className="user-avatar-img" draggable={false} />
+                  ) : (
+                    <span className="user-avatar-initial">
+                      {profileName.trim() ? profileName.trim().charAt(0).toUpperCase() : 'G'}
+                    </span>
+                  )}
+                  <div className="settings-profile-avatar-overlay">
+                    <ImageIcon size={18} />
+                  </div>
+                </div>
+                <div className="settings-profile-fields">
+                  <input
+                    className="form-input"
+                    placeholder="Nombre de usuario"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    onBlur={(e) => handleSaveProfileName(e.target.value.trim())}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        ;(e.target as HTMLInputElement).blur()
+                      }
+                    }}
+                  />
+                  <p className="settings-profile-hint">
+                    El nombre se guarda al salir del campo o pulsar Enter. Haz clic en la foto para cambiarla.
+                  </p>
                 </div>
               </div>
             </div>

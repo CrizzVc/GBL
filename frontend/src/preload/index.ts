@@ -19,7 +19,11 @@ const api = {
   // Background image APIs
   selectBackgroundImage: () => ipcRenderer.invoke('select-background-image'),
   getBackgroundImage: () => ipcRenderer.invoke('get-background-image'),
-  clearBackgroundImage: () => ipcRenderer.invoke('clear-background-image')
+  clearBackgroundImage: () => ipcRenderer.invoke('clear-background-image'),
+  // Profile APIs
+  getProfile: () => ipcRenderer.invoke('get-profile'),
+  saveProfile: (profile: { name: string; avatar: string | null }) => ipcRenderer.invoke('save-profile', profile),
+  selectProfileImage: () => ipcRenderer.invoke('select-profile-image')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

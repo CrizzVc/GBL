@@ -267,6 +267,129 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
+  // ── User profile handlers ──
+  const getProfilePath = (): string => {
+    return join(app.getPath('userData'), 'profile.json')
+  }
+
+  ipcMain.handle('get-profile', async () => {
+    const profilePath = getProfilePath()
+    if (fs.existsSync(profilePath)) {
+      try {
+        const data = fs.readFileSync(profilePath, 'utf8')
+        return JSON.parse(data)
+      } catch (e) {
+        console.error('Error reading profile.json', e)
+        return { name: '', avatar: null }
+      }
+    }
+    return { name: '', avatar: null }
+  })
+
+  ipcMain.handle('save-profile', async (_event, profile: { name: string; avatar: string | null }) => {
+    try {
+      const profilePath = getProfilePath()
+      fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2), 'utf8')
+      return { success: true }
+    } catch (e: any) {
+      console.error('Error writing profile.json', e)
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('select-profile-image', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Imágenes', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] }
+      ]
+    })
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+    try {
+      const data = fs.readFileSync(result.filePaths[0])
+      const ext = extname(result.filePaths[0]).toLowerCase()
+      const mimeType = ext === '.png' ? 'image/png'
+        : ext === '.webp' ? 'image/webp'
+        : ext === '.gif' ? 'image/gif'
+        : ext === '.bmp' ? 'image/bmp'
+        : 'image/jpeg'
+      return `data:${mimeType};base64,${data.toString('base64')}`
+    } catch (err) {
+      console.error('Error reading profile image:', err)
+      return null
+    }
+  })
+
+  // ── Store detection & opening ──
+  const STORES = [
+    {
+      id: 'steam',
+      name: 'Steam',
+      exeCandidates: [
+        'C:\\Program Files (x86)\\Steam\\steam.exe',
+        'C:\\Program Files\\Steam\\steam.exe',
+        process.env.ProgramFiles + '\\Steam\\steam.exe',
+        (process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)') + '\\Steam\\steam.exe'
+      ]
+    },
+    {
+      id: 'epic',
+      name: 'Epic Games',
+      exeCandidates: [
+        (process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)') + '\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe',
+        (process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)') + '\\Epic Games\\Launcher\\Portal\\Binaries\\Win32\\EpicGamesLauncher.exe',
+        process.env.ProgramFiles + '\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe'
+      ]
+    },
+    {
+      id: 'gog',
+      name: 'GOG Galaxy',
+      exeCandidates: [
+        (process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)') + '\\GOG Galaxy\\GalaxyClient.exe',
+        process.env.ProgramFiles + '\\GOG Galaxy\\GalaxyClient.exe',
+        (process.env.LocalAppData || process.env.APPDATA || '') + '\\GOG.com\\Galaxy\\GalaxyClient.exe'
+      ]
+    }
+  ]
+
+  const findStoreExe = (store): string | null => {
+    for (const candidate of store.exeCandidates) {
+      try {
+        if (candidate && fs.existsSync(candidate)) return candidate
+      } catch {
+        // ignore
+      }
+    }
+    return null
+  }
+
+  ipcMain.handle('get-stores', async () => {
+    return STORES.map((store) => {
+      const exePath = findStoreExe(store)
+      return {
+        id: store.id,
+        name: store.name,
+        installed: !!exePath,
+        exePath
+      }
+    })
+  })
+
+  ipcMain.handle('open-store', async (_event, storeId: string) => {
+    const store = STORES.find((s) => s.id === storeId)
+    if (!store) return { success: false, error: 'Tienda desconocida' }
+    const exePath = findStoreExe(store)
+    if (!exePath) return { success: false, error: 'Tienda no instalada' }
+    try {
+      const error = await shell.openPath(exePath)
+      return error ? { success: false, error } : { success: true }
+    } catch (err: any) {
+      return { success: false, error: err.message }
+    }
+  })
+
   createWindow()
 
   app.on('activate', function () {
