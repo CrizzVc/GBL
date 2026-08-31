@@ -1538,6 +1538,7 @@
   flex-direction: column;
   gap: 8px;
   max-width: 420px;
+  width: 350px
 }
 
 .detail-actions-row {
@@ -1716,16 +1717,6 @@
   gap: 6px;
 }
 
-.detail-tag-pill {
-  padding: 5px 10px;
-  border-radius: var(--gbl-radius-sm);
-  background: rgba(102, 192, 244, 0.12);
-  color: #66c0f4;
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 /* ══════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════ */
@@ -1773,12 +1764,6 @@
   min-height: 0;
 }
 
-.detail-hero-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 460px;
-}
 
 .detail-actions-row {
   display: flex;
@@ -2007,9 +1992,9 @@
 .detail-tag-pill {
   padding: 6px 12px;
   border-radius: var(--gbl-radius-sm);
-  background: rgba(102, 192, 244, 0.1);
-  border: 1px solid rgba(102, 192, 244, 0.2);
-  color: #66c0f4;
+  background: rgba(134, 134, 134, 0.1);
+  border: 1px solid rgba(221, 221, 221, 0.2);
+  /* color: #66c0f4; */
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -2018,6 +2003,6 @@
 }
 
 .detail-tag-pill:hover {
-  background: rgba(102, 192, 244, 0.18);
-  border-color: rgba(102, 192, 244, 0.35);
+  background: rgba(119, 119, 119, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
 }
