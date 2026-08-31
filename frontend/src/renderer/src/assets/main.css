@@ -1257,7 +1257,6 @@
 .library-item-cover.not-installed {
   filter: brightness(0.48) saturate(0.8) contrast(0.94);
   opacity: 0.62;
-  animation: cover-drift 4s ease-in-out infinite alternate;
 }
 
 .library-item:hover .library-item-cover {
@@ -1919,6 +1918,37 @@
   font-size: 16px;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.detail-play-actions {
+  position: fixed;
+  right: 30px;
+  bottom: 50px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-edit-button {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(18, 18, 18, 0.86);
+  color: var(--gbl-text-primary);
+  cursor: pointer;
+  transition: background var(--gbl-transition-fast), border-color var(--gbl-transition-fast), transform var(--gbl-transition-fast);
+}
+
+.detail-edit-button:hover {
+  border-color: var(--gbl-text-primary);
+  background: rgba(42, 42, 42, 0.96);
+  transform: translateY(-1px);
 }
 
 .detail-playtime {

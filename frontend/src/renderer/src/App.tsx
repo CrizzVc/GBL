@@ -197,6 +197,16 @@ function ChevronRightIcon({ size = 20 }: { size?: number }): React.JSX.Element {
   )
 }
 
+function MoreIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  )
+}
+
 /* ────────────────────────────────────────────
    App
    ──────────────────────────────────────────── */
@@ -1825,14 +1835,29 @@ function App(): React.JSX.Element {
             </div>
 
             {/* BOTON DE JUGAR!!!!! */}
-            <button
-              className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
-              onClick={handleLaunchGame}
-              style={{ position: 'fixed', bottom: '50px', right: '30px' }}
-            >
-              <PlayIcon size={20} />
-              {runningGameId === detailGame.id ? 'Ejecutando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
-            </button>
+            <div className="detail-play-actions">
+              <button
+                className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
+                onClick={handleLaunchGame}
+              >
+                <PlayIcon size={20} />
+                {runningGameId === detailGame.id ? 'Ejecutando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
+              </button>
+              <button
+                className="detail-edit-button"
+                onClick={() => {
+                  if (detailGame.isSteam) {
+                    setDetailGameId(detailGame.id)
+                  } else {
+                    openEditGameModal(detailGame.id)
+                  }
+                }}
+                aria-label={detailGame.isSteam ? 'Detalles del juego' : 'Editar juego'}
+                title={detailGame.isSteam ? 'Detalles del juego' : 'Editar juego'}
+              >
+                <MoreIcon size={20} />
+              </button>
+            </div>
 
           </div>
         </div>
