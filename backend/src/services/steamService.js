@@ -1,4 +1,6 @@
 const STORE_API = 'https://store.steampowered.com/api/appdetails';
+const REVIEWS_API = 'https://store.steampowered.com/appreviews';
+const STEAMSPY_API = 'https://steamspy.com/api.php';
 
 // Simple in-memory cache
 const cache = new Map();
@@ -74,5 +76,123 @@ export async function getScreenshots(appid) {
   } catch (err) {
     console.error('[SteamService] Error obteniendo screenshots:', err.message);
     return [];
+  }
+}
+
+/**
+ * Get a review summary (score description + total count) for a Steam AppID.
+ * @param {number|string} appid - Steam AppID
+ * @param {{ dayRange?: number }} options - Optional day_range to restrict to "recent" reviews (e.g. 30)
+ * @returns {Promise<{summary: string, count: number} | null>}
+ */
+async function fetchReviewSummary(appid, { dayRange } = {}) {
+  const params = new URLSearchParams({
+    json: '1',
+    language: 'all',
+    review_type: 'all',
+    purchase_type: 'all',
+    num_per_page: '0'
+  });
+  if (dayRange) params.set('day_range', String(dayRange));
+
+  const res = await fetch(`${REVIEWS_API}/${appid}?${params.toString()}`, {
+    headers: { 'Accept-Language': 'es-419,es;q=0.9,en;q=0.8' }
+  });
+  if (!res.ok) {
+    throw new Error(`Steam reviews error ${res.status}`);
+  }
+  const json = await res.json();
+  const summary = json.query_summary;
+  if (!summary) return null;
+
+  return {
+    summary: summary.review_score_desc || 'Sin reseñas',
+    count: summary.total_reviews || 0
+  };
+}
+
+/**
+ * Get community tags for a Steam AppID via SteamSpy.
+ * @param {number|string} appid - Steam AppID
+ * @returns {Promise<string[]>}
+ */
+async function fetchTags(appid) {
+  try {
+    const res = await fetch(`${STEAMSPY_API}?request=appdetails&appid=${appid}`);
+    if (!res.ok) {
+      throw new Error(`SteamSpy error ${res.status}`);
+    }
+    const json = await res.json();
+    if (json && json.tags && typeof json.tags === 'object' && !Array.isArray(json.tags)) {
+      return Object.keys(json.tags).slice(0, 6);
+    }
+  } catch (err) {
+    console.error('[SteamService] Error obteniendo tags de SteamSpy:', err.message);
+  }
+  return [];
+}
+
+/**
+ * Get full store details for a Steam AppID: description, developer, publisher,
+ * release date, recent/all review summaries and community tags.
+ * @param {number|string} appid - Steam AppID
+ * @returns {Promise<object|null>}
+ */
+export async function getAppDetails(appid) {
+  const key = `details:${appid}`;
+  const cached = getCached(key);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(`${STORE_API}?appids=${appid}&l=es`, {
+      headers: { 'Accept-Language': 'es-419,es;q=0.9,en;q=0.8' }
+    });
+    if (!res.ok) {
+      throw new Error(`Steam appdetails error ${res.status}`);
+    }
+    const json = await res.json();
+    const entry = json[appid];
+    if (!entry || !entry.success || !entry.data) {
+      return null;
+    }
+    const data = entry.data;
+
+    const [reviewsRecent, reviewsAll, tags] = await Promise.all([
+      fetchReviewSummary(appid, { dayRange: 30 }).catch((err) => {
+        console.error('[SteamService] Error obteniendo reseñas recientes:', err.message);
+        return null;
+      }),
+      fetchReviewSummary(appid).catch((err) => {
+        console.error('[SteamService] Error obteniendo reseñas totales:', err.message);
+        return null;
+      }),
+      fetchTags(appid)
+    ]);
+
+    const result = {
+      description: data.short_description || data.about_the_game || null,
+      developer:
+        Array.isArray(data.developers) && data.developers.length
+          ? data.developers.join(', ')
+          : null,
+      publisher:
+        Array.isArray(data.publishers) && data.publishers.length
+          ? data.publishers.join(', ')
+          : null,
+      releaseDate: data.release_date?.date || null,
+      reviewsRecent,
+      reviewsAll,
+      tags: tags.length
+        ? tags
+        : Array.isArray(data.genres)
+          ? data.genres.map((g) => g.description)
+          : []
+    };
+
+    setCache(key, result);
+    return result;
+  } catch (err) {
+    console.error('[SteamService] Error obteniendo detalles:', err.message);
+    return null;
   }
 }

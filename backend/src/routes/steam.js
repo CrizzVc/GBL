@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { resolveAppId, getScreenshots } from '../services/steamService.js';
+import { resolveAppId, getScreenshots, getAppDetails } from '../services/steamService.js';
 
 const router = Router();
 
@@ -29,6 +29,24 @@ router.get('/screenshots/:appid', async (req, res) => {
     res.json(screenshots);
   } catch (error) {
     console.error('[Steam] Error obteniendo screenshots:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get store details (description, developer, publisher, release date, reviews, tags)
+router.get('/details/:appid', async (req, res) => {
+  try {
+    const { appid } = req.params;
+    if (!appid) {
+      return res.status(400).json({ error: 'Se requiere el appid' });
+    }
+    const details = await getAppDetails(appid);
+    if (!details) {
+      return res.status(404).json({ error: 'No se encontraron detalles para este appid' });
+    }
+    res.json(details);
+  } catch (error) {
+    console.error('[Steam] Error obteniendo detalles:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

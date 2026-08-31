@@ -145,6 +145,22 @@ function ImageIcon({ size = 20 }: { size?: number }): React.JSX.Element {
   )
 }
 
+function ChevronLeftIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  )
+}
+
+function ChevronRightIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  )
+}
+
 /* ────────────────────────────────────────────
    App
    ──────────────────────────────────────────── */
@@ -198,6 +214,17 @@ function App(): React.JSX.Element {
   const [detailAccent, setDetailAccent] = useState<string>('#ffffff')
   const [detailScreenshots, setDetailScreenshots] = useState<Array<{ path_full: string; path_thumbnail: string }>>([])
   const [detailLoadingShots, setDetailLoadingShots] = useState(false)
+  const [detailShotIndex, setDetailShotIndex] = useState(0)
+  const [detailInfo, setDetailInfo] = useState<{
+    description: string | null
+    developer: string | null
+    publisher: string | null
+    releaseDate: string | null
+    reviewsRecent: { summary: string; count: number } | null
+    reviewsAll: { summary: string; count: number } | null
+    tags: string[]
+  } | null>(null)
+  const [detailInfoLoading, setDetailInfoLoading] = useState(false)
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
@@ -365,16 +392,21 @@ function App(): React.JSX.Element {
     }
   }, [detailGame?.heroImageUrl])
 
-  // ── Fetch Steam screenshots for the detail game ──
+  // ── Fetch Steam screenshots + details for the detail game ──
   useEffect(() => {
     if (!detailGame) {
       setDetailScreenshots([])
+      setDetailInfo(null)
+      setDetailShotIndex(0)
       return
     }
     let cancelled = false
-    const loadScreenshots = async (): Promise<void> => {
+    const loadDetails = async (): Promise<void> => {
       setDetailLoadingShots(true)
+      setDetailInfoLoading(true)
       setDetailScreenshots([])
+      setDetailInfo(null)
+      setDetailShotIndex(0)
       try {
         // 1) Resolve the game name to a Steam AppID
         const resolveRes = await fetch(
@@ -385,18 +417,30 @@ function App(): React.JSX.Element {
         const appid = resolved?.appid
         if (!appid) return
 
-        // 2) Fetch screenshots for that AppID
-        const shotsRes = await fetch(`${BACKEND_URL}/api/steam/screenshots/${appid}`)
-        if (!shotsRes.ok) return
-        const shots = await shotsRes.json()
-        if (!cancelled && Array.isArray(shots)) setDetailScreenshots(shots)
+        // 2) Fetch screenshots and store details in parallel
+        const [shotsRes, detailsRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/api/steam/screenshots/${appid}`),
+          fetch(`${BACKEND_URL}/api/steam/details/${appid}`)
+        ])
+
+        if (!cancelled && shotsRes.ok) {
+          const shots = await shotsRes.json()
+          if (Array.isArray(shots)) setDetailScreenshots(shots)
+        }
+        if (!cancelled && detailsRes.ok) {
+          const details = await detailsRes.json()
+          if (details) setDetailInfo(details)
+        }
       } catch (err) {
-        console.error('Error obteniendo capturas de Steam:', err)
+        console.error('Error obteniendo información de Steam:', err)
       } finally {
-        if (!cancelled) setDetailLoadingShots(false)
+        if (!cancelled) {
+          setDetailLoadingShots(false)
+          setDetailInfoLoading(false)
+        }
       }
     }
-    loadScreenshots()
+    loadDetails()
     return () => {
       cancelled = true
     }
@@ -815,6 +859,18 @@ function App(): React.JSX.Element {
     setDetailGameId(gameId)
   }, [])
 
+  const handlePrevShot = useCallback(() => {
+    setDetailShotIndex((prev) =>
+      detailScreenshots.length ? (prev - 1 + detailScreenshots.length) % detailScreenshots.length : 0
+    )
+  }, [detailScreenshots.length])
+
+  const handleNextShot = useCallback(() => {
+    setDetailShotIndex((prev) =>
+      detailScreenshots.length ? (prev + 1) % detailScreenshots.length : 0
+    )
+  }, [detailScreenshots.length])
+
   // ── Detail view background style (accent color derived from hero image) ──
   const detailBgStyle: React.CSSProperties = detailGame?.heroImageUrl
     ? {
@@ -1212,25 +1268,118 @@ function App(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="detail-screenshots-row">
-            {detailLoadingShots && (
-              <div className="detail-screenshots-loading">Cargando capturas...</div>
-            )}
-            {!detailLoadingShots && detailScreenshots.length === 0 && (
-              <div className="detail-screenshots-empty">
-                No se encontraron capturas para este juego
-              </div>
-            )}
-            {detailScreenshots.map((shot, index) => (
-              <img
-                key={index}
-                src={shot.path_full}
-                alt={`Captura ${index + 1} de ${detailGame.name}`}
-                className="detail-screenshot"
-                draggable={false}
-                loading="lazy"
-              />
-            ))}
+          <div className="detail-info-row">
+            {/* Screenshot carousel */}
+            <div className="detail-carousel">
+              {detailLoadingShots && (
+                <div className="detail-carousel-status">Cargando capturas...</div>
+              )}
+              {!detailLoadingShots && detailScreenshots.length === 0 && (
+                <div className="detail-carousel-status">
+                  No se encontraron capturas para este juego
+                </div>
+              )}
+              {!detailLoadingShots && detailScreenshots.length > 0 && (
+                <>
+                  <img
+                    key={detailShotIndex}
+                    src={detailScreenshots[detailShotIndex].path_full}
+                    alt={`Captura ${detailShotIndex + 1} de ${detailGame.name}`}
+                    className="detail-carousel-image"
+                    draggable={false}
+                  />
+                  {detailScreenshots.length > 1 && (
+                    <>
+                      <button
+                        className="detail-carousel-nav prev"
+                        onClick={handlePrevShot}
+                        aria-label="Captura anterior"
+                      >
+                        <ChevronLeftIcon size={20} />
+                      </button>
+                      <button
+                        className="detail-carousel-nav next"
+                        onClick={handleNextShot}
+                        aria-label="Siguiente captura"
+                      >
+                        <ChevronRightIcon size={20} />
+                      </button>
+                      <div className="detail-carousel-dots">
+                        {detailScreenshots.map((_, i) => (
+                          <button
+                            key={i}
+                            className={`detail-carousel-dot ${i === detailShotIndex ? 'active' : ''}`}
+                            onClick={() => setDetailShotIndex(i)}
+                            aria-label={`Captura ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="detail-description">
+              {detailInfoLoading && (
+                <p className="detail-description-text muted">Cargando descripción...</p>
+              )}
+              {!detailInfoLoading && detailInfo?.description && (
+                <p className="detail-description-text">{detailInfo.description}</p>
+              )}
+              {!detailInfoLoading && !detailInfo?.description && (
+                <p className="detail-description-text muted">No hay descripción disponible.</p>
+              )}
+            </div>
+
+            {/* Steam-style info panel */}
+            <div className="detail-meta-panel">
+              {detailInfo?.reviewsRecent && (
+                <div className="detail-meta-row">
+                  <span className="detail-meta-label">Reseñas recientes</span>
+                  <span className="detail-meta-value link">
+                    {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
+                  </span>
+                </div>
+              )}
+              {detailInfo?.reviewsAll && (
+                <div className="detail-meta-row">
+                  <span className="detail-meta-label">Todas las reseñas</span>
+                  <span className="detail-meta-value link">
+                    {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
+                  </span>
+                </div>
+              )}
+              {detailInfo?.releaseDate && (
+                <div className="detail-meta-row">
+                  <span className="detail-meta-label">Fecha de lanzamiento</span>
+                  <span className="detail-meta-value">{detailInfo.releaseDate}</span>
+                </div>
+              )}
+              {detailInfo?.developer && (
+                <div className="detail-meta-row">
+                  <span className="detail-meta-label">Desarrollador</span>
+                  <span className="detail-meta-value link">{detailInfo.developer}</span>
+                </div>
+              )}
+              {detailInfo?.publisher && (
+                <div className="detail-meta-row">
+                  <span className="detail-meta-label">Editor</span>
+                  <span className="detail-meta-value link">{detailInfo.publisher}</span>
+                </div>
+              )}
+              {detailInfo?.tags && detailInfo.tags.length > 0 && (
+                <div className="detail-meta-tags-block">
+                  <div className="detail-meta-label">Etiquetas populares</div>
+                  <div className="detail-meta-tags">
+                    {detailInfo.tags.map((tag) => (
+                      <span key={tag} className="detail-tag-pill">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
