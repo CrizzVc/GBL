@@ -212,10 +212,10 @@ function App(): React.JSX.Element {
         const updated = prev.map((g) =>
           g.id === data.gameId
             ? {
-                ...g,
-                playtimeMinutes: g.playtimeMinutes + data.durationMinutes,
-                lastPlayed: new Date().toISOString()
-              }
+              ...g,
+              playtimeMinutes: g.playtimeMinutes + data.durationMinutes,
+              lastPlayed: new Date().toISOString()
+            }
             : g
         )
         window.api.saveGames(updated)
@@ -324,11 +324,11 @@ function App(): React.JSX.Element {
     const newGames = games.map((g) =>
       g.id === editingGameId
         ? {
-            ...g,
-            name: formName.trim(),
-            exePath: formExePath.trim(),
-            iconDataUrl: formIconUrl ?? g.iconDataUrl
-          }
+          ...g,
+          name: formName.trim(),
+          exePath: formExePath.trim(),
+          iconDataUrl: formIconUrl ?? g.iconDataUrl
+        }
         : g
     )
     saveGames(newGames)
@@ -490,19 +490,19 @@ function App(): React.JSX.Element {
     if (!sgdbTargetGameId || !sgdbSelectedGame) return
     const artField = (sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? 'gridImageUrl'
       : sgdbArtType === 'heroes' ? 'heroImageUrl'
-      : sgdbArtType === 'logos' ? 'logoImageUrl'
-      : 'iconDataUrl'
+        : sgdbArtType === 'logos' ? 'logoImageUrl'
+          : 'iconDataUrl'
 
     const newGames = games.map((g) =>
       g.id === sgdbTargetGameId
         ? {
-            ...g,
-            [artField]: image.url,
-            steamGridId: sgdbSelectedGame.id,
-            // Also set the grid as the card image if it's a grid or square_grid
-            ...((sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? { gridImageUrl: image.url } : {}),
-            ...(sgdbArtType === 'icons' ? { iconDataUrl: image.url } : {})
-          }
+          ...g,
+          [artField]: image.url,
+          steamGridId: sgdbSelectedGame.id,
+          // Also set the grid as the card image if it's a grid or square_grid
+          ...((sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? { gridImageUrl: image.url } : {}),
+          ...(sgdbArtType === 'icons' ? { iconDataUrl: image.url } : {})
+        }
         : g
     )
     saveGames(newGames)
@@ -582,25 +582,30 @@ function App(): React.JSX.Element {
   // ── Background style ──
   const bgStyle = selectedGame?.heroImageUrl
     ? {
-        backgroundImage: `url(${selectedGame.heroImageUrl})`,
-        backgroundSize: 'cover',
+      backgroundImage: `linear-gradient(to bottom, transparent 20%, var(--gbl-bg-primary) 56%), url(${selectedGame.heroImageUrl})`,
+      backgroundSize: 'contain',
+      backgroundPosition: 'top',
+      backgroundRepeat: 'no-repeat'
+    }
+    : backgroundImage
+      ? {
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'contain',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }
-    : backgroundImage
-      ? { backgroundImage: `url(${backgroundImage})` }
       : selectedGame
         ? {
-            background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
-          }
+          background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
+        }
         : {}
 
   return (
     <div className="launcher">
       {/* ── Sidebar ── */}
-      <div 
-        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} 
-        onClick={() => setSidebarOpen(false)} 
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
       />
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-title">GBL Launcher</div>
@@ -625,7 +630,8 @@ function App(): React.JSX.Element {
 
       {/* Animated background */}
       <div
-        className={`launcher-bg ${backgroundImage ? 'has-custom-bg' : ''}`}
+        key={selectedGame?.heroImageUrl || backgroundImage || 'default'}
+        className={`launcher-bg fade-in-bg ${backgroundImage ? 'has-custom-bg' : ''}`}
         style={bgStyle}
       />
 
@@ -1222,9 +1228,9 @@ function App(): React.JSX.Element {
                       onClick={() => handleSgdbChangeArtType(type)}
                     >
                       {type === 'grids' ? 'Portadas' :
-                       type === 'square_grids' ? 'Grids 1:1' :
-                       type === 'heroes' ? 'Banners' :
-                       type === 'logos' ? 'Logos' : 'Iconos'}
+                        type === 'square_grids' ? 'Grids 1:1' :
+                          type === 'heroes' ? 'Banners' :
+                            type === 'logos' ? 'Logos' : 'Iconos'}
                     </button>
                   ))}
                 </div>

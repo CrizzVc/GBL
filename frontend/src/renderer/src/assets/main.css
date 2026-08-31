@@ -42,11 +42,25 @@
   pointer-events: none;
 }
 
+.fade-in-bg {
+  animation: bgFadeIn 0.4s ease-out forwards;
+}
+
+@keyframes bgFadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Custom background image */
 .launcher-bg.has-custom-bg {
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .launcher-bg.has-custom-bg::before {
@@ -355,6 +369,7 @@
   align-items: flex-start;
   padding: 16px;
 }
+
 .game-card.library-card.selected {
   border-color: var(--gbl-accent);
 }
@@ -404,10 +419,12 @@
   pointer-events: none;
   transition: opacity var(--gbl-transition-normal);
 }
+
 .sidebar-overlay.open {
   opacity: 1;
   pointer-events: auto;
 }
+
 .sidebar {
   position: fixed;
   top: 0;
@@ -422,9 +439,11 @@
   flex-direction: column;
   padding: 40px 20px;
 }
+
 .sidebar.open {
   left: 0;
 }
+
 .sidebar-title {
   font-size: 20px;
   font-weight: 600;
@@ -432,6 +451,7 @@
   margin-bottom: 30px;
   margin-left: 10px;
 }
+
 .sidebar-item {
   display: flex;
   align-items: center;
@@ -447,10 +467,13 @@
   text-align: left;
   font-size: 14px;
 }
-.sidebar-item:hover, .sidebar-item.focused {
+
+.sidebar-item:hover,
+.sidebar-item.focused {
   background: rgba(255, 255, 255, 0.1);
   color: var(--gbl-text-primary);
 }
+
 .sidebar-item-icon {
   display: flex;
   align-items: center;
