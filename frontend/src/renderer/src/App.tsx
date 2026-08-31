@@ -223,6 +223,8 @@ function App(): React.JSX.Element {
     reviewsRecent: { summary: string; count: number } | null
     reviewsAll: { summary: string; count: number } | null
     tags: string[]
+    metacritic: { score: number; url: string | null } | null
+    rating: { board: string; rating: string | null; descriptors: string[] } | null
   } | null>(null)
   const [detailInfoLoading, setDetailInfoLoading] = useState(false)
 
@@ -1381,6 +1383,56 @@ function App(): React.JSX.Element {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Metacritic + content rating, as their own side column */}
+            <div className="detail-ratings-panel">
+              {detailInfo?.metacritic && (
+                <a
+                  className="detail-metacritic-card"
+                  href={detailInfo.metacritic.url || undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => {
+                    if (!detailInfo.metacritic?.url) e.preventDefault()
+                  }}
+                >
+                  <span
+                    className={`detail-metacritic-score ${detailInfo.metacritic.score >= 75
+                        ? 'good'
+                        : detailInfo.metacritic.score >= 50
+                          ? 'mixed'
+                          : 'bad'
+                      }`}
+                  >
+                    {detailInfo.metacritic.score}
+                  </span>
+                  <div className="detail-metacritic-info">
+                    <span className="detail-metacritic-name">metacritic</span>
+                    <span className="detail-metacritic-link">Leer las reseñas ↗</span>
+                  </div>
+                </a>
+              )}
+
+              {detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
+                <div className="detail-rating-card">
+                  <div className="detail-rating-badge">
+                    {detailInfo.rating.rating ? detailInfo.rating.rating.toUpperCase() : detailInfo.rating.board}
+                  </div>
+                  <div className="detail-rating-info">
+                    {detailInfo.rating.descriptors.length > 0 && (
+                      <ul className="detail-rating-descriptors">
+                        {detailInfo.rating.descriptors.map((d) => (
+                          <li key={d}>{d}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <span className="detail-rating-board">
+                      Clasificación por edades para: {detailInfo.rating.board}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1577,7 +1577,7 @@
 
 .detail-carousel {
   position: relative;
-  width: 70%;
+  width: 84%;
   aspect-ratio: 16 / 9;
   border-radius: var(--gbl-radius-md);
   overflow: hidden;
@@ -1795,8 +1795,8 @@
 .detail-info-row {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: minmax(360px, 1.3fr) minmax(300px, 1fr);
-  gap: 32px;
+  grid-template-columns: minmax(360px, 1.2fr) minmax(280px, 0.9fr) minmax(220px, 0.7fr);
+  gap: 28px;
   padding: 32px 36px 40px 36px;
   position: relative;
   z-index: 5;
@@ -1809,7 +1809,7 @@
   max-height: 46vh;
 }
 
-/* Right column: description stacked on top of reviews/metadata */
+/* Middle column: description stacked on top of reviews/metadata */
 .detail-side-panel {
   display: flex;
   flex-direction: column;
@@ -1818,6 +1818,16 @@
   max-height: 46vh;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+/* Right column: metacritic + content rating, next to the description */
+.detail-ratings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  max-height: 46vh;
+  overflow-y: auto;
 }
 
 .detail-carousel-image {
@@ -2005,4 +2015,123 @@
 .detail-tag-pill:hover {
   background: rgba(119, 119, 119, 0.18);
   border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ══════════════════════════════════════════
+   METACRITIC + CONTENT RATING CARDS
+   ══════════════════════════════════════════ */
+.detail-metacritic-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--gbl-radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--gbl-transition-fast), border-color var(--gbl-transition-fast);
+}
+
+.detail-metacritic-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.detail-metacritic-score {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--gbl-radius-sm);
+  font-size: 17px;
+  font-weight: 700;
+  color: #0c0c0c;
+}
+
+.detail-metacritic-score.good {
+  background: #6bc84e;
+}
+
+.detail-metacritic-score.mixed {
+  background: #fdca35;
+}
+
+.detail-metacritic-score.bad {
+  background: #ff6b57;
+}
+
+.detail-metacritic-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-metacritic-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gbl-text-primary);
+  letter-spacing: 0.2px;
+}
+
+.detail-metacritic-link {
+  font-size: 12px;
+  color: var(--gbl-text-muted);
+  transition: color var(--gbl-transition-fast);
+}
+
+.detail-metacritic-card:hover .detail-metacritic-link {
+  color: var(--gbl-text-secondary);
+}
+
+.detail-rating-card {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--gbl-radius-md);
+}
+
+.detail-rating-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--gbl-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--gbl-text-primary);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.detail-rating-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.detail-rating-descriptors {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--gbl-text-secondary);
+}
+
+.detail-rating-board {
+  font-size: 11px;
+  color: var(--gbl-text-muted);
 }

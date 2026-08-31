@@ -133,6 +133,32 @@ async function fetchTags(appid) {
 }
 
 /**
+ * Pick a single content rating board from Steam's `ratings` object
+ * (ESRB preferred since the store search runs with cc=us, falls back to
+ * whatever board the region/game actually has — PEGI, USK, etc.).
+ * @param {object|undefined} ratings - the `ratings` field from appdetails
+ * @returns {{ board: string, rating: string|null, descriptors: string[] } | null}
+ */
+function pickRating(ratings) {
+  if (!ratings || typeof ratings !== 'object') return null;
+
+  const preferredOrder = ['esrb', 'pegi', 'usk', 'dejus', 'oflc', 'cero', 'nzoflc'];
+  const boardKey = preferredOrder.find((key) => ratings[key]) || Object.keys(ratings)[0];
+  if (!boardKey) return null;
+
+  const board = ratings[boardKey];
+  if (!board) return null;
+
+  return {
+    board: boardKey.toUpperCase(),
+    rating: board.rating || null,
+    descriptors: board.descriptors
+      ? board.descriptors.split(',').map((d) => d.trim()).filter(Boolean)
+      : []
+  };
+}
+
+/**
  * Get full store details for a Steam AppID: description, developer, publisher,
  * release date, recent/all review summaries and community tags.
  * @param {number|string} appid - Steam AppID
@@ -186,7 +212,12 @@ export async function getAppDetails(appid) {
         ? tags
         : Array.isArray(data.genres)
           ? data.genres.map((g) => g.description)
-          : []
+          : [],
+      metacritic:
+        data.metacritic && typeof data.metacritic.score === 'number'
+          ? { score: data.metacritic.score, url: data.metacritic.url || null }
+          : null,
+      rating: pickRating(data.ratings)
     };
 
     setCache(key, result);
