@@ -231,16 +231,16 @@
   align-items: center;
   gap: 8px;
   padding: 10px 28px;
-  background: var(--gbl-accent-gradient);
+  background: #242424;
   color: white;
-  border: none;
+  border: solid 1px white;
   border-radius: var(--gbl-radius-xl);
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--gbl-transition-normal);
-  box-shadow: 0 4px 20px var(--gbl-accent-glow);
+  /* box-shadow: 0 4px 20px var(--gbl-accent-glow); */
 }
 
 .btn-play:hover {

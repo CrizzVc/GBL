@@ -1273,13 +1273,7 @@ function App(): React.JSX.Element {
             </div>
 
             <div className="detail-actions-row">
-              <button
-                className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
-                onClick={handleLaunchGame}
-              >
-                <PlayIcon size={20} />
-                {runningGameId === detailGame.id ? 'Ejecutando...' : 'Jugar'}
-              </button>
+
               <span className="detail-playtime">
                 {formatPlaytime(detailGame.playtimeMinutes)} jugado
                 {detailGame.lastPlayed && (
@@ -1480,6 +1474,17 @@ function App(): React.JSX.Element {
                 </div>
               )}
             </div>
+
+            {/* BOTON DE JUGAR!!!!! */}
+            <button
+              className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
+              onClick={handleLaunchGame}
+              style={{ position: 'fixed', bottom: '50px', right: '30px' }}
+            >
+              <PlayIcon size={20} />
+              {runningGameId === detailGame.id ? 'Ejecutando...' : 'Jugar'}
+            </button>
+
           </div>
         </div>
       )}
