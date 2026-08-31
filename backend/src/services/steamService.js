@@ -85,11 +85,11 @@ export async function getScreenshots(appid) {
  * @param {{ dayRange?: number }} options - Optional day_range to restrict to "recent" reviews (e.g. 30)
  * @returns {Promise<{summary: string, count: number} | null>}
  */
-async function fetchReviewSummary(appid, { dayRange } = {}) {
+async function fetchReviewSummary(appid, { dayRange, reviewType = 'all' } = {}) {
   const params = new URLSearchParams({
     json: '1',
     language: 'all',
-    review_type: 'all',
+    review_type: reviewType,
     purchase_type: 'all',
     num_per_page: '0'
   });
@@ -183,13 +183,21 @@ export async function getAppDetails(appid) {
     }
     const data = entry.data;
 
-    const [reviewsRecent, reviewsAll, tags] = await Promise.all([
+    const [reviewsRecent, reviewsAll, reviewsPositive, reviewsNegative, tags] = await Promise.all([
       fetchReviewSummary(appid, { dayRange: 30 }).catch((err) => {
         console.error('[SteamService] Error obteniendo reseñas recientes:', err.message);
         return null;
       }),
       fetchReviewSummary(appid).catch((err) => {
         console.error('[SteamService] Error obteniendo reseñas totales:', err.message);
+        return null;
+      }),
+      fetchReviewSummary(appid, { reviewType: 'positive' }).catch((err) => {
+        console.error('[SteamService] Error obteniendo reseñas positivas:', err.message);
+        return null;
+      }),
+      fetchReviewSummary(appid, { reviewType: 'negative' }).catch((err) => {
+        console.error('[SteamService] Error obteniendo reseñas negativas:', err.message);
         return null;
       }),
       fetchTags(appid)
@@ -208,6 +216,8 @@ export async function getAppDetails(appid) {
       releaseDate: data.release_date?.date || null,
       reviewsRecent,
       reviewsAll,
+      reviewsPositive,
+      reviewsNegative,
       tags: tags.length
         ? tags
         : Array.isArray(data.genres)

@@ -6,7 +6,6 @@ import {
   CloseIcon,
   WifiIcon,
   BatteryIcon,
-  LibraryIcon,
   StoreIcon,
   SettingsIcon,
   PowerIcon,
@@ -124,31 +123,6 @@ function formatPlaytime(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-// Maps a raw ESRB (or similar board) rating code from Steam into the
-// two-line label used on the real rating badge: a short letter (M, T, E...)
-// and the full spelled-out name (MATURE 17+, TEEN, EVERYONE...).
-const RATING_BADGE_LABELS: Record<string, { letter: string; top: string }> = {
-  ec: { letter: 'EC', top: 'Early Childhood' },
-  e: { letter: 'E', top: 'Everyone' },
-  everyone: { letter: 'E', top: 'Everyone' },
-  e10: { letter: 'E10+', top: 'Everyone 10+' },
-  e10plus: { letter: 'E10+', top: 'Everyone 10+' },
-  everyone10plus: { letter: 'E10+', top: 'Everyone 10+' },
-  t: { letter: 'T', top: 'Teen' },
-  teen: { letter: 'T', top: 'Teen' },
-  m: { letter: 'M', top: 'Mature 17+' },
-  mature: { letter: 'M', top: 'Mature 17+' },
-  mature17plus: { letter: 'M', top: 'Mature 17+' },
-  ao: { letter: 'AO', top: 'Adults Only 18+' },
-  adultsonly: { letter: 'AO', top: 'Adults Only 18+' },
-  rp: { letter: 'RP', top: 'Rating Pending' }
-}
-
-function formatRatingBadge(code: string | null, board: string): { letter: string; top: string } {
-  const key = (code || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-  return RATING_BADGE_LABELS[key] || { letter: (code || board).toUpperCase(), top: board }
-}
-
 /* ────────────────────────────────────────────
    SearchIcon component (inline)
    ──────────────────────────────────────────── */
@@ -248,16 +222,21 @@ function App(): React.JSX.Element {
     releaseDate: string | null
     reviewsRecent: { summary: string; count: number } | null
     reviewsAll: { summary: string; count: number } | null
+    reviewsPositive: { summary: string; count: number } | null
+    reviewsNegative: { summary: string; count: number } | null
     tags: string[]
     metacritic: { score: number; url: string | null } | null
     rating: { board: string; rating: string | null; descriptors: string[] } | null
   } | null>(null)
   const [detailInfoLoading, setDetailInfoLoading] = useState(false)
+  const [windowSize, setWindowSize] = useState({ width: window.outerWidth, height: window.outerHeight })
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const detailGame = games.find((g) => g.id === detailGameId) || null
+  const compactDetailReviewLayout =
+    Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
 
   // ── Clock ──
   useEffect(() => {
@@ -273,6 +252,20 @@ function App(): React.JSX.Element {
   }, [])
 
 
+
+  // ── Track current window size for compact detail layout ──
+  useEffect(() => {
+    const updateWindowSize = (): void => {
+      setWindowSize({
+        width: window.outerWidth,
+        height: window.outerHeight
+      })
+    }
+
+    updateWindowSize()
+    window.addEventListener('resize', updateWindowSize)
+    return () => window.removeEventListener('resize', updateWindowSize)
+  }, [])
 
   // ── Load games from disk ──
   useEffect(() => {
@@ -1419,59 +1412,94 @@ function App(): React.JSX.Element {
 
             {/* Reviews, then release info, then tags */}
             <div className="detail-ratings-panel">
-              {(detailInfo?.reviewsRecent || detailInfo?.reviewsAll) && (
-                <div className="detail-meta-section">
-                  {detailInfo?.reviewsRecent && (
-                    <div className="detail-meta-row">
-                      <span className="detail-meta-label">Reseñas recientes</span>
-                      <span className="detail-meta-value link">
-                        {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
-                      </span>
+              {compactDetailReviewLayout ? (
+                <>
+                  {(detailInfo?.reviewsPositive || detailInfo?.reviewsNegative) && (
+                    <div className="detail-meta-section">
+                      {detailInfo?.reviewsPositive && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Reseñas positivas</span>
+                          <span className="detail-meta-value link">
+                            {detailInfo.reviewsPositive.summary} ({detailInfo.reviewsPositive.count})
+                          </span>
+                        </div>
+                      )}
+                      {detailInfo?.reviewsNegative && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Reseñas negativas</span>
+                          <span className="detail-meta-value link">
+                            {detailInfo.reviewsNegative.summary} ({detailInfo.reviewsNegative.count})
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {detailInfo?.reviewsAll && (
-                    <div className="detail-meta-row">
-                      <span className="detail-meta-label">Todas las reseñas</span>
-                      <span className="detail-meta-value link">
-                        {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {(detailInfo?.developer || detailInfo?.publisher || detailInfo?.releaseDate) && (
-                <div className="detail-meta-section">
-                  {detailInfo?.releaseDate && (
-                    <div className="detail-meta-row">
-                      <span className="detail-meta-label">Fecha de lanzamiento</span>
-                      <span className="detail-meta-value">{detailInfo.releaseDate}</span>
-                    </div>
-                  )}
                   {detailInfo?.developer && (
-                    <div className="detail-meta-row">
-                      <span className="detail-meta-label">Desarrollador</span>
-                      <span className="detail-meta-value link">{detailInfo.developer}</span>
+                    <div className="detail-meta-section">
+                      <div className="detail-meta-row">
+                        <span className="detail-meta-label">Desarrollador</span>
+                        <span className="detail-meta-value link">{detailInfo.developer}</span>
+                      </div>
                     </div>
                   )}
-                  {detailInfo?.publisher && (
-                    <div className="detail-meta-row">
-                      <span className="detail-meta-label">Editor</span>
-                      <span className="detail-meta-value link">{detailInfo.publisher}</span>
+                </>
+              ) : (
+                <>
+                  {(detailInfo?.reviewsRecent || detailInfo?.reviewsAll) && (
+                    <div className="detail-meta-section">
+                      {detailInfo?.reviewsRecent && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Reseñas recientes</span>
+                          <span className="detail-meta-value link">
+                            {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
+                          </span>
+                        </div>
+                      )}
+                      {detailInfo?.reviewsAll && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Todas las reseñas</span>
+                          <span className="detail-meta-value link">
+                            {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
 
-              )}
+                  {(detailInfo?.developer || detailInfo?.publisher || detailInfo?.releaseDate) && (
+                    <div className="detail-meta-section">
+                      {detailInfo?.releaseDate && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Fecha de lanzamiento</span>
+                          <span className="detail-meta-value">{detailInfo.releaseDate}</span>
+                        </div>
+                      )}
+                      {detailInfo?.developer && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Desarrollador</span>
+                          <span className="detail-meta-value link">{detailInfo.developer}</span>
+                        </div>
+                      )}
+                      {detailInfo?.publisher && (
+                        <div className="detail-meta-row">
+                          <span className="detail-meta-label">Editor</span>
+                          <span className="detail-meta-value link">{detailInfo.publisher}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-              {detailInfo?.tags && detailInfo.tags.length > 0 && (
-                <div className="detail-meta-section">
-                  <div className="detail-meta-tags">
-                    {detailInfo.tags.map((tag) => (
-                      <span key={tag} className="detail-tag-pill">{tag}</span>
-                    ))}
-                  </div>
-                </div>
+                  {detailInfo?.tags && detailInfo.tags.length > 0 && (
+                    <div className="detail-meta-section">
+                      <div className="detail-meta-tags">
+                        {detailInfo.tags.map((tag) => (
+                          <span key={tag} className="detail-tag-pill">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
