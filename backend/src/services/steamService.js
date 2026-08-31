@@ -237,3 +237,55 @@ export async function getAppDetails(appid) {
     return null;
   }
 }
+
+export async function resolveSteamId(apiKey, steamIdentifier) {
+  const trimmed = steamIdentifier.trim();
+  if (!trimmed) return null;
+
+  const vanityUrl = /^[0-9]+$/.test(trimmed)
+    ? null
+    : `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=${encodeURIComponent(apiKey)}&vanityurl=${encodeURIComponent(trimmed)}`;
+
+  if (vanityUrl) {
+    const res = await fetch(vanityUrl);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.response?.steamid || null;
+  }
+
+  return trimmed;
+}
+
+export async function getSteamLibrary({ key, steamId }) {
+  const libraryKey = `library:${key}:${steamId}`;
+  const cached = getCached(libraryKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${encodeURIComponent(key)}&steamid=${encodeURIComponent(steamId)}&include_appinfo=1&include_played_free_games=1`
+    );
+    if (!res.ok) {
+      throw new Error(`Steam library error ${res.status}`);
+    }
+
+    const json = await res.json();
+    const games = Array.isArray(json?.response?.games) ? json.response.games : [];
+    const mappedGames = games.map((game) => ({
+      appid: String(game.appid),
+      name: game.name,
+      playtime_forever: Number(game.playtime_forever || 0),
+      img_icon_url: game.img_icon_url || '',
+      img_logo_url: game.img_logo_url || '',
+      img_capsule: game.img_capsule || '',
+      has_community_visible_stats: !!game.has_community_visible_stats,
+      installed: false
+    }));
+
+    setCache(libraryKey, mappedGames);
+    return mappedGames;
+  } catch (err) {
+    console.error('[SteamService] Error obteniendo biblioteca:', err.message);
+    return [];
+  }
+}

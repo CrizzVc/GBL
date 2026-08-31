@@ -4,6 +4,73 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as fs from 'fs'
 import { spawn } from 'child_process'
+import * as http from 'http'
+import { URL } from 'url'
+
+const STEAM_API_KEY = 'B1F361EA3C07B455DC8B0D06ED179B00'
+const STEAM_OPENID_RETURN_URL = 'http://127.0.0.1:8765/steam-openid'
+const STEAM_OPENID_REALM = 'http://127.0.0.1:8765'
+
+interface SteamOpenIdResult {
+  linked: boolean
+  apiKey: string
+  steamId: string
+  accountName: string
+  steamId64: string | null
+}
+
+let steamOpenIdServer: http.Server | null = null
+let steamOpenIdResolve: ((value: SteamOpenIdResult) => void) | null = null
+let steamOpenIdReject: ((reason?: unknown) => void) | null = null
+
+function ensureSteamOpenIdServer(): void {
+  if (steamOpenIdServer) return
+
+  steamOpenIdServer = http.createServer((req: any, res: any) => {
+    const requestUrl = new URL(req.url || '/', STEAM_OPENID_RETURN_URL)
+    const mode = requestUrl.searchParams.get('openid.mode')
+    const identity = requestUrl.searchParams.get('openid.identity') || requestUrl.searchParams.get('openid.claimed_id')
+
+    if (requestUrl.pathname === '/steam-openid' && mode === 'id_res' && identity) {
+      const steamIdMatch = identity.match(/\/id\/(\d+)/)
+      const steamId = steamIdMatch ? steamIdMatch[1] : null
+
+      if (steamId) {
+        const payload = {
+          linked: true,
+          apiKey: STEAM_API_KEY,
+          steamId,
+          accountName: `Steam ${steamId}`,
+          steamId64: steamId
+        }
+
+        const steamAccountPath = join(app.getPath('userData'), 'steam-account.json')
+        fs.writeFileSync(steamAccountPath, JSON.stringify(payload, null, 2), 'utf8')
+
+        if (steamOpenIdResolve) {
+          steamOpenIdResolve(payload)
+        }
+        steamOpenIdResolve = null
+        steamOpenIdReject = null
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+        res.end('<html><body><h2>Steam conectado.</h2><p>Puedes cerrar esta ventana.</p></body></html>')
+        return
+      }
+    }
+
+    if (steamOpenIdReject) {
+      steamOpenIdReject(new Error('No se pudo completar la autenticación de Steam.'))
+    }
+    steamOpenIdResolve = null
+    steamOpenIdReject = null
+
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('La autenticación de Steam no pudo completarse.')
+  })
+
+  steamOpenIdServer.listen(8765, '127.0.0.1')
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -390,6 +457,112 @@ app.whenReady().then(() => {
     } catch (err: any) {
       return { success: false, error: err.message }
     }
+  })
+
+  const getSteamPaths = (): string[] => {
+    const roots = [
+      'C:\\Program Files (x86)\\Steam',
+      'C:\\Program Files\\Steam',
+      process.env.ProgramFiles ? `${process.env.ProgramFiles}\\Steam` : '',
+      process.env['ProgramFiles(x86)'] ? `${process.env['ProgramFiles(x86)']}\\Steam` : '',
+      process.env.LocalAppData ? `${process.env.LocalAppData}\\Steam` : ''
+    ]
+    return roots.filter((root): root is string => !!root && fs.existsSync(root))
+  }
+
+  ipcMain.handle('get-steam-installation-status', async (_event, appIds: string[]) => {
+    const uniqueAppIds = Array.from(new Set((appIds || []).filter(Boolean).map((id) => String(id))))
+    if (uniqueAppIds.length === 0) return {}
+
+    const result: Record<string, boolean> = {}
+    const steamRoots = getSteamPaths()
+
+    for (const appId of uniqueAppIds) {
+      result[appId] = steamRoots.some((root) => {
+        const manifestPath = join(root, 'steamapps', `appmanifest_${appId}.acf`)
+        return fs.existsSync(manifestPath)
+      })
+    }
+
+    return result
+  })
+
+  const getSteamAccountPath = (): string => {
+    return join(app.getPath('userData'), 'steam-account.json')
+  }
+
+  ipcMain.handle('get-steam-account', async () => {
+    const steamAccountPath = getSteamAccountPath()
+    if (fs.existsSync(steamAccountPath)) {
+      try {
+        const data = fs.readFileSync(steamAccountPath, 'utf8')
+        return JSON.parse(data)
+      } catch (e) {
+        console.error('Error reading steam-account.json', e)
+        return {
+          linked: false,
+          apiKey: '',
+          steamId: '',
+          accountName: '',
+          steamId64: null
+        }
+      }
+    }
+    return {
+      linked: false,
+      apiKey: '',
+      steamId: '',
+      accountName: '',
+      steamId64: null
+    }
+  })
+
+  ipcMain.handle('save-steam-account', async (_event, steamAccount: {
+    linked: boolean
+    apiKey: string
+    steamId: string
+    accountName: string
+    steamId64: string | null
+  }) => {
+    try {
+      const steamAccountPath = getSteamAccountPath()
+      fs.writeFileSync(steamAccountPath, JSON.stringify(steamAccount, null, 2), 'utf8')
+      return { success: true }
+    } catch (e: any) {
+      console.error('Error writing steam-account.json', e)
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('open-steam-openid', async () => {
+    ensureSteamOpenIdServer()
+
+    return await new Promise<{
+      linked: boolean
+      apiKey: string
+      steamId: string
+      accountName: string
+      steamId64: string | null
+    }>((resolve, reject) => {
+      steamOpenIdResolve = resolve as (value: {
+        linked: boolean
+        apiKey: string
+        steamId: string
+        accountName: string
+        steamId64: string | null
+      }) => void
+      steamOpenIdReject = reject
+
+      const openIdUrl = new URL('https://steamcommunity.com/openid/login')
+      openIdUrl.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0')
+      openIdUrl.searchParams.set('openid.mode', 'checkid_setup')
+      openIdUrl.searchParams.set('openid.return_to', STEAM_OPENID_RETURN_URL)
+      openIdUrl.searchParams.set('openid.realm', STEAM_OPENID_REALM)
+      openIdUrl.searchParams.set('openid.identity', 'http://specs.openid.net/auth/2.0/identifier_select')
+      openIdUrl.searchParams.set('openid.claimed_id', 'http://specs.openid.net/auth/2.0/identifier_select')
+
+      void shell.openExternal(openIdUrl.toString())
+    })
   })
 
   createWindow()

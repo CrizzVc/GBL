@@ -1230,7 +1230,17 @@
   height: 100%;
   display: block;
   object-fit: cover;
-  transition: transform var(--gbl-transition-normal);
+  transition: transform var(--gbl-transition-normal), filter var(--gbl-transition-normal), opacity var(--gbl-transition-normal);
+}
+
+.library-item-cover.installed {
+  filter: saturate(1.1) contrast(1.04);
+  opacity: 1;
+}
+
+.library-item-cover.not-installed {
+  filter: grayscale(1) brightness(0.7) saturate(0.5);
+  opacity: 0.76;
 }
 
 .library-item:hover .library-item-cover {

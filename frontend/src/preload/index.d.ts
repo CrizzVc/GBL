@@ -35,6 +35,29 @@ declare global {
       // Store APIs
       getStores: () => Promise<{ id: string; name: string; installed: boolean; exePath: string | null }[]>
       openStore: (storeId: string) => Promise<{ success: boolean; error?: string }>
+      // Steam account APIs
+      getSteamAccount: () => Promise<{
+        linked: boolean
+        apiKey: string
+        steamId: string
+        accountName: string
+        steamId64: string | null
+      }>
+      saveSteamAccount: (steamAccount: {
+        linked: boolean
+        apiKey: string
+        steamId: string
+        accountName: string
+        steamId64: string | null
+      }) => Promise<{ success: boolean; error?: string }>
+      openSteamOpenId: () => Promise<{
+        linked: boolean
+        apiKey: string
+        steamId: string
+        accountName: string
+        steamId64: string | null
+      }>
+      getSteamInstallationStatus: (appIds: string[]) => Promise<Record<string, boolean>>
     }
   }
 }

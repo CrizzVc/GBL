@@ -83,7 +83,29 @@ interface SteamGridImage {
   height: number
 }
 
+const DEFAULT_STEAM_API_KEY = 'B1F361EA3C07B455DC8B0D06ED179B00'
+
+interface SteamAccount {
+  linked: boolean
+  apiKey: string
+  steamId: string
+  accountName: string
+  steamId64: string | null
+}
+
+interface SteamLibraryGame {
+  appid: string
+  name: string
+  playtime_forever: number
+  img_icon_url: string
+  img_logo_url: string
+  img_capsule: string
+  has_community_visible_stats: boolean
+  installed: boolean
+}
+
 type SteamGridArtType = 'grids' | 'square_grids' | 'heroes' | 'logos' | 'icons'
+type LibrarySource = 'local' | 'steam'
 
 /* ────────────────────────────────────────────
    Helpers
@@ -192,6 +214,17 @@ function App(): React.JSX.Element {
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarIndex, setSidebarIndex] = useState(0)
+  const [librarySource, setLibrarySource] = useState<LibrarySource>('local')
+  const [selectedSteamAppId, setSelectedSteamAppId] = useState<string | null>(null)
+  const [steamAccount, setSteamAccount] = useState<SteamAccount>({
+    linked: false,
+    apiKey: DEFAULT_STEAM_API_KEY,
+    steamId: '',
+    accountName: '',
+    steamId64: null
+  })
+  const [steamLibrary, setSteamLibrary] = useState<SteamLibraryGame[]>([])
+  const [steamLibraryLoading, setSteamLibraryLoading] = useState(false)
 
   // Background image state
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
@@ -251,8 +284,11 @@ function App(): React.JSX.Element {
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const librarySelectedGame = games.find((g) => g.id === selectedGameId) || games[0] || null
   const detailGame = games.find((g) => g.id === detailGameId) || null
+  const currentLibraryItems = librarySource === 'steam' ? steamLibrary : games
+  const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
   const compactDetailReviewLayout =
     Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
+  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`, [])
 
   // ── Clock ──
   useEffect(() => {
@@ -347,6 +383,72 @@ function App(): React.JSX.Element {
     }
     loadStores()
   }, [])
+
+  // ── Load Steam linkage and library ──
+  useEffect(() => {
+    const loadSteamAccount = async (): Promise<void> => {
+      try {
+        const account = await window.api.getSteamAccount()
+        setSteamAccount({
+          linked: !!account?.linked,
+          apiKey: account?.apiKey || DEFAULT_STEAM_API_KEY,
+          steamId: account?.steamId || '',
+          accountName: account?.accountName || '',
+          steamId64: account?.steamId64 || null
+        })
+      } catch (err) {
+        console.error('Error loading Steam account:', err)
+      }
+    }
+    loadSteamAccount()
+  }, [])
+
+  const loadSteamLibrary = useCallback(async (): Promise<void> => {
+    if (!steamAccount.linked || !steamAccount.apiKey || !steamAccount.steamId) return
+
+    setSteamLibraryLoading(true)
+    try {
+      const query = new URLSearchParams({
+        key: steamAccount.apiKey,
+        steamId: steamAccount.steamId
+      })
+
+      const res = await fetch(`${BACKEND_URL}/api/steam/library?${query.toString()}`)
+      if (!res.ok) return
+      const games = await res.json()
+      const normalizedGames = (Array.isArray(games) ? games : []).map((game: SteamLibraryGame) => ({
+        ...game,
+        appid: String(game.appid),
+        installed: Boolean(game.installed)
+      }))
+
+      const appIds = normalizedGames.map((game) => game.appid)
+      const installStatus = await window.api.getSteamInstallationStatus(appIds)
+      const finalGames = normalizedGames.map((game) => ({
+        ...game,
+        installed: Boolean(installStatus[game.appid]) || Boolean(game.installed)
+      }))
+
+      setSteamLibrary(finalGames)
+      if (librarySource === 'steam' && finalGames.length > 0) {
+        setSelectedSteamAppId(String(finalGames[0].appid))
+      }
+    } catch (err) {
+      console.error('Error loading Steam library:', err)
+      setSteamLibrary([])
+    } finally {
+      setSteamLibraryLoading(false)
+    }
+  }, [librarySource, steamAccount])
+
+  useEffect(() => {
+    if (steamAccount.linked) {
+      void loadSteamLibrary()
+    } else {
+      setSteamLibrary([])
+      setSelectedSteamAppId(null)
+    }
+  }, [steamAccount, loadSteamLibrary])
 
   // ── Store carousel auto-advance (paused on hover) ──
   useEffect(() => {
@@ -752,6 +854,43 @@ function App(): React.JSX.Element {
     setCurrentStoreIndex(index)
   }, [])
 
+  const handleSteamOpenIdLink = useCallback(async () => {
+    try {
+      const result = await window.api.openSteamOpenId()
+      if (!result?.linked || !result.steamId) {
+        return
+      }
+
+      const payload = {
+        linked: true,
+        apiKey: result.apiKey || DEFAULT_STEAM_API_KEY,
+        steamId: result.steamId,
+        accountName: result.accountName || result.steamId,
+        steamId64: result.steamId64 || result.steamId
+      }
+
+      await window.api.saveSteamAccount(payload)
+      setSteamAccount(payload)
+      setLibrarySource('steam')
+      setModal(null)
+    } catch (err) {
+      console.error('Error vinculando Steam con OpenID:', err)
+    }
+  }, [])
+
+  const handleSteamUnlink = useCallback(async () => {
+    const payload = {
+      linked: false,
+      apiKey: DEFAULT_STEAM_API_KEY,
+      steamId: '',
+      accountName: '',
+      steamId64: null
+    }
+    await window.api.saveSteamAccount(payload)
+    setSteamAccount(payload)
+    setLibrarySource('local')
+  }, [])
+
   // ── SteamGridDB handlers ──
   const handleSgdbSearch = useCallback(async () => {
     if (!sgdbSearch.trim()) return
@@ -849,20 +988,38 @@ function App(): React.JSX.Element {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (libraryView) {
         if (e.key === 'Escape') setLibraryView(false)
-        if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown') && games.length > 0) {
+        if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown') && currentLibraryItems.length > 0) {
           e.preventDefault()
-          const currentIndex = Math.max(0, games.findIndex((game) => game.id === selectedGameId))
+          const currentIndex = librarySource === 'steam'
+            ? Math.max(0, currentLibraryItems.findIndex((game) => String((game as SteamLibraryGame).appid) === selectedSteamAppId))
+            : Math.max(0, currentLibraryItems.findIndex((game) => 'id' in game && game.id === selectedGameId))
           const columnCount = libraryGridRef.current
             ? getComputedStyle(libraryGridRef.current).gridTemplateColumns.split(' ').length
             : 1
           const step = e.key === 'ArrowUp' ? -columnCount : e.key === 'ArrowDown' ? columnCount : e.key === 'ArrowLeft' ? -1 : 1
-          const nextIndex = Math.max(0, Math.min(games.length - 1, currentIndex + step))
-          setSelectedGameId(games[nextIndex].id)
+          const nextIndex = Math.max(0, Math.min(currentLibraryItems.length - 1, currentIndex + step))
+          if (librarySource === 'steam') {
+            const nextGame = currentLibraryItems[nextIndex] as SteamLibraryGame
+            setSelectedSteamAppId(String(nextGame.appid))
+          } else {
+            const nextGame = currentLibraryItems[nextIndex] as Game
+            if (nextGame?.id) setSelectedGameId(nextGame.id)
+          }
         }
-        if (e.key === 'Enter' && librarySelectedGame) {
+        if (e.key === 'Enter') {
           e.preventDefault()
-          setLibraryView(false)
-          setDetailGameId(librarySelectedGame.id)
+          if (librarySource === 'steam' && selectedSteamAppId) {
+            const steamGame = steamLibrary.find((game) => String(game.appid) === selectedSteamAppId)
+            if (steamGame) {
+              setLibraryView(false)
+              setSelectedGameId('steam-library')
+            }
+            return
+          }
+          if (librarySelectedGame) {
+            setLibraryView(false)
+            setDetailGameId(librarySelectedGame.id)
+          }
         }
         return
       }
@@ -1792,15 +1949,23 @@ function App(): React.JSX.Element {
       {/* ── Library View ── */}
       {libraryView && (
         <section className="library-view" aria-label="Biblioteca">
-          {games.length === 0 ? (
+          {librarySource === 'steam' && !steamAccount.linked ? (
             <div className="library-empty library-view-empty">
-              No hay juegos en tu biblioteca. ¡Agrega uno para comenzar!
+              Vincula tu cuenta de Steam desde Ajustes para ver tu biblioteca.
+            </div>
+          ) : librarySource === 'steam' && steamLibraryLoading ? (
+            <div className="library-empty library-view-empty">
+              Cargando juegos de Steam...
+            </div>
+          ) : librarySource === 'steam' && steamLibrary.length === 0 ? (
+            <div className="library-empty library-view-empty">
+              No se encontraron juegos en tu biblioteca de Steam.
             </div>
           ) : (
             <>
               <div
                 className="library-hero"
-                style={librarySelectedGame?.heroImageUrl ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${librarySelectedGame.heroImageUrl})` } : undefined}
+                style={librarySource === 'local' && librarySelectedGame?.heroImageUrl ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${librarySelectedGame.heroImageUrl})` } : undefined}
               >
                 <div className="library-hero-content">
                   <button className="library-back-button" onClick={() => setLibraryView(false)}>
@@ -1809,55 +1974,92 @@ function App(): React.JSX.Element {
                   <div className="library-title-row">
                     <h1 className="library-view-title">Biblioteca</h1>
                     <span className="library-view-divider">|</span>
-                    <span className="library-view-platform">Steam</span>
+                    <button
+                      type="button"
+                      className={`library-view-platform ${librarySource === 'steam' ? 'active' : ''}`}
+                      onClick={() => {
+                        if (steamAccount.linked) setLibrarySource((prev) => prev === 'steam' ? 'local' : 'steam')
+                        else setModal('settings')
+                      }}
+                    >
+                      Steam
+                    </button>
                   </div>
-                  <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'}</p>
-                  <button className="btn-primary library-add-button" onClick={openAddGameModal}>
-                    <PlusIcon size={16} /> Agregar juego
-                  </button>
+                  <p className="library-view-subtitle">
+                    {currentLibraryCount} {currentLibraryCount === 1 ? 'juego' : 'juegos'}
+                  </p>
+                  {librarySource === 'local' && (
+                    <button className="btn-primary library-add-button" onClick={openAddGameModal}>
+                      <PlusIcon size={16} /> Agregar juego
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="library-grid library-view-grid" ref={libraryGridRef}>
-              {games.map((game) => (
-                <article
-                  key={game.id}
-                  id={`library-game-${game.id}`}
-                  className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedGameId(game.id)}
-                  onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
-                >
-                  <div className="library-item-art">
-                    {game.gridImageUrl ? (
-                      <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
-                    ) : game.iconDataUrl ? (
-                      <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
-                    ) : (
-                      <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
-                        {game.name.charAt(0).toUpperCase()}
+                {librarySource === 'steam'
+                  ? steamLibrary.map((game) => (
+                    <article
+                      key={game.appid}
+                      id={`library-game-${game.appid}`}
+                      className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
+                      onClick={() => setSelectedSteamAppId(game.appid)}
+                    >
+                      <div className="library-item-art steam-library-art">
+                        <img
+                          src={steamLibraryArtUrl(game.appid)}
+                          alt={game.name}
+                          className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
+                          draggable={false}
+                        />
                       </div>
-                    )}
-                  </div>
-                  <div className="library-item-info">
-                    {game.logoImageUrl ? (
-                      <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
-                    ) : (
-                      <span className="library-item-name">{game.name}</span>
-                    )}
-                    <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
-                  </div>
-                  <div className="library-item-actions">
-                    <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }} title="Editar">
-                      <EditIcon size={14} />
-                    </button>
-                    <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }} title="Buscar Artwork">
-                      <ImageIcon size={14} />
-                    </button>
-                    <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }} title="Eliminar">
-                      <TrashIcon size={14} />
-                    </button>
-                  </div>
-                </article>
-              ))}
+                      <div className="library-item-info">
+                        <span className="library-item-name">{game.name}</span>
+                        <span className="library-item-playtime">
+                          {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
+                        </span>
+                      </div>
+                    </article>
+                  ))
+                  : games.map((game) => (
+                    <article
+                      key={game.id}
+                      id={`library-game-${game.id}`}
+                      className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedGameId(game.id)}
+                      onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
+                    >
+                      <div className="library-item-art">
+                        {game.gridImageUrl ? (
+                          <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
+                        ) : game.iconDataUrl ? (
+                          <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
+                        ) : (
+                          <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
+                            {game.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="library-item-info">
+                        {game.logoImageUrl ? (
+                          <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
+                        ) : (
+                          <span className="library-item-name">{game.name}</span>
+                        )}
+                        <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
+                      </div>
+                      <div className="library-item-actions">
+                        <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }} title="Editar">
+                          <EditIcon size={14} />
+                        </button>
+                        <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }} title="Buscar Artwork">
+                          <ImageIcon size={14} />
+                        </button>
+                        <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }} title="Eliminar">
+                          <TrashIcon size={14} />
+                        </button>
+                      </div>
+                    </article>
+                  ))}
               </div>
             </>
           )}
@@ -1889,6 +2091,25 @@ function App(): React.JSX.Element {
                   {formatPlaytime(games.reduce((sum, g) => sum + g.playtimeMinutes, 0))}
                 </div>
               </div>
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">Steam</h3>
+              <div className="settings-bg-actions" style={{ justifyContent: 'flex-start' }}>
+                <button className="btn-primary" onClick={handleSteamOpenIdLink}>
+                  {steamAccount.linked ? 'Volver a vincular con Steam' : 'Vincular con Steam'}
+                </button>
+                {steamAccount.linked && (
+                  <button className="btn-danger" onClick={handleSteamUnlink}>
+                    Desvincular
+                  </button>
+                )}
+              </div>
+              {steamAccount.linked && (
+                <p className="settings-profile-hint" style={{ marginTop: 12 }}>
+                  Cuenta conectada: {steamAccount.accountName || steamAccount.steamId}
+                </p>
+              )}
             </div>
 
             {/* Profile settings */}

@@ -26,7 +26,18 @@ const api = {
   selectProfileImage: () => ipcRenderer.invoke('select-profile-image'),
   // Store APIs
   getStores: () => ipcRenderer.invoke('get-stores'),
-  openStore: (storeId: string) => ipcRenderer.invoke('open-store', storeId)
+  openStore: (storeId: string) => ipcRenderer.invoke('open-store', storeId),
+  // Steam account APIs
+  getSteamAccount: () => ipcRenderer.invoke('get-steam-account'),
+  saveSteamAccount: (steamAccount: {
+    linked: boolean
+    apiKey: string
+    steamId: string
+    accountName: string
+    steamId64: string | null
+  }) => ipcRenderer.invoke('save-steam-account', steamAccount),
+  openSteamOpenId: () => ipcRenderer.invoke('open-steam-openid'),
+  getSteamInstallationStatus: (appIds: string[]) => ipcRenderer.invoke('get-steam-installation-status', appIds)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

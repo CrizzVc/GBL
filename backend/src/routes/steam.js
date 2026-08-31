@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { resolveAppId, getScreenshots, getAppDetails } from '../services/steamService.js';
+import {
+  resolveAppId,
+  getScreenshots,
+  getAppDetails,
+  getSteamLibrary,
+  resolveSteamId
+} from '../services/steamService.js';
 
 const router = Router();
 
@@ -47,6 +53,29 @@ router.get('/details/:appid', async (req, res) => {
     res.json(details);
   } catch (error) {
     console.error('[Steam] Error obteniendo detalles:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/library', async (req, res) => {
+  try {
+    const { key, steamId } = req.query;
+    if (!key || typeof key !== 'string' || !key.trim()) {
+      return res.status(400).json({ error: 'Se requiere la API key de Steam' });
+    }
+    if (!steamId || typeof steamId !== 'string' || !steamId.trim()) {
+      return res.status(400).json({ error: 'Se requiere el Steam ID o vanity URL' });
+    }
+
+    const resolvedSteamId = await resolveSteamId(key.trim(), steamId.trim());
+    if (!resolvedSteamId) {
+      return res.status(404).json({ error: 'No se pudo resolver la cuenta de Steam' });
+    }
+
+    const library = await getSteamLibrary({ key: key.trim(), steamId: resolvedSteamId });
+    res.json(library);
+  } catch (error) {
+    console.error('[Steam] Error obteniendo biblioteca:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
