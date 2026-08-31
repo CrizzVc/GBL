@@ -282,8 +282,9 @@
 
 .game-card {
   flex-shrink: 0;
-  width: 20.5vh;
-  height: 220px;
+  width: clamp(140px, 20.5vh, 225px);
+  aspect-ratio: 1 / 1;
+  height: auto;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
   border: 2px solid var(--gbl-border);
