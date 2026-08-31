@@ -1163,25 +1163,39 @@ function App(): React.JSX.Element {
     if (!libraryView) return
     previousLibraryIndexRef.current = null
     libraryGridRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-  }, [libraryView])
+  }, [libraryView, librarySource])
 
   useEffect(() => {
-    if (!libraryView || !selectedGameId || !libraryGridRef.current) return
+    if (!libraryView || !libraryGridRef.current) return
     const grid = libraryGridRef.current
-    const target = document.getElementById(`library-game-${selectedGameId}`)
+    const selectedId = librarySource === 'steam' ? selectedSteamAppId : selectedGameId
+    if (!selectedId) return
+
+    const items = librarySource === 'steam' ? steamLibrary : games
+    const currentIndex = librarySource === 'steam'
+      ? steamLibrary.findIndex((game) => game.appid === selectedId)
+      : games.findIndex((game) => game.id === selectedId)
+    if (currentIndex < 0) return
+
+    const target = document.getElementById(`library-game-${selectedId}`)
     if (!target) return
 
-    const currentIndex = games.findIndex((game) => game.id === selectedGameId)
     const previousIndex = previousLibraryIndexRef.current
     previousLibraryIndexRef.current = currentIndex
     const columnCount = getComputedStyle(grid).gridTemplateColumns.split(' ').length
     if (previousIndex === null || Math.floor(previousIndex / columnCount) === Math.floor(currentIndex / columnCount)) return
 
-    const previousTarget = document.getElementById(`library-game-${games[previousIndex].id}`)
+    const previousItem = items[previousIndex]
+    const previousId = librarySource === 'steam'
+      ? (previousItem as SteamLibraryGame)?.appid
+      : (previousItem as Game)?.id
+    const previousTarget = previousId
+      ? document.getElementById(`library-game-${previousId}`)
+      : null
     const rowDistance = previousTarget ? target.offsetTop - previousTarget.offsetTop : target.offsetHeight
     const nextScrollTop = Math.max(0, grid.scrollTop + rowDistance)
     grid.scrollTo({ top: nextScrollTop, behavior: 'smooth' })
-  }, [games, libraryView, selectedGameId])
+  }, [games, librarySource, libraryView, selectedGameId, selectedSteamAppId, steamLibrary])
 
   const handlePrevShot = useCallback(() => {
     setDetailShotIndex((prev) =>
@@ -2024,7 +2038,11 @@ function App(): React.JSX.Element {
             <>
               <div
                 className="library-hero"
-                style={librarySource === 'local' && librarySelectedGame?.heroImageUrl ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${librarySelectedGame.heroImageUrl})` } : undefined}
+                style={librarySource === 'steam'
+                  ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${steamBanner})` }
+                  : librarySelectedGame?.heroImageUrl
+                    ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${librarySelectedGame.heroImageUrl})` }
+                    : undefined}
               >
                 <div className="library-hero-content">
                   <button className="library-back-button" onClick={() => setLibraryView(false)}>
