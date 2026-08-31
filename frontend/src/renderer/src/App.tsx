@@ -657,7 +657,11 @@ function App(): React.JSX.Element {
       <section className="hero-section">
         {selectedGame && (
           <div className="hero-content">
-            <h1 className="hero-title">{selectedGame.name}</h1>
+            {selectedGame.logoImageUrl ? (
+              <img src={selectedGame.logoImageUrl} alt={selectedGame.name} className="hero-logo" draggable={false} />
+            ) : (
+              <h1 className="hero-title">{selectedGame.name}</h1>
+            )}
             <div className="hero-meta">
               <span>{formatPlaytime(selectedGame.playtimeMinutes)} jugado</span>
               {selectedGame.lastPlayed && (

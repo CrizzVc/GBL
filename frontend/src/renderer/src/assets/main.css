@@ -195,6 +195,14 @@
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
+.hero-logo {
+  max-width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
+}
+
 .hero-meta {
   display: flex;
   align-items: center;
