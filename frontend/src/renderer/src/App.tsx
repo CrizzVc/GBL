@@ -94,13 +94,16 @@ const GAME_COLORS = [
 ]
 
 const BACKEND_URL = 'http://localhost:3000'
+const RECENT_GAMES_LIMIT = 15
 
 const sortGamesByNewestFirst = (items: Game[]): Game[] =>
   [...items].sort((a, b) => {
     const aDate = new Date(a.createdAt || a.lastPlayed || 0).getTime()
     const bDate = new Date(b.createdAt || b.lastPlayed || 0).getTime()
     return bDate - aDate
-  }).slice(0, 15)
+  })
+
+const getRecentGames = (items: Game[]): Game[] => sortGamesByNewestFirst(items).slice(0, RECENT_GAMES_LIMIT)
 
 const STORE_IMAGES: Record<string, { banner: string; logo: string }> = {
   steam: { banner: steamBanner, logo: steamLogo },
@@ -241,7 +244,7 @@ function App(): React.JSX.Element {
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
-  const visibleGames = useMemo(() => sortGamesByNewestFirst(games), [games])
+  const visibleGames = useMemo(() => getRecentGames(games), [games])
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const detailGame = games.find((g) => g.id === detailGameId) || null
   const compactDetailReviewLayout =
@@ -286,9 +289,8 @@ function App(): React.JSX.Element {
             ...game,
             createdAt: game.createdAt || game.lastPlayed || new Date().toISOString()
           }))
-          const orderedGames = sortGamesByNewestFirst(normalizedGames)
-          setGames(orderedGames)
-          setSelectedGameId(orderedGames[0]?.id ?? null)
+          setGames(normalizedGames)
+          setSelectedGameId(normalizedGames[0]?.id ?? null)
         }
       } catch (err) {
         console.error('Error loading games:', err)
@@ -503,9 +505,8 @@ function App(): React.JSX.Element {
   // ── Persist games ──
   const saveGames = useCallback(
     (newGames: Game[]) => {
-      const orderedGames = sortGamesByNewestFirst(newGames)
-      setGames(orderedGames)
-      window.api.saveGames(orderedGames)
+      setGames(newGames)
+      window.api.saveGames(newGames)
     },
     []
   )
@@ -577,7 +578,7 @@ function App(): React.JSX.Element {
     }
 
     setGames((prevGames) => {
-      const newGames = sortGamesByNewestFirst([...prevGames, newGame])
+      const newGames = [...prevGames, newGame]
       window.api.saveGames(newGames)
       return newGames
     })
