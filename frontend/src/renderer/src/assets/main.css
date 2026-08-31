@@ -1028,8 +1028,8 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  padding: 0 48px 42px;
-  overflow-y: auto;
+  padding: 0 24px 0;
+  overflow: hidden;
   background: #0c0c0c;
   animation: fadeIn var(--gbl-transition-normal) forwards;
 }
@@ -1037,15 +1037,15 @@
 .library-view-header {
   position: absolute;
   top: 34px;
-  left: 48px;
-  right: 48px;
+  left: 24px;
+  right: 24px;
   z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin: 0 auto;
-  width: min(calc(100% - 96px), 1280px);
+  margin: 0;
+  width: auto;
 }
 
 .library-back-button {
@@ -1085,13 +1085,21 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  background: #242424;
+  border: 1px solid white;
+  box-shadow: none;
+}
+
+.library-add-button:hover {
+  background: #242424;
+  box-shadow: 0 6px 30px var(--gbl-accent-glow);
 }
 
 .library-hero {
   position: relative;
-  width: calc(100% + 96px);
+  width: calc(100% + 48px);
   min-height: 390px;
-  margin: 0 -48px 28px;
+  margin: 0 -24px 28px;
   overflow: hidden;
   background-color: #171717;
   background-position: center;
@@ -1107,7 +1115,20 @@
   justify-content: flex-end;
   align-items: flex-start;
   gap: 10px;
-  padding: 34px 48px 30px;
+  padding: 34px 24px 30px;
+}
+
+.library-hero-content .library-back-button {
+  position: absolute;
+  top: 34px;
+  left: 24px;
+  margin: 0;
+}
+
+.library-hero-content .library-add-button {
+  position: absolute;
+  bottom: 30px;
+  right: 24px;
 }
 
 .library-hero-logo {
@@ -1130,16 +1151,24 @@
 }
 
 .library-view-grid {
-  width: min(100%, 1280px);
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   margin: 0 auto;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  gap: 12px;
+  align-content: start;
   max-height: none;
-  overflow: visible;
+  overflow-y: auto;
+  padding: 0 2px 24px 0;
+  scrollbar-gutter: stable;
 }
 
 .library-view-grid .library-item {
   position: relative;
+  height: auto;
+  aspect-ratio: 1;
   min-width: 0;
   padding: 0;
   align-items: stretch;
@@ -1161,7 +1190,10 @@
 }
 
 .library-item-art {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: auto;
   aspect-ratio: 1;
   overflow: hidden;
   background: #171717;
@@ -1224,6 +1256,14 @@
   max-width: 100%;
   font-size: 13px;
   text-align: left;
+}
+
+.library-item-logo {
+  display: block;
+  width: 100%;
+  height: 26px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .library-item-playtime {
@@ -1982,7 +2022,7 @@
   }
 
   .library-view {
-    padding: 0 20px 30px;
+    padding: 0 20px 0;
   }
 
   .library-view-header {

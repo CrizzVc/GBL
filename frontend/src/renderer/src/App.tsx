@@ -946,6 +946,12 @@ function App(): React.JSX.Element {
     })
   }, [selectedGameId, visibleGames])
 
+  useEffect(() => {
+    if (!libraryView || !selectedGameId) return
+    const target = document.getElementById(`library-game-${selectedGameId}`)
+    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [libraryView, selectedGameId])
+
   const handlePrevShot = useCallback(() => {
     setDetailShotIndex((prev) =>
       detailScreenshots.length ? (prev - 1 + detailScreenshots.length) % detailScreenshots.length : 0
@@ -1767,18 +1773,6 @@ function App(): React.JSX.Element {
       {/* ── Library View ── */}
       {libraryView && (
         <section className="library-view" aria-label="Biblioteca">
-          <div className="library-view-header">
-            <div>
-              <button className="library-back-button" onClick={() => setLibraryView(false)}>
-                <ChevronLeftIcon size={20} /> Volver
-              </button>
-              <h1 className="library-view-title">Biblioteca</h1>
-              <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'}</p>
-            </div>
-            <button className="btn-primary library-add-button" onClick={openAddGameModal}>
-              <PlusIcon size={16} /> Agregar juego
-            </button>
-          </div>
           {games.length === 0 ? (
             <div className="library-empty library-view-empty">
               No hay juegos en tu biblioteca. ¡Agrega uno para comenzar!
@@ -1787,23 +1781,24 @@ function App(): React.JSX.Element {
             <>
               <div
                 className="library-hero"
-                style={librarySelectedGame?.heroImageUrl ? { backgroundImage: `linear-gradient(90deg, rgba(12, 12, 12, 0.96) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.2) 100%), url(${librarySelectedGame.heroImageUrl})` } : undefined}
+                style={librarySelectedGame?.heroImageUrl ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${librarySelectedGame.heroImageUrl})` } : undefined}
               >
                 <div className="library-hero-content">
-                  {librarySelectedGame?.logoImageUrl ? (
-                    <img src={librarySelectedGame.logoImageUrl} alt={librarySelectedGame.name} className="library-hero-logo" draggable={false} />
-                  ) : (
-                    <h2 className="library-hero-title">{librarySelectedGame?.name}</h2>
-                  )}
-                  {librarySelectedGame && (
-                    <span className="library-hero-meta">{formatPlaytime(librarySelectedGame.playtimeMinutes)} jugado</span>
-                  )}
+                  <button className="library-back-button" onClick={() => setLibraryView(false)}>
+                    <ChevronLeftIcon size={20} /> Volver
+                  </button>
+                  <h1 className="library-view-title">Biblioteca</h1>
+                  <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'}</p>
+                  <button className="btn-primary library-add-button" onClick={openAddGameModal}>
+                    <PlusIcon size={16} /> Agregar juego
+                  </button>
                 </div>
               </div>
               <div className="library-grid library-view-grid" ref={libraryGridRef}>
               {games.map((game) => (
                 <article
                   key={game.id}
+                  id={`library-game-${game.id}`}
                   className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
                   onClick={() => setSelectedGameId(game.id)}
                   onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
@@ -1820,7 +1815,11 @@ function App(): React.JSX.Element {
                     )}
                   </div>
                   <div className="library-item-info">
-                    <span className="library-item-name">{game.name}</span>
+                    {game.logoImageUrl ? (
+                      <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
+                    ) : (
+                      <span className="library-item-name">{game.name}</span>
+                    )}
                     <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
                   </div>
                   <div className="library-item-actions">
