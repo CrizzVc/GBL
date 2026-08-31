@@ -818,7 +818,7 @@ function App(): React.JSX.Element {
   // ── Detail view background style (accent color derived from hero image) ──
   const detailBgStyle: React.CSSProperties = detailGame?.heroImageUrl
     ? {
-      backgroundImage: `linear-gradient(to bottom, transparent 15%, ${detailAccent} 60%, ${detailAccent} 100%), url(${detailGame.heroImageUrl})`,
+      backgroundImage: `linear-gradient(transparent 5%, rgb(12, 12, 12) 57%, rgb(12, 12, 12) 100%), url(${detailGame.heroImageUrl})`,
       backgroundSize: 'contain',
       backgroundPosition: 'top',
       backgroundRepeat: 'no-repeat',

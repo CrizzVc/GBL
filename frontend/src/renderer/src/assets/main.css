@@ -200,7 +200,7 @@
   max-height: 150px;
   object-fit: contain;
   margin-bottom: 8px;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
+  /* filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5)); */
 }
 
 .hero-meta {
@@ -1578,7 +1578,7 @@
 }
 
 .detail-screenshot {
-  height: 170px;
+  height: 390px;
   border-radius: var(--gbl-radius-md);
   object-fit: cover;
   flex-shrink: 0;
