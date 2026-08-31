@@ -1255,8 +1255,8 @@
 }
 
 .library-item-cover.not-installed {
-  filter: saturate(1.08) brightness(0.94);
-  opacity: 0.96;
+  filter: brightness(0.48) saturate(0.8) contrast(0.94);
+  opacity: 0.62;
   animation: cover-drift 4s ease-in-out infinite alternate;
 }
 
@@ -1269,22 +1269,40 @@
   top: 10px;
   right: 10px;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(12, 12, 12, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
-  color: #f1f5f9;
-  backdrop-filter: blur(6px);
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.7));
 }
 
 @keyframes cover-drift {
   0% { transform: translateY(0) scale(1); }
   100% { transform: translateY(-4px) scale(1.02); }
+}
+
+.library-source-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  animation: library-source-enter 320ms ease;
+}
+
+@keyframes library-source-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .library-item-art .game-card-placeholder {

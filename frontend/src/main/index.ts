@@ -472,14 +472,76 @@ app.whenReady().then(() => {
   })
 
   const getSteamPaths = (): string[] => {
-    const roots = [
+    const candidates = new Set<string>()
+
+    const addPath = (value?: string): void => {
+      if (!value) return
+      const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '')
+      if (normalized) candidates.add(normalized.replace(/\//g, '\\'))
+    }
+
+    for (const drive of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')) {
+      const root = `${drive}:\\`
+      if (!fs.existsSync(root)) continue
+      addPath(root)
+      addPath(join(root, 'Steam'))
+      addPath(join(root, 'steam'))
+      addPath(join(root, 'Games', 'Steam'))
+      addPath(join(root, 'Games', 'steam'))
+    }
+
+    const defaults = [
       'C:\\Program Files (x86)\\Steam',
       'C:\\Program Files\\Steam',
       process.env.ProgramFiles ? `${process.env.ProgramFiles}\\Steam` : '',
       process.env['ProgramFiles(x86)'] ? `${process.env['ProgramFiles(x86)']}\\Steam` : '',
       process.env.LocalAppData ? `${process.env.LocalAppData}\\Steam` : ''
     ]
-    return roots.filter((root): root is string => !!root && fs.existsSync(root))
+    defaults.forEach((value) => addPath(value))
+
+    const steamRoots: string[] = []
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        steamRoots.push(candidate)
+        continue
+      }
+
+      const possibleSteamFolders = [
+        candidate,
+        join(candidate, 'Steam'),
+        join(candidate, 'steam'),
+        join(candidate, 'Games', 'Steam'),
+        join(candidate, 'Games', 'steam')
+      ]
+
+      for (const folder of possibleSteamFolders) {
+        if (fs.existsSync(folder)) steamRoots.push(folder)
+      }
+    }
+
+    const finalRoots: string[] = []
+    for (const root of Array.from(new Set(steamRoots))) {
+      if (!root || !fs.existsSync(root)) continue
+      finalRoots.push(root)
+
+      const libraryFoldersPath = join(root, 'steamapps', 'libraryfolders.vdf')
+      if (!fs.existsSync(libraryFoldersPath)) continue
+
+      try {
+        const content = fs.readFileSync(libraryFoldersPath, 'utf8')
+        const matches = [...content.matchAll(/\"([^\"]+)\"\s+\"([^\"]+)\"/g)]
+        for (const [, , value] of matches) {
+          if (!value || !value.includes(':')) continue
+          const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '')
+          const folder = normalized.replace(/\//g, '\\')
+          if (folder && fs.existsSync(folder)) finalRoots.push(folder)
+        }
+      } catch {
+        // ignore malformed libraryfolders.vdf
+      }
+    }
+
+    return Array.from(new Set(finalRoots.filter((root) => !!root && fs.existsSync(root))))
   }
 
   ipcMain.handle('get-steam-installation-status', async (_event, appIds: string[]) => {
@@ -491,8 +553,12 @@ app.whenReady().then(() => {
 
     for (const appId of uniqueAppIds) {
       result[appId] = steamRoots.some((root) => {
-        const manifestPath = join(root, 'steamapps', `appmanifest_${appId}.acf`)
-        return fs.existsSync(manifestPath)
+        const manifestCandidates = [
+          join(root, 'steamapps', `appmanifest_${appId}.acf`),
+          join(root, 'Steam', 'steamapps', `appmanifest_${appId}.acf`),
+          join(root, 'steam', 'steamapps', `appmanifest_${appId}.acf`)
+        ]
+        return manifestCandidates.some((manifestPath) => fs.existsSync(manifestPath))
       })
     }
 

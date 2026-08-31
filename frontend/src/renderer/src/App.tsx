@@ -22,6 +22,7 @@ import steamBanner from './assets/tiendas/steamBanner.png'
 import epicBanner from './assets/tiendas/EpicBanner.png'
 import gogBanner from './assets/tiendas/gogBanner.png'
 import Teen from './assets/ratings/T.png'
+import installIcon from './assets/images/install.png'
 
 /* ────────────────────────────────────────────
    Types
@@ -176,16 +177,6 @@ function ImageIcon({ size = 20 }: { size?: number }): React.JSX.Element {
       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
       <circle cx="8.5" cy="8.5" r="1.5" />
       <polyline points="21 15 16 10 5 21" />
-    </svg>
-  )
-}
-
-function DownloadIcon({ size = 20 }: { size?: number }): React.JSX.Element {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3v12" />
-      <path d="m7 20 5 5 5-5" />
-      <path d="M5 21h14" />
     </svg>
   )
 }
@@ -2069,22 +2060,23 @@ function App(): React.JSX.Element {
                   )}
                 </div>
               </div>
-              <div className="library-grid library-view-grid" ref={libraryGridRef}>
-                {librarySource === 'steam'
-                  ? steamLibrary.map((game) => (
-                    <article
-                      key={game.appid}
-                      id={`library-game-${game.appid}`}
-                      className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedSteamAppId(game.appid)
-                        setDetailGameId(`steam-${game.appid}`)
-                      }}
-                      onDoubleClick={() => {
-                        setSelectedSteamAppId(game.appid)
-                        void handleLaunchGame()
-                      }}
-                    >
+              <div key={librarySource} className="library-source-panel">
+                <div className="library-grid library-view-grid" ref={libraryGridRef}>
+                  {librarySource === 'steam'
+                    ? steamLibrary.map((game) => (
+                      <article
+                        key={game.appid}
+                        id={`library-game-${game.appid}`}
+                        className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedSteamAppId(game.appid)
+                          setDetailGameId(`steam-${game.appid}`)
+                        }}
+                        onDoubleClick={() => {
+                          setSelectedSteamAppId(game.appid)
+                          void handleLaunchGame()
+                        }}
+                      >
                       <div className="library-item-art steam-library-art">
                         <img
                           src={steamLibraryArtUrl(game.appid)}
@@ -2093,9 +2085,13 @@ function App(): React.JSX.Element {
                           draggable={false}
                         />
                         {!game.installed && (
-                          <div className="library-item-download-badge" title="Descargar">
-                            <DownloadIcon size={12} />
-                          </div>
+                          <img
+                            src={installIcon}
+                            alt="Descargar"
+                            className="library-item-download-badge"
+                            title="Descargar"
+                            draggable={false}
+                          />
                         )}
                       </div>
                       <div className="library-item-info">
@@ -2104,48 +2100,49 @@ function App(): React.JSX.Element {
                           {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
                         </span>
                       </div>
-                    </article>
-                  ))
-                  : games.map((game) => (
-                    <article
-                      key={game.id}
-                      id={`library-game-${game.id}`}
-                      className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
-                      onClick={() => setSelectedGameId(game.id)}
-                      onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
-                    >
-                      <div className="library-item-art">
-                        {game.gridImageUrl ? (
-                          <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
-                        ) : game.iconDataUrl ? (
-                          <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
-                        ) : (
-                          <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
-                            {game.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="library-item-info">
-                        {game.logoImageUrl ? (
-                          <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
-                        ) : (
-                          <span className="library-item-name">{game.name}</span>
-                        )}
-                        <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
-                      </div>
-                      <div className="library-item-actions">
-                        <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }} title="Editar">
-                          <EditIcon size={14} />
-                        </button>
-                        <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }} title="Buscar Artwork">
-                          <ImageIcon size={14} />
-                        </button>
-                        <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }} title="Eliminar">
-                          <TrashIcon size={14} />
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ))
+                    : games.map((game) => (
+                      <article
+                        key={game.id}
+                        id={`library-game-${game.id}`}
+                        className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedGameId(game.id)}
+                        onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
+                      >
+                        <div className="library-item-art">
+                          {game.gridImageUrl ? (
+                            <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
+                          ) : game.iconDataUrl ? (
+                            <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
+                          ) : (
+                            <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
+                              {game.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="library-item-info">
+                          {game.logoImageUrl ? (
+                            <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
+                          ) : (
+                            <span className="library-item-name">{game.name}</span>
+                          )}
+                          <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
+                        </div>
+                        <div className="library-item-actions">
+                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }} title="Editar">
+                            <EditIcon size={14} />
+                          </button>
+                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }} title="Buscar Artwork">
+                            <ImageIcon size={14} />
+                          </button>
+                          <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }} title="Eliminar">
+                            <TrashIcon size={14} />
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                </div>
               </div>
             </>
           )}
