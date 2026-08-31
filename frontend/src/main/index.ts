@@ -194,13 +194,25 @@ app.whenReady().then(() => {
 
     try {
       const hasExecutable = exePath && exePath.trim() !== ''
-      const fileExists = hasExecutable ? fs.existsSync(exePath) : false
+      const isSteamProtocol = /^steam:\/\//i.test(exePath)
+      const fileExists = isSteamProtocol ? false : hasExecutable ? fs.existsSync(exePath) : false
 
       if (win) {
         win.minimize()
       }
 
       const startTime = Date.now()
+
+      if (isSteamProtocol) {
+        await shell.openExternal(exePath)
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+          }
+        }, 1500)
+        return { success: true, tracked: false, startTime, steamProtocol: true }
+      }
 
       if (!hasExecutable || !fileExists) {
         setTimeout(() => {

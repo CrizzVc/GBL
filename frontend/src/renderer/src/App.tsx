@@ -35,6 +35,8 @@ interface Game {
   lastPlayed: string | null
   createdAt: string
   color: string
+  steamAppId?: string | null
+  isSteam?: boolean
   // SteamGridDB fields
   steamGridId?: number | null
   gridImageUrl?: string | null
@@ -178,6 +180,16 @@ function ImageIcon({ size = 20 }: { size?: number }): React.JSX.Element {
   )
 }
 
+function DownloadIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v12" />
+      <path d="m7 20 5 5 5-5" />
+      <path d="M5 21h14" />
+    </svg>
+  )
+}
+
 function ChevronLeftIcon({ size = 20 }: { size?: number }): React.JSX.Element {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -282,13 +294,41 @@ function App(): React.JSX.Element {
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
+  const selectedSteamGame = useMemo(
+    () => steamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? null,
+    [selectedSteamAppId, steamLibrary]
+  )
+  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`, [])
   const librarySelectedGame = games.find((g) => g.id === selectedGameId) || games[0] || null
-  const detailGame = games.find((g) => g.id === detailGameId) || null
+  const detailGame = useMemo<Game | null>(() => {
+    const localGame = games.find((g) => g.id === detailGameId) || null
+    if (localGame) return localGame
+
+    if (!detailGameId || !detailGameId.startsWith('steam-')) return null
+
+    const appid = detailGameId.replace(/^steam-/, '')
+    const steamGame = steamLibrary.find((game) => String(game.appid) === appid)
+    if (!steamGame) return null
+
+    return {
+      id: `steam-${steamGame.appid}`,
+      name: steamGame.name,
+      exePath: `steam://rungameid/${steamGame.appid}`,
+      iconDataUrl: null,
+      playtimeMinutes: Math.round(steamGame.playtime_forever / 60),
+      lastPlayed: null,
+      createdAt: new Date().toISOString(),
+      color: '#66b2ff',
+      steamAppId: String(steamGame.appid),
+      isSteam: true,
+      gridImageUrl: steamLibraryArtUrl(steamGame.appid),
+      heroImageUrl: steamLibraryArtUrl(steamGame.appid)
+    }
+  }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
   const currentLibraryItems = librarySource === 'steam' ? steamLibrary : games
   const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
   const compactDetailReviewLayout =
     Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
-  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`, [])
 
   // ── Clock ──
   useEffect(() => {
@@ -725,15 +765,31 @@ function App(): React.JSX.Element {
 
   // ── Launch game ──
   const handleLaunchGame = useCallback(async () => {
-    if (!selectedGame) return
-    setRunningGameId(selectedGame.id)
+    const launchTarget = selectedGame ?? (selectedSteamGame ? {
+      id: `steam-${selectedSteamGame.appid}`,
+      name: selectedSteamGame.name,
+      exePath: `steam://rungameid/${selectedSteamGame.appid}`,
+      iconDataUrl: null,
+      playtimeMinutes: Math.round(selectedSteamGame.playtime_forever / 60),
+      lastPlayed: null,
+      createdAt: new Date().toISOString(),
+      color: '#66b2ff',
+      steamAppId: String(selectedSteamGame.appid),
+      isSteam: true,
+      gridImageUrl: steamLibraryArtUrl(selectedSteamGame.appid),
+      heroImageUrl: steamLibraryArtUrl(selectedSteamGame.appid)
+    } as Game : null)
+
+    if (!launchTarget) return
+
+    setRunningGameId(launchTarget.id)
     try {
-      await window.api.launchGame(selectedGame.id, selectedGame.exePath)
+      await window.api.launchGame(launchTarget.id, launchTarget.exePath)
     } catch (err) {
       console.error('Error launching game:', err)
       setRunningGameId(null)
     }
-  }, [selectedGame])
+  }, [selectedGame, selectedSteamGame, steamLibraryArtUrl])
 
   // ── Open specs modal ──
   const handleOpenSpecs = useCallback(async () => {
@@ -1012,7 +1068,7 @@ function App(): React.JSX.Element {
             const steamGame = steamLibrary.find((game) => String(game.appid) === selectedSteamAppId)
             if (steamGame) {
               setLibraryView(false)
-              setSelectedGameId('steam-library')
+              setDetailGameId(`steam-${steamGame.appid}`)
             }
             return
           }
@@ -1079,6 +1135,14 @@ function App(): React.JSX.Element {
   }, [])
 
   const openDetailView = useCallback((gameId: string) => {
+    if (gameId.startsWith('steam-')) {
+      const appid = gameId.replace(/^steam-/, '')
+      setSelectedSteamAppId(appid)
+      setSelectedGameId(null)
+      setDetailGameId(gameId)
+      return
+    }
+
     setSelectedGameId(gameId)
     setDetailGameId(gameId)
   }, [])
@@ -1171,6 +1235,10 @@ function App(): React.JSX.Element {
           background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
         }
         : {}
+
+  const steamDetailIsInstalled = Boolean(
+    detailGame?.isSteam && detailGame.steamAppId && steamLibrary.some((game) => String(game.appid) === detailGame.steamAppId && game.installed)
+  )
 
   return (
     <div className="launcher">
@@ -1758,7 +1826,7 @@ function App(): React.JSX.Element {
               style={{ position: 'fixed', bottom: '50px', right: '30px' }}
             >
               <PlayIcon size={20} />
-              {runningGameId === detailGame.id ? 'Ejecutando...' : 'Jugar'}
+              {runningGameId === detailGame.id ? 'Ejecutando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
             </button>
 
           </div>
@@ -1972,13 +2040,19 @@ function App(): React.JSX.Element {
                     <ChevronLeftIcon size={20} /> Volver
                   </button>
                   <div className="library-title-row">
-                    <h1 className="library-view-title">Biblioteca</h1>
+                    <button
+                      type="button"
+                      className={`library-view-platform ${librarySource === 'local' ? 'active' : 'muted'}`}
+                      onClick={() => setLibrarySource('local')}
+                    >
+                      Biblioteca
+                    </button>
                     <span className="library-view-divider">|</span>
                     <button
                       type="button"
-                      className={`library-view-platform ${librarySource === 'steam' ? 'active' : ''}`}
+                      className={`library-view-platform ${librarySource === 'steam' ? 'active' : 'muted'}`}
                       onClick={() => {
-                        if (steamAccount.linked) setLibrarySource((prev) => prev === 'steam' ? 'local' : 'steam')
+                        if (steamAccount.linked) setLibrarySource('steam')
                         else setModal('settings')
                       }}
                     >
@@ -2002,7 +2076,14 @@ function App(): React.JSX.Element {
                       key={game.appid}
                       id={`library-game-${game.appid}`}
                       className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
-                      onClick={() => setSelectedSteamAppId(game.appid)}
+                      onClick={() => {
+                        setSelectedSteamAppId(game.appid)
+                        setDetailGameId(`steam-${game.appid}`)
+                      }}
+                      onDoubleClick={() => {
+                        setSelectedSteamAppId(game.appid)
+                        void handleLaunchGame()
+                      }}
                     >
                       <div className="library-item-art steam-library-art">
                         <img
@@ -2011,6 +2092,11 @@ function App(): React.JSX.Element {
                           className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                           draggable={false}
                         />
+                        {!game.installed && (
+                          <div className="library-item-download-badge" title="Descargar">
+                            <DownloadIcon size={12} />
+                          </div>
+                        )}
                       </div>
                       <div className="library-item-info">
                         <span className="library-item-name">{game.name}</span>

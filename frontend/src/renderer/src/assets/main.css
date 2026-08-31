@@ -1091,10 +1091,26 @@
 }
 
 .library-view-platform {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
   color: rgba(255, 255, 255, 0.58);
   font-size: 30px;
   line-height: 1.15;
   font-weight: 700;
+  cursor: pointer;
+  transition: color var(--gbl-transition-fast), opacity var(--gbl-transition-fast), filter var(--gbl-transition-fast);
+}
+
+.library-view-platform.active {
+  color: var(--gbl-text-primary);
+  opacity: 1;
+  filter: brightness(1.1);
+}
+
+.library-view-platform.muted {
+  opacity: 0.48;
 }
 
 .library-view-subtitle {
@@ -1239,12 +1255,36 @@
 }
 
 .library-item-cover.not-installed {
-  filter: grayscale(1) brightness(0.7) saturate(0.5);
-  opacity: 0.76;
+  filter: saturate(1.08) brightness(0.94);
+  opacity: 0.96;
+  animation: cover-drift 4s ease-in-out infinite alternate;
 }
 
 .library-item:hover .library-item-cover {
   transform: scale(1.04);
+}
+
+.library-item-download-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(12, 12, 12, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+  color: #f1f5f9;
+  backdrop-filter: blur(6px);
+}
+
+@keyframes cover-drift {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-4px) scale(1.02); }
 }
 
 .library-item-art .game-card-placeholder {
