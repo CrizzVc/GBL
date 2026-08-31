@@ -105,6 +105,10 @@ interface SteamLibraryGame {
   img_capsule: string
   has_community_visible_stats: boolean
   installed: boolean
+  gridImageUrl?: string | null
+  heroImageUrl?: string | null
+  logoImageUrl?: string | null
+  iconDataUrl?: string | null
 }
 
 type SteamGridArtType = 'grids' | 'square_grids' | 'heroes' | 'logos' | 'icons'
@@ -120,6 +124,16 @@ const GAME_COLORS = [
 
 const BACKEND_URL = 'http://localhost:3000'
 const RECENT_GAMES_LIMIT = 15
+const STEAM_ARTWORK_STORAGE_KEY = 'gbl-steam-artwork'
+
+function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridImageUrl' | 'heroImageUrl' | 'logoImageUrl' | 'iconDataUrl'>> {
+  try {
+    const stored = localStorage.getItem(STEAM_ARTWORK_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
 
 const sortGamesByNewestFirst = (items: Game[]): Game[] =>
   [...items].sort((a, b) => {
@@ -315,15 +329,16 @@ function App(): React.JSX.Element {
       id: `steam-${steamGame.appid}`,
       name: steamGame.name,
       exePath: `steam://rungameid/${steamGame.appid}`,
-      iconDataUrl: null,
       playtimeMinutes: Math.round(steamGame.playtime_forever / 60),
       lastPlayed: null,
       createdAt: new Date().toISOString(),
       color: '#66b2ff',
       steamAppId: String(steamGame.appid),
       isSteam: true,
-      gridImageUrl: steamLibraryArtUrl(steamGame.appid),
-      heroImageUrl: steamLibraryArtUrl(steamGame.appid)
+      iconDataUrl: steamGame.iconDataUrl || null,
+      gridImageUrl: steamGame.gridImageUrl || steamLibraryArtUrl(steamGame.appid),
+      heroImageUrl: steamGame.heroImageUrl || steamLibraryArtUrl(steamGame.appid),
+      logoImageUrl: steamGame.logoImageUrl || null
     }
   }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
   const currentLibraryItems = librarySource === 'steam' ? steamLibrary : games
@@ -460,7 +475,8 @@ function App(): React.JSX.Element {
       const normalizedGames = (Array.isArray(games) ? games : []).map((game: SteamLibraryGame) => ({
         ...game,
         appid: String(game.appid),
-        installed: Boolean(game.installed)
+        installed: Boolean(game.installed),
+        ...(getStoredSteamArtwork()[String(game.appid)] || {})
       }))
 
       const appIds = normalizedGames.map((game) => game.appid)
@@ -592,13 +608,16 @@ function App(): React.JSX.Element {
       setDetailInfo(null)
       setDetailShotIndex(0)
       try {
-        // 1) Resolve the game name to a Steam AppID
-        const resolveRes = await fetch(
-          `${BACKEND_URL}/api/steam/resolve?term=${encodeURIComponent(detailGame.name)}`
-        )
-        if (!resolveRes.ok) return
-        const resolved = await resolveRes.json()
-        const appid = resolved?.appid
+        // Steam entries already carry their AppID; local games still resolve by name.
+        let appid = detailGame.steamAppId
+        if (!appid) {
+          const resolveRes = await fetch(
+            `${BACKEND_URL}/api/steam/resolve?term=${encodeURIComponent(detailGame.name)}`
+          )
+          if (!resolveRes.ok) return
+          const resolved = await resolveRes.json()
+          appid = resolved?.appid
+        }
         if (!appid) return
 
         // 2) Fetch screenshots and store details in parallel
@@ -770,15 +789,16 @@ function App(): React.JSX.Element {
       id: `steam-${selectedSteamGame.appid}`,
       name: selectedSteamGame.name,
       exePath: `steam://rungameid/${selectedSteamGame.appid}`,
-      iconDataUrl: null,
       playtimeMinutes: Math.round(selectedSteamGame.playtime_forever / 60),
       lastPlayed: null,
       createdAt: new Date().toISOString(),
       color: '#66b2ff',
       steamAppId: String(selectedSteamGame.appid),
       isSteam: true,
-      gridImageUrl: steamLibraryArtUrl(selectedSteamGame.appid),
-      heroImageUrl: steamLibraryArtUrl(selectedSteamGame.appid)
+      iconDataUrl: selectedSteamGame.iconDataUrl || null,
+      gridImageUrl: selectedSteamGame.gridImageUrl || steamLibraryArtUrl(selectedSteamGame.appid),
+      heroImageUrl: selectedSteamGame.heroImageUrl || steamLibraryArtUrl(selectedSteamGame.appid),
+      logoImageUrl: selectedSteamGame.logoImageUrl || null
     } as Game : null)
 
     if (!launchTarget) return
@@ -1007,6 +1027,29 @@ function App(): React.JSX.Element {
         : sgdbArtType === 'logos' ? 'logoImageUrl'
           : 'iconDataUrl'
 
+    if (sgdbTargetGameId.startsWith('steam-')) {
+      const steamAppId = sgdbTargetGameId.replace(/^steam-/, '')
+      setSteamLibrary((previousGames) => previousGames.map((game) =>
+        String(game.appid) === steamAppId
+          ? { ...game, [artField]: image.url, ...(sgdbArtType === 'square_grids' ? { gridImageUrl: image.url } : {}) }
+          : game
+      ))
+      const artwork = getStoredSteamArtwork()
+      artwork[steamAppId] = {
+        ...(artwork[steamAppId] || {}),
+        [artField]: image.url,
+        ...(sgdbArtType === 'square_grids' ? { gridImageUrl: image.url } : {})
+      }
+      localStorage.setItem(STEAM_ARTWORK_STORAGE_KEY, JSON.stringify(artwork))
+      setModal(null)
+      setSgdbSearch('')
+      setSgdbResults([])
+      setSgdbSelectedGame(null)
+      setSgdbImages([])
+      setSgdbTargetGameId(null)
+      return
+    }
+
     const newGames = games.map((g) =>
       g.id === sgdbTargetGameId
         ? {
@@ -1029,6 +1072,20 @@ function App(): React.JSX.Element {
   }, [sgdbTargetGameId, sgdbSelectedGame, sgdbArtType, games, saveGames])
 
   const openSteamGridModal = useCallback((gameId: string) => {
+    if (gameId.startsWith('steam-')) {
+      const steamAppId = gameId.replace(/^steam-/, '')
+      const steamGame = steamLibrary.find((game) => String(game.appid) === steamAppId)
+      if (!steamGame) return
+      setSgdbTargetGameId(gameId)
+      setSgdbSearch(steamGame.name)
+      setSgdbArtType('grids')
+      setSgdbResults([])
+      setSgdbSelectedGame(null)
+      setSgdbImages([])
+      setModal('steamgrid')
+      return
+    }
+
     const game = games.find((g) => g.id === gameId)
     if (!game) return
     setSgdbTargetGameId(gameId)
@@ -1038,7 +1095,7 @@ function App(): React.JSX.Element {
     setSgdbSelectedGame(null)
     setSgdbImages([])
     setModal('steamgrid')
-  }, [games])
+  }, [games, steamLibrary])
 
   // ── Keyboard Navigation ──
   useEffect(() => {
@@ -1846,14 +1903,10 @@ function App(): React.JSX.Element {
               <button
                 className="detail-edit-button"
                 onClick={() => {
-                  if (detailGame.isSteam) {
-                    setDetailGameId(detailGame.id)
-                  } else {
-                    openEditGameModal(detailGame.id)
-                  }
+                  openSteamGridModal(detailGame.id)
                 }}
-                aria-label={detailGame.isSteam ? 'Detalles del juego' : 'Editar juego'}
-                title={detailGame.isSteam ? 'Detalles del juego' : 'Editar juego'}
+                aria-label="Editar Artwork"
+                title="Editar Artwork"
               >
                 <MoreIcon size={20} />
               </button>
@@ -1973,7 +2026,7 @@ function App(): React.JSX.Element {
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Editar Juego</h2>
+              <h2 className="modal-title">{detailGame?.isSteam ? 'Detalles de Steam' : 'Editar Juego'}</h2>
               <button className="modal-close" onClick={() => setModal(null)}>
                 <CloseIcon size={20} />
               </button>
@@ -1986,6 +2039,7 @@ function App(): React.JSX.Element {
                 placeholder="Nombre del juego"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
+                readOnly={detailGame?.isSteam}
                 autoFocus
               />
             </div>
@@ -1998,10 +2052,13 @@ function App(): React.JSX.Element {
                   placeholder="Ruta al .exe o acceso directo"
                   value={formExePath}
                   onChange={(e) => setFormExePath(e.target.value)}
+                  readOnly={detailGame?.isSteam}
                 />
-                <button className="btn-browse" onClick={handleBrowse}>
-                  <FolderIcon size={16} />
-                </button>
+                {!detailGame?.isSteam && (
+                  <button className="btn-browse" onClick={handleBrowse}>
+                    <FolderIcon size={16} />
+                  </button>
+                )}
               </div>
             </div>
             {formIconUrl && (
@@ -2011,34 +2068,42 @@ function App(): React.JSX.Element {
               </div>
             )}
             <div className="modal-actions">
-              <button
-                className="btn-danger"
-                onClick={() => {
-                  if (editingGameId) handleDeleteGame(editingGameId)
-                  setModal(null)
-                  resetForm()
-                }}
-              >
-                Eliminar
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={() => {
-                  if (editingGameId) openSteamGridModal(editingGameId)
-                }}
-              >
-                <ImageIcon size={14} /> Artwork
-              </button>
-              <button className="btn-secondary" onClick={() => setModal(null)}>
-                Cancelar
-              </button>
-              <button
-                className="btn-primary"
-                onClick={handleEditGame}
-                disabled={!formName.trim()}
-              >
-                Guardar
-              </button>
+              {detailGame?.isSteam ? (
+                <button className="btn-primary" onClick={() => setModal(null)}>
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="btn-danger"
+                    onClick={() => {
+                      if (editingGameId) handleDeleteGame(editingGameId)
+                      setModal(null)
+                      resetForm()
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => {
+                      if (editingGameId) openSteamGridModal(editingGameId)
+                    }}
+                  >
+                    <ImageIcon size={14} /> Artwork
+                  </button>
+                  <button className="btn-secondary" onClick={() => setModal(null)}>
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={handleEditGame}
+                    disabled={!formName.trim()}
+                  >
+                    Guardar
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -2122,7 +2187,7 @@ function App(): React.JSX.Element {
                       >
                       <div className="library-item-art steam-library-art">
                         <img
-                          src={steamLibraryArtUrl(game.appid)}
+                          src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
                           alt={game.name}
                           className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                           draggable={false}
