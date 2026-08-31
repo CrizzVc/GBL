@@ -123,6 +123,31 @@ function formatPlaytime(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
+// Maps a raw ESRB (or similar board) rating code from Steam into the
+// two-line label used on the real rating badge: a short letter (M, T, E...)
+// and the full spelled-out name (MATURE 17+, TEEN, EVERYONE...).
+const RATING_BADGE_LABELS: Record<string, { letter: string; top: string }> = {
+  ec: { letter: 'EC', top: 'Early Childhood' },
+  e: { letter: 'E', top: 'Everyone' },
+  everyone: { letter: 'E', top: 'Everyone' },
+  e10: { letter: 'E10+', top: 'Everyone 10+' },
+  e10plus: { letter: 'E10+', top: 'Everyone 10+' },
+  everyone10plus: { letter: 'E10+', top: 'Everyone 10+' },
+  t: { letter: 'T', top: 'Teen' },
+  teen: { letter: 'T', top: 'Teen' },
+  m: { letter: 'M', top: 'Mature 17+' },
+  mature: { letter: 'M', top: 'Mature 17+' },
+  mature17plus: { letter: 'M', top: 'Mature 17+' },
+  ao: { letter: 'AO', top: 'Adults Only 18+' },
+  adultsonly: { letter: 'AO', top: 'Adults Only 18+' },
+  rp: { letter: 'RP', top: 'Rating Pending' }
+}
+
+function formatRatingBadge(code: string | null, board: string): { letter: string; top: string } {
+  const key = (code || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  return RATING_BADGE_LABELS[key] || { letter: (code || board).toUpperCase(), top: board }
+}
+
 /* ────────────────────────────────────────────
    SearchIcon component (inline)
    ──────────────────────────────────────────── */
@@ -1322,7 +1347,7 @@ function App(): React.JSX.Element {
               )}
             </div>
 
-            {/* Description + Steam-style info panel, stacked */}
+            {/* Description, then a real-style Metacritic + rating card below it */}
             <div className="detail-side-panel">
               <div className="detail-description">
                 <h3 className="detail-section-title">Acerca del juego</h3>
@@ -1337,59 +1362,9 @@ function App(): React.JSX.Element {
                 )}
               </div>
 
-              <div className="detail-meta-panel">
-                {detailInfo?.reviewsRecent && (
-                  <div className="detail-meta-row">
-                    <span className="detail-meta-label">Reseñas recientes</span>
-                    <span className="detail-meta-value link">
-                      {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
-                    </span>
-                  </div>
-                )}
-                {detailInfo?.reviewsAll && (
-                  <div className="detail-meta-row">
-                    <span className="detail-meta-label">Todas las reseñas</span>
-                    <span className="detail-meta-value link">
-                      {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
-                    </span>
-                  </div>
-                )}
-                {detailInfo?.releaseDate && (
-                  <div className="detail-meta-row">
-                    <span className="detail-meta-label">Fecha de lanzamiento</span>
-                    <span className="detail-meta-value">{detailInfo.releaseDate}</span>
-                  </div>
-                )}
-                {detailInfo?.developer && (
-                  <div className="detail-meta-row">
-                    <span className="detail-meta-label">Desarrollador</span>
-                    <span className="detail-meta-value link">{detailInfo.developer}</span>
-                  </div>
-                )}
-                {detailInfo?.publisher && (
-                  <div className="detail-meta-row">
-                    <span className="detail-meta-label">Editor</span>
-                    <span className="detail-meta-value link">{detailInfo.publisher}</span>
-                  </div>
-                )}
-                {detailInfo?.tags && detailInfo.tags.length > 0 && (
-                  <div className="detail-meta-tags-block">
-                    <div className="detail-meta-label">Etiquetas populares</div>
-                    <div className="detail-meta-tags">
-                      {detailInfo.tags.map((tag) => (
-                        <span key={tag} className="detail-tag-pill">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Metacritic + content rating, as their own side column */}
-            <div className="detail-ratings-panel">
               {detailInfo?.metacritic && (
                 <a
-                  className="detail-metacritic-card"
+                  className="metacritic-widget"
                   href={detailInfo.metacritic.url || undefined}
                   target="_blank"
                   rel="noreferrer"
@@ -1398,38 +1373,104 @@ function App(): React.JSX.Element {
                   }}
                 >
                   <span
-                    className={`detail-metacritic-score ${detailInfo.metacritic.score >= 75
-                        ? 'good'
-                        : detailInfo.metacritic.score >= 50
-                          ? 'mixed'
-                          : 'bad'
+                    className={`metacritic-widget-score ${detailInfo.metacritic.score >= 75
+                      ? 'good'
+                      : detailInfo.metacritic.score >= 50
+                        ? 'mixed'
+                        : 'bad'
                       }`}
                   >
                     {detailInfo.metacritic.score}
                   </span>
-                  <div className="detail-metacritic-info">
-                    <span className="detail-metacritic-name">metacritic</span>
-                    <span className="detail-metacritic-link">Leer las reseñas ↗</span>
+                  <div className="metacritic-widget-body">
+                    <div className="metacritic-widget-brand">
+                      <span className="metacritic-widget-logo">M</span>
+                      <span className="metacritic-widget-name">metacritic</span>
+                    </div>
+                    <span className="metacritic-widget-link">Leer las reseñas ↗</span>
                   </div>
                 </a>
               )}
 
               {detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
-                <div className="detail-rating-card">
-                  <div className="detail-rating-badge">
-                    {detailInfo.rating.rating ? detailInfo.rating.rating.toUpperCase() : detailInfo.rating.board}
+                <div className="rating-widget">
+                  <div className="rating-widget-badge">
+                    <span className="rating-widget-badge-top">
+                      {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).top}
+                    </span>
+                    <span className="rating-widget-badge-letter">
+                      {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).letter}
+                    </span>
+                    <span className="rating-widget-badge-board">{detailInfo.rating.board}</span>
                   </div>
-                  <div className="detail-rating-info">
+                  <div className="rating-widget-body">
                     {detailInfo.rating.descriptors.length > 0 && (
-                      <ul className="detail-rating-descriptors">
+                      <ul className="rating-widget-descriptors">
                         {detailInfo.rating.descriptors.map((d) => (
                           <li key={d}>{d}</li>
                         ))}
                       </ul>
                     )}
-                    <span className="detail-rating-board">
+                    <span className="rating-widget-caption">
                       Clasificación por edades para: {detailInfo.rating.board}
                     </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Reviews, then release info, then tags */}
+            <div className="detail-ratings-panel">
+              {(detailInfo?.reviewsRecent || detailInfo?.reviewsAll) && (
+                <div className="detail-meta-section">
+                  {detailInfo?.reviewsRecent && (
+                    <div className="detail-meta-row">
+                      <span className="detail-meta-label">Reseñas recientes</span>
+                      <span className="detail-meta-value link">
+                        {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
+                      </span>
+                    </div>
+                  )}
+                  {detailInfo?.reviewsAll && (
+                    <div className="detail-meta-row">
+                      <span className="detail-meta-label">Todas las reseñas</span>
+                      <span className="detail-meta-value link">
+                        {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(detailInfo?.developer || detailInfo?.publisher || detailInfo?.releaseDate) && (
+                <div className="detail-meta-section">
+                  {detailInfo?.releaseDate && (
+                    <div className="detail-meta-row">
+                      <span className="detail-meta-label">Fecha de lanzamiento</span>
+                      <span className="detail-meta-value">{detailInfo.releaseDate}</span>
+                    </div>
+                  )}
+                  {detailInfo?.developer && (
+                    <div className="detail-meta-row">
+                      <span className="detail-meta-label">Desarrollador</span>
+                      <span className="detail-meta-value link">{detailInfo.developer}</span>
+                    </div>
+                  )}
+                  {detailInfo?.publisher && (
+                    <div className="detail-meta-row">
+                      <span className="detail-meta-label">Editor</span>
+                      <span className="detail-meta-value link">{detailInfo.publisher}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detailInfo?.tags && detailInfo.tags.length > 0 && (
+                <div className="detail-meta-section">
+                  <div className="detail-meta-tags">
+                    {detailInfo.tags.map((tag) => (
+                      <span key={tag} className="detail-tag-pill">{tag}</span>
+                    ))}
                   </div>
                 </div>
               )}
