@@ -22,37 +22,51 @@
 }
 
 /* ══════════════════════════════════════════
-   ANIMATED BACKGROUND
+   ANIMATED BACKGROUND (Perfect Cross-Fade Overlap)
    ══════════════════════════════════════════ */
-.launcher-bg {
+.launcher-bg-wrapper {
   position: absolute;
   inset: 0;
   z-index: 0;
-  transition: background var(--gbl-transition-slow);
-  background: var(--gbl-bg-primary);
+  background: var(--gbl-bg-primary); /* El fondo negro se queda oculto detrás de todo */
+  overflow: hidden;
 }
 
-.launcher-bg::after {
-  content: '';
+.launcher-bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
-  pointer-events: none;
+  background-size: contain;
+  background-position: top;
+  background-repeat: no-repeat;
 }
 
-.fade-in-bg {
-  animation: bgFadeIn 0.4s ease-out forwards;
+/* Capa nueva: Aparece desde opacidad 0 hasta 1 por ENCIMA de la anterior */
+.bg-fade-in {
+  z-index: 2;
+  animation: overlayFadeIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-@keyframes bgFadeIn {
+/* Capa vieja: Se queda ABAJO y se desvanece lentamente para amortiguar el cambio */
+.bg-fade-out {
+  z-index: 1;
+  animation: overlayFadeOut 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes overlayFadeIn {
   0% {
     opacity: 0;
   }
-
   100% {
     opacity: 1;
+  }
+}
+
+@keyframes overlayFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3; /* No la bajamos a 0 del todo de inmediato para evitar cualquier micro-destello */
   }
 }
 
@@ -72,12 +86,8 @@
       rgba(12, 12, 12, 0.4) 40%,
       rgba(12, 12, 12, 0.7) 70%,
       rgba(12, 12, 12, 0.92) 100%);
-  z-index: 1;
+  z-index: 3; /* Ajustado para que el degradado quede por encima de las imágenes */
   pointer-events: none;
-}
-
-.launcher-bg.has-custom-bg::after {
-  z-index: 2;
 }
 
 /* ══════════════════════════════════════════

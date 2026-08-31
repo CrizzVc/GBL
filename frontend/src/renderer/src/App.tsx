@@ -1340,12 +1340,22 @@ function App(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Animated background */}
-      <div
-        key={selectedGame?.heroImageUrl || backgroundImage || 'default'}
-        className={`launcher-bg fade-in-bg ${backgroundImage ? 'has-custom-bg' : ''}`}
-        style={bgStyle}
-      />
+      {/* Animated background con sobreposición limpia */}
+      <div className="launcher-bg-wrapper">
+        {/* Capa de salida (Fondo anterior que se desvanece) */}
+        <div 
+          key={`old-${selectedGame?.heroImageUrl || backgroundImage || 'default'}`}
+          className="launcher-bg bg-fade-out" 
+          style={bgStyle} 
+        />
+        {/* Capa de entrada (Fondo nuevo que se sobrepone) */}
+        <div
+          key={`new-${selectedGame?.heroImageUrl || backgroundImage || 'default'}`}
+          className={`launcher-bg bg-fade-in ${backgroundImage ? 'has-custom-bg' : ''}`}
+          style={bgStyle}
+        />
+      </div>
+
 
       {/* ── Header ── */}
       <header className="header-bar">
