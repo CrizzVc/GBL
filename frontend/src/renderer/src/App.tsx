@@ -1320,65 +1320,67 @@ function App(): React.JSX.Element {
               )}
             </div>
 
-            {/* Description */}
-            <div className="detail-description">
-              {detailInfoLoading && (
-                <p className="detail-description-text muted">Cargando descripción...</p>
-              )}
-              {!detailInfoLoading && detailInfo?.description && (
-                <p className="detail-description-text">{detailInfo.description}</p>
-              )}
-              {!detailInfoLoading && !detailInfo?.description && (
-                <p className="detail-description-text muted">No hay descripción disponible.</p>
-              )}
-            </div>
+            {/* Description + Steam-style info panel, stacked */}
+            <div className="detail-side-panel">
+              <div className="detail-description">
+                <h3 className="detail-section-title">Acerca del juego</h3>
+                {detailInfoLoading && (
+                  <p className="detail-description-text muted">Cargando descripción...</p>
+                )}
+                {!detailInfoLoading && detailInfo?.description && (
+                  <p className="detail-description-text">{detailInfo.description}</p>
+                )}
+                {!detailInfoLoading && !detailInfo?.description && (
+                  <p className="detail-description-text muted">No hay descripción disponible.</p>
+                )}
+              </div>
 
-            {/* Steam-style info panel */}
-            <div className="detail-meta-panel">
-              {detailInfo?.reviewsRecent && (
-                <div className="detail-meta-row">
-                  <span className="detail-meta-label">Reseñas recientes</span>
-                  <span className="detail-meta-value link">
-                    {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
-                  </span>
-                </div>
-              )}
-              {detailInfo?.reviewsAll && (
-                <div className="detail-meta-row">
-                  <span className="detail-meta-label">Todas las reseñas</span>
-                  <span className="detail-meta-value link">
-                    {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
-                  </span>
-                </div>
-              )}
-              {detailInfo?.releaseDate && (
-                <div className="detail-meta-row">
-                  <span className="detail-meta-label">Fecha de lanzamiento</span>
-                  <span className="detail-meta-value">{detailInfo.releaseDate}</span>
-                </div>
-              )}
-              {detailInfo?.developer && (
-                <div className="detail-meta-row">
-                  <span className="detail-meta-label">Desarrollador</span>
-                  <span className="detail-meta-value link">{detailInfo.developer}</span>
-                </div>
-              )}
-              {detailInfo?.publisher && (
-                <div className="detail-meta-row">
-                  <span className="detail-meta-label">Editor</span>
-                  <span className="detail-meta-value link">{detailInfo.publisher}</span>
-                </div>
-              )}
-              {detailInfo?.tags && detailInfo.tags.length > 0 && (
-                <div className="detail-meta-tags-block">
-                  <div className="detail-meta-label">Etiquetas populares</div>
-                  <div className="detail-meta-tags">
-                    {detailInfo.tags.map((tag) => (
-                      <span key={tag} className="detail-tag-pill">{tag}</span>
-                    ))}
+              <div className="detail-meta-panel">
+                {detailInfo?.reviewsRecent && (
+                  <div className="detail-meta-row">
+                    <span className="detail-meta-label">Reseñas recientes</span>
+                    <span className="detail-meta-value link">
+                      {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
+                    </span>
                   </div>
-                </div>
-              )}
+                )}
+                {detailInfo?.reviewsAll && (
+                  <div className="detail-meta-row">
+                    <span className="detail-meta-label">Todas las reseñas</span>
+                    <span className="detail-meta-value link">
+                      {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
+                    </span>
+                  </div>
+                )}
+                {detailInfo?.releaseDate && (
+                  <div className="detail-meta-row">
+                    <span className="detail-meta-label">Fecha de lanzamiento</span>
+                    <span className="detail-meta-value">{detailInfo.releaseDate}</span>
+                  </div>
+                )}
+                {detailInfo?.developer && (
+                  <div className="detail-meta-row">
+                    <span className="detail-meta-label">Desarrollador</span>
+                    <span className="detail-meta-value link">{detailInfo.developer}</span>
+                  </div>
+                )}
+                {detailInfo?.publisher && (
+                  <div className="detail-meta-row">
+                    <span className="detail-meta-label">Editor</span>
+                    <span className="detail-meta-value link">{detailInfo.publisher}</span>
+                  </div>
+                )}
+                {detailInfo?.tags && detailInfo.tags.length > 0 && (
+                  <div className="detail-meta-tags-block">
+                    <div className="detail-meta-label">Etiquetas populares</div>
+                    <div className="detail-meta-tags">
+                      {detailInfo.tags.map((tag) => (
+                        <span key={tag} className="detail-tag-pill">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
