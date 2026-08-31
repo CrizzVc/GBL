@@ -1074,10 +1074,34 @@
   color: var(--gbl-text-primary);
 }
 
+.library-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  transform: translateY(45px);
+}
+
+.library-view-divider,
+.library-view-platform {
+  font-size: 13px;
+}
+
+.library-view-divider {
+  color: var(--gbl-text-muted);
+}
+
+.library-view-platform {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
 .library-view-subtitle {
   margin-top: 6px;
   color: var(--gbl-text-secondary);
   font-size: 13px;
+  transform: translateY(28px);
 }
 
 .library-add-button {
@@ -2034,6 +2058,10 @@
   }
 
   .library-view-title {
+    font-size: 24px;
+  }
+
+  .library-view-platform {
     font-size: 24px;
   }
 

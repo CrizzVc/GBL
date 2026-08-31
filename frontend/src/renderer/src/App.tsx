@@ -651,7 +651,7 @@ function App(): React.JSX.Element {
 
   const openLibraryView = useCallback(() => {
     setDetailGameId(null)
-    setSelectedGameId((currentId) => games.some((game) => game.id === currentId) ? currentId : games[0]?.id ?? null)
+    setSelectedGameId(games[0]?.id ?? null)
     setLibraryView(true)
   }, [games])
 
@@ -948,6 +948,7 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     if (!libraryView || !selectedGameId) return
+    libraryGridRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     const target = document.getElementById(`library-game-${selectedGameId}`)
     target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [libraryView, selectedGameId])
@@ -1787,7 +1788,11 @@ function App(): React.JSX.Element {
                   <button className="library-back-button" onClick={() => setLibraryView(false)}>
                     <ChevronLeftIcon size={20} /> Volver
                   </button>
-                  <h1 className="library-view-title">Biblioteca</h1>
+                  <div className="library-title-row">
+                    <h1 className="library-view-title">Biblioteca</h1>
+                    <span className="library-view-divider">|</span>
+                    <span className="library-view-platform">Steam</span>
+                  </div>
                   <p className="library-view-subtitle">{games.length} {games.length === 1 ? 'juego' : 'juegos'}</p>
                   <button className="btn-primary library-add-button" onClick={openAddGameModal}>
                     <PlusIcon size={16} /> Agregar juego
