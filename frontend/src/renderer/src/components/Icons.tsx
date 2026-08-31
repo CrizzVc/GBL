@@ -296,6 +296,32 @@ export const StoreIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
   </svg>
 )
 
+export const EpicIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M12 1.8c-3.2 0-5.6 2.2-5.6 5.5 0 1.4.5 2.6 1.3 3.6l-2.2 6.6c-.2.7.3 1.4 1 1.4h1.2l-.8 2.3c-.2.5.2 1 .7 1h8.8c.5 0 .9-.5.7-1l-.8-2.3h1.2c.7 0 1.2-.7 1-1.4l-2.2-6.6c.8-1 1.3-2.2 1.3-3.6 0-3.3-2.4-5.5-5.6-5.5zm-3.4 8.6c.6-1.1.3-2.5-.6-3.3 1.1-.7 2.1-1 3.3-1 1.1 0 2.2.3 3.3 1-.9.8-1.2 2.2-.6 3.3.7 1.2 2.2 1.8 3.6 1.4l-4.4 4.4a2.1 2.1 0 0 1-3 0L5 11.8c1.4.4 2.9-.2 3.6-1.4z" />
+  </svg>
+)
+
+export const GogIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.8 5.2c.3 1.6 1.1 2.9 1.1 4.8 0 3.9-2.6 6-5.9 6-2.6 0-4.5-1.6-4.9-4l1.6-.5c.3 1.4 1.4 2.9 3.4 2.9 2 0 3.4-1.6 3.4-4.2 0-1.6-1-2.8-1.7-3.6l-1.2-1.3h6.2v1.9h-4.4l-1-1c1 .3 1.6.9 2.1 1.6v-.3z" />
+  </svg>
+)
+
 export const PowerIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
   <svg
     width={size}

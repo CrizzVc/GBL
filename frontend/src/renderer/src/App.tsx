@@ -16,6 +16,13 @@ import {
   BooksIcon
 } from './components/Icons'
 
+import steamLogo from './assets/tiendas/steamLogo.png'
+import epicLogo from './assets/tiendas/EpicLogo.png'
+import gogLogo from './assets/tiendas/gogLogo.png'
+import steamBanner from './assets/tiendas/steamBanner.png'
+import epicBanner from './assets/tiendas/EpicBanner.png'
+import gogBanner from './assets/tiendas/gogBanner.png'
+
 /* ────────────────────────────────────────────
    Types
    ──────────────────────────────────────────── */
@@ -35,6 +42,13 @@ interface Game {
 }
 
 type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | 'steamgrid' | null
+
+interface Store {
+  id: string
+  name: string
+  installed: boolean
+  exePath: string | null
+}
 
 interface SystemInfo {
   platform: string
@@ -79,6 +93,20 @@ const GAME_COLORS = [
 ]
 
 const BACKEND_URL = 'http://localhost:3000'
+
+const STORE_IMAGES: Record<string, { banner: string; logo: string }> = {
+  steam: { banner: steamBanner, logo: steamLogo },
+  epic: { banner: epicBanner, logo: epicLogo },
+  gog: { banner: gogBanner, logo: gogLogo }
+}
+
+function storeCapsuleImage(id: string): string | null {
+  return STORE_IMAGES[id]?.banner || null
+}
+
+function storeLogoImage(id: string): string | null {
+  return STORE_IMAGES[id]?.logo || null
+}
 
 function randomColor(): string {
   return GAME_COLORS[Math.floor(Math.random() * GAME_COLORS.length)]
@@ -160,6 +188,10 @@ function App(): React.JSX.Element {
   const [sgdbImagesLoading, setSgdbImagesLoading] = useState(false)
   const [sgdbTargetGameId, setSgdbTargetGameId] = useState<string | null>(null)
 
+  // Store carousel state
+  const [stores, setStores] = useState<Store[]>([])
+  const [currentStoreIndex, setCurrentStoreIndex] = useState(0)
+
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
@@ -223,6 +255,31 @@ function App(): React.JSX.Element {
     }
     loadProfile()
   }, [])
+
+  // ── Load installed stores ──
+  useEffect(() => {
+    const loadStores = async (): Promise<void> => {
+      try {
+        const storeList = await window.api.getStores()
+        if (Array.isArray(storeList) && storeList.length > 0) {
+          setStores(storeList)
+          setCurrentStoreIndex(0)
+        }
+      } catch (err) {
+        console.error('Error loading stores:', err)
+      }
+    }
+    loadStores()
+  }, [])
+
+  // ── Store carousel auto-advance ──
+  useEffect(() => {
+    if (stores.length <= 1) return
+    const interval = setInterval(() => {
+      setCurrentStoreIndex((prev) => (prev + 1) % stores.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [stores.length])
 
   // ── Listen for game-exited events from main process ──
   useEffect(() => {
@@ -474,6 +531,24 @@ function App(): React.JSX.Element {
     },
     [profileAvatar]
   )
+
+  // ── Store carousel handlers ──
+  const handleOpenStore = useCallback(
+    async (storeId: string) => {
+      const store = stores.find((s) => s.id === storeId)
+      if (!store || !store.installed) return
+      try {
+        await window.api.openStore(storeId)
+      } catch (err) {
+        console.error('Error opening store:', err)
+      }
+    },
+    [stores]
+  )
+
+  const handleStoreSelect = useCallback((index: number) => {
+    setCurrentStoreIndex(index)
+  }, [])
 
   // ── SteamGridDB handlers ──
   const handleSgdbSearch = useCallback(async () => {
@@ -844,11 +919,58 @@ function App(): React.JSX.Element {
           {/* Texto superpuesto al frente de todo */}
           <div className="floating-title">My games & apps</div>
         </div>
-        <div className="bottom-card" id="btn-store">
-          <StoreIcon size={22} className="bottom-card-icon" />
-          <div className="bottom-card-text">
-            <span className="bottom-card-title">Tiendas</span>
-            <span className="bottom-card-sub">Steam, Epic, GOG</span>
+        <div className="bottom-card store-card" id="btn-store">
+          <div className="store-carousel">
+            {stores.map((store, index) => {
+              const active = index === currentStoreIndex
+              const capsuleImg = storeCapsuleImage(store.id)
+              const logoImg = storeLogoImage(store.id)
+              return (
+                <div
+                  key={store.id}
+                  className={`store-capsule ${active ? 'active' : ''} ${store.installed ? '' : 'not-installed'}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (active) {
+                      handleOpenStore(store.id)
+                    } else {
+                      handleStoreSelect(index)
+                    }
+                  }}
+                  title={store.installed ? `Abrir ${store.name}` : `${store.name} no está instalado`}
+                >
+                  {capsuleImg && (
+                    <img
+                      src={capsuleImg}
+                      alt={store.name}
+                      className="store-capsule-bg"
+                      draggable={false}
+                    />
+                  )}
+                  <div className="store-capsule-overlay" />
+                  {logoImg ? (
+                    <img src={logoImg} alt={store.name} className="store-capsule-logo" draggable={false} />
+                  ) : (
+                    <div className="store-capsule-icon">
+                      <StoreIcon size={20} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div className="store-dots">
+            {stores.map((store, index) => (
+              <button
+                key={store.id}
+                className={`store-dot ${index === currentStoreIndex ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleStoreSelect(index)
+                }}
+                aria-label={store.name}
+              />
+            ))}
           </div>
         </div>
         <div className="bottom-card" onClick={() => setModal('settings')} id="btn-settings">

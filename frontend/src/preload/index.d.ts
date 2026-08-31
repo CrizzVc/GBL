@@ -32,6 +32,9 @@ declare global {
       getProfile: () => Promise<{ name: string; avatar: string | null }>
       saveProfile: (profile: { name: string; avatar: string | null }) => Promise<{ success: boolean; error?: string }>
       selectProfileImage: () => Promise<string | null>
+      // Store APIs
+      getStores: () => Promise<{ id: string; name: string; installed: boolean; exePath: string | null }[]>
+      openStore: (storeId: string) => Promise<{ success: boolean; error?: string }>
     }
   }
 }

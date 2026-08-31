@@ -23,7 +23,10 @@ const api = {
   // Profile APIs
   getProfile: () => ipcRenderer.invoke('get-profile'),
   saveProfile: (profile: { name: string; avatar: string | null }) => ipcRenderer.invoke('save-profile', profile),
-  selectProfileImage: () => ipcRenderer.invoke('select-profile-image')
+  selectProfileImage: () => ipcRenderer.invoke('select-profile-image'),
+  // Store APIs
+  getStores: () => ipcRenderer.invoke('get-stores'),
+  openStore: (storeId: string) => ipcRenderer.invoke('open-store', storeId)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

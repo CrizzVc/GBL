@@ -559,6 +559,125 @@
 }
 
 /* ══════════════════════════════════════════
+   STORE CAROUSEL
+   ══════════════════════════════════════════ */
+.bottom-card.store-card {
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: default;
+  overflow: hidden;
+}
+
+.store-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.store-capsule {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity var(--gbl-transition-normal), transform var(--gbl-transition-normal);
+  cursor: pointer;
+}
+
+.store-capsule.active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.store-capsule:hover {
+  filter: brightness(1.1);
+}
+
+.store-capsule.not-installed {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.store-capsule-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  z-index: 1;
+}
+
+.store-capsule-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.05) 35%, rgba(0, 0, 0, 0) 60%);
+}
+
+.store-capsule-logo {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 3;
+  max-width: 120px;
+  max-height: 40px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+}
+
+.store-capsule-icon {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--gbl-radius-sm);
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.store-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.store-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: background var(--gbl-transition-normal), transform var(--gbl-transition-normal);
+}
+
+.store-dot.active {
+  background: #ffffff;
+  transform: scale(1.2);
+}
+
+/* ══════════════════════════════════════════
    MODALS
    ══════════════════════════════════════════ */
 .modal-overlay {
