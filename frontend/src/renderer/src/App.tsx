@@ -1357,7 +1357,7 @@ function App(): React.JSX.Element {
                 )}
               </div>
 
-              <div className="detail-meta-section2">
+              <div className="detail-meta-section2" style={{ maxWidth: '400px' }}>
                 {detailInfo?.metacritic && (
                   <a
                     className="metacritic-widget"

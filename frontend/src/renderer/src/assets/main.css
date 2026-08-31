@@ -2301,10 +2301,10 @@
 .rating-widget {
   display: flex;
   gap: 14px;
-  padding: 16px;
+  /* padding: 16px; */
   border-radius: var(--gbl-radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  /* border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03); */
   max-width: 350px;
 }
 
