@@ -191,10 +191,18 @@ function App(): React.JSX.Element {
   // Store carousel state
   const [stores, setStores] = useState<Store[]>([])
   const [currentStoreIndex, setCurrentStoreIndex] = useState(0)
+  const [storeHover, setStoreHover] = useState(false)
+
+  // Game details view state
+  const [detailGameId, setDetailGameId] = useState<string | null>(null)
+  const [detailAccent, setDetailAccent] = useState<string>('#ffffff')
+  const [detailScreenshots, setDetailScreenshots] = useState<Array<{ path_full: string; path_thumbnail: string }>>([])
+  const [detailLoadingShots, setDetailLoadingShots] = useState(false)
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
+  const detailGame = games.find((g) => g.id === detailGameId) || null
 
   // ── Clock ──
   useEffect(() => {
@@ -272,14 +280,14 @@ function App(): React.JSX.Element {
     loadStores()
   }, [])
 
-  // ── Store carousel auto-advance ──
+  // ── Store carousel auto-advance (paused on hover) ──
   useEffect(() => {
-    if (stores.length <= 1) return
+    if (stores.length <= 1 || storeHover) return
     const interval = setInterval(() => {
       setCurrentStoreIndex((prev) => (prev + 1) % stores.length)
     }, 4000)
     return () => clearInterval(interval)
-  }, [stores.length])
+  }, [stores.length, storeHover])
 
   // ── Listen for game-exited events from main process ──
   useEffect(() => {
@@ -301,6 +309,108 @@ function App(): React.JSX.Element {
     })
     return unsubscribe
   }, [])
+
+  // ── Extract an accent color from the detail game's hero image ──
+  useEffect(() => {
+    if (!detailGame?.heroImageUrl) {
+      setDetailAccent('#0c0c0c')
+      return
+    }
+    let cancelled = false
+    const img = new Image()
+    // NOTE: intentionally NOT setting img.crossOrigin — most image CDNs (SteamGridDB
+    // included) don't send Access-Control-Allow-Origin, so requesting CORS mode just
+    // makes the browser refuse to load the image at all. Loading it "normally" instead
+    // taints the canvas, which means getImageData() below will throw a SecurityError —
+    // that's expected and handled by the catch block, which falls back to a neutral color.
+    img.onload = () => {
+      if (cancelled) return
+      try {
+        const canvas = document.createElement('canvas')
+        const w = (canvas.width = 32)
+        const h = (canvas.height = 32)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.drawImage(img, 0, 0, w, h)
+        const { data } = ctx.getImageData(0, 0, w, h)
+        let r = 0
+        let g = 0
+        let b = 0
+        let count = 0
+        // Sample the lower portion of the image, which is where the gradient blends in
+        for (let y = Math.floor(h * 0.55); y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4
+            r += data[i]
+            g += data[i + 1]
+            b += data[i + 2]
+            count++
+          }
+        }
+        r = Math.round(r / count)
+        g = Math.round(g / count)
+        b = Math.round(b / count)
+        if (!cancelled) setDetailAccent(`rgb(${r}, ${g}, ${b})`)
+      } catch {
+        // Canvas is tainted by a cross-origin image with no CORS headers — expected, fall back silently.
+        if (!cancelled) setDetailAccent('#0c0c0c')
+      }
+    }
+    img.onerror = () => {
+      if (!cancelled) setDetailAccent('#0c0c0c')
+    }
+    img.src = detailGame.heroImageUrl
+    return () => {
+      cancelled = true
+    }
+  }, [detailGame?.heroImageUrl])
+
+  // ── Fetch Steam screenshots for the detail game ──
+  useEffect(() => {
+    if (!detailGame) {
+      setDetailScreenshots([])
+      return
+    }
+    let cancelled = false
+    const loadScreenshots = async (): Promise<void> => {
+      setDetailLoadingShots(true)
+      setDetailScreenshots([])
+      try {
+        // 1) Resolve the game name to a Steam AppID
+        const resolveRes = await fetch(
+          `${BACKEND_URL}/api/steam/resolve?term=${encodeURIComponent(detailGame.name)}`
+        )
+        if (!resolveRes.ok) return
+        const resolved = await resolveRes.json()
+        const appid = resolved?.appid
+        if (!appid) return
+
+        // 2) Fetch screenshots for that AppID
+        const shotsRes = await fetch(`${BACKEND_URL}/api/steam/screenshots/${appid}`)
+        if (!shotsRes.ok) return
+        const shots = await shotsRes.json()
+        if (!cancelled && Array.isArray(shots)) setDetailScreenshots(shots)
+      } catch (err) {
+        console.error('Error obteniendo capturas de Steam:', err)
+      } finally {
+        if (!cancelled) setDetailLoadingShots(false)
+      }
+    }
+    loadScreenshots()
+    return () => {
+      cancelled = true
+    }
+  }, [detailGameId])
+
+  // ── Close detail view with Escape ──
+  useEffect(() => {
+    if (!detailGameId) return
+    const handleEsc = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setDetailGameId(null)
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [detailGameId])
 
   // ── Close context menu on click anywhere ──
   useEffect(() => {
@@ -695,6 +805,27 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [sidebarOpen, sidebarIndex, modal, games, selectedGameId, handleLaunchGame, openAddGameModal, handleOpenSpecs])
 
+  // ── Detail view handlers ──
+  const handleCloseDetail = useCallback(() => {
+    setDetailGameId(null)
+  }, [])
+
+  const openDetailView = useCallback((gameId: string) => {
+    setSelectedGameId(gameId)
+    setDetailGameId(gameId)
+  }, [])
+
+  // ── Detail view background style (accent color derived from hero image) ──
+  const detailBgStyle: React.CSSProperties = detailGame?.heroImageUrl
+    ? {
+      backgroundImage: `linear-gradient(to bottom, transparent 15%, ${detailAccent} 60%, ${detailAccent} 100%), url(${detailGame.heroImageUrl})`,
+      backgroundSize: 'contain',
+      backgroundPosition: 'top',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: detailAccent
+    }
+    : { background: 'var(--gbl-bg-primary)' }
+
   // ── Background style ──
   const bgStyle = selectedGame?.heroImageUrl
     ? {
@@ -801,16 +932,6 @@ function App(): React.JSX.Element {
                 </>
               )}
             </div>
-            <div className="hero-actions">
-              <button
-                className={`btn-play ${runningGameId === selectedGame.id ? 'running' : ''}`}
-                onClick={handleLaunchGame}
-                id="btn-launch"
-              >
-                <PlayIcon size={18} />
-                {runningGameId === selectedGame.id ? 'Ejecutando...' : 'Jugar'}
-              </button>
-            </div>
           </div>
         )}
         {!selectedGame && games.length === 0 && (
@@ -849,7 +970,7 @@ function App(): React.JSX.Element {
             <div
               key={game.id}
               className={`game-card ${selectedGameId === game.id ? 'selected' : ''}`}
-              onClick={() => setSelectedGameId(game.id)}
+              onClick={() => openDetailView(game.id)}
               onDoubleClick={handleLaunchGame}
               onContextMenu={(e) => handleContextMenu(e, game.id)}
               title={game.name}
@@ -885,9 +1006,9 @@ function App(): React.JSX.Element {
 
       {/* ── Bottom row ── */}
       <div className="bottom-row">
-        <div 
-          className="dashboard-container bottom-card" 
-          onClick={() => setModal('library')} 
+        <div
+          className="dashboard-container bottom-card"
+          onClick={() => setModal('library')}
           style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
         >
           <div className="dashboard">
@@ -919,7 +1040,12 @@ function App(): React.JSX.Element {
           {/* Texto superpuesto al frente de todo */}
           <div className="floating-title">My games & apps</div>
         </div>
-        <div className="bottom-card store-card" id="btn-store">
+        <div
+          className="bottom-card store-card"
+          id="btn-store"
+          onMouseEnter={() => setStoreHover(true)}
+          onMouseLeave={() => setStoreHover(false)}
+        >
           <div className="store-carousel">
             {stores.map((store, index) => {
               const active = index === currentStoreIndex
@@ -1033,6 +1159,79 @@ function App(): React.JSX.Element {
           >
             <TrashIcon size={16} /> Eliminar
           </button>
+        </div>
+      )}
+
+      {/* ── Detail View ── */}
+      {detailGame && (
+        <div className="detail-view">
+          <div
+            key={detailGame.heroImageUrl || detailGame.id}
+            className="detail-bg fade-in-bg"
+            style={detailBgStyle}
+          />
+          <button className="detail-close" onClick={handleCloseDetail} title="Cerrar">
+            <CloseIcon size={20} />
+          </button>
+
+          <div className="detail-hero-section">
+            <div className="detail-hero-content">
+              {detailGame.logoImageUrl ? (
+                <img
+                  src={detailGame.logoImageUrl}
+                  alt={detailGame.name}
+                  className="hero-logo"
+                  draggable={false}
+                />
+              ) : (
+                <h1 className="hero-title">{detailGame.name}</h1>
+              )}
+            </div>
+
+            <div className="detail-actions-row">
+              <button
+                className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
+                onClick={handleLaunchGame}
+              >
+                <PlayIcon size={20} />
+                {runningGameId === detailGame.id ? 'Ejecutando...' : 'Jugar'}
+              </button>
+              <span className="detail-playtime">
+                {formatPlaytime(detailGame.playtimeMinutes)} jugado
+                {detailGame.lastPlayed && (
+                  <>
+                    {' '}
+                    · Última vez:{' '}
+                    {new Date(detailGame.lastPlayed).toLocaleDateString('es', {
+                      day: 'numeric',
+                      month: 'short'
+                    })}
+                  </>
+                )}
+              </span>
+            </div>
+          </div>
+
+          <div className="detail-screenshots-row">
+            {detailLoadingShots && (
+              <div className="detail-screenshots-loading">Cargando capturas...</div>
+            )}
+            {!detailLoadingShots && detailScreenshots.length === 0 && (
+              <div className="detail-screenshots-empty">
+                No se encontraron capturas para este juego
+              </div>
+            )}
+            {detailScreenshots.map((shot, index) => (
+              <img
+                key={index}
+                src={shot.path_full}
+                alt={`Captura ${index + 1} de ${detailGame.name}`}
+                className="detail-screenshot"
+                draggable={false}
+                loading="lazy"
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -1358,7 +1557,7 @@ function App(): React.JSX.Element {
                     onBlur={(e) => handleSaveProfileName(e.target.value.trim())}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        ;(e.target as HTMLInputElement).blur()
+                        ; (e.target as HTMLInputElement).blur()
                       }
                     }}
                   />

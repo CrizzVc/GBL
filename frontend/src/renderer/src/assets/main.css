@@ -1480,6 +1480,117 @@
   /* Asegura legibilidad sobre fondos claros */
 }
 
+/* ══════════════════════════════════════════
+   DETAIL VIEW (per-game details screen)
+   ══════════════════════════════════════════ */
+.detail-view {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  background: var(--gbl-bg-primary);
+  overflow: hidden;
+}
+
+.detail-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: background var(--gbl-transition-slow);
+}
+
+.detail-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.35);
+  border: none;
+  color: var(--gbl-text-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gbl-transition-fast);
+}
+
+.detail-close:hover {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.detail-hero-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 36px 20px 36px;
+  position: relative;
+  z-index: 5;
+  min-height: 0;
+}
+
+.detail-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.detail-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.btn-play-detail {
+  width: 320px;
+  height: 65px;
+  padding: 0;
+  font-size: 16px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detail-playtime {
+  font-size: 13px;
+  color: var(--gbl-text-secondary);
+  white-space: nowrap;
+}
+
+.detail-screenshots-row {
+  flex-shrink: 0;
+  display: flex;
+  gap: 12px;
+  padding: 0 36px 28px 36px;
+  overflow-x: auto;
+  position: relative;
+  z-index: 5;
+}
+
+.detail-screenshots-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.detail-screenshot {
+  height: 170px;
+  border-radius: var(--gbl-radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--gbl-border);
+}
+
+.detail-screenshots-loading,
+.detail-screenshots-empty {
+  color: var(--gbl-text-muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
 
 /* ══════════════════════════════════════════
    RESPONSIVE
@@ -1499,5 +1610,16 @@
 
   .sgdb-images-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .btn-play-detail {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .detail-actions-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 }

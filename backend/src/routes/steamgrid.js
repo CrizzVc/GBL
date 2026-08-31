@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   searchGames,
+  getGame,
   getGrids,
   getSquareGrids,
   getHeroes,
@@ -21,6 +22,18 @@ router.get('/search', async (req, res) => {
     res.json(results);
   } catch (error) {
     console.error('[SteamGrid] Error buscando juegos:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get a single game metadata (steam_appid, etc.)
+router.get('/game/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const game = await getGame(gameId);
+    res.json(game);
+  } catch (error) {
+    console.error('[SteamGrid] Error obteniendo juego:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

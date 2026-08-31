@@ -53,6 +53,20 @@ export async function searchGames(term) {
 }
 
 /**
+ * Get a single game's metadata (includes steam_appid if available)
+ * @param {number} gameId - SteamGridDB game ID
+ * @returns {Promise<object|null>} Game object or null
+ */
+export async function getGame(gameId) {
+  try {
+    return await apiFetch(`/games/${gameId}`);
+  } catch (err) {
+    console.error('[SteamGrid] Error obteniendo juego:', err.message);
+    return null;
+  }
+}
+
+/**
  * Get grids (vertical cover art) for a game
  * @param {number} gameId - SteamGridDB game ID
  * @returns {Promise<Array>} Array of grid images
