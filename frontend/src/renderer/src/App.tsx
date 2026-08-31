@@ -1399,7 +1399,7 @@ function App(): React.JSX.Element {
                       if (!detailInfo.metacritic?.url) e.preventDefault()
                     }}
                   >
-                    <span
+                    {/* <span
                       className={`metacritic-widget-score ${detailInfo.metacritic.score >= 75
                         ? 'good'
                         : detailInfo.metacritic.score >= 50
@@ -1408,14 +1408,14 @@ function App(): React.JSX.Element {
                         }`}
                     >
                       {detailInfo.metacritic.score}
-                    </span>
-                    <div className="metacritic-widget-body">
+                    </span> */}
+                    {/* <div className="metacritic-widget-body">
                       <div className="metacritic-widget-brand">
                         <img src="https://store.fastly.steamstatic.com/public/images/v6/mc_logo_no_text.png" alt="" />
                         <span className="metacritic-widget-name">metacritic</span>
                       </div>
                       <span className="metacritic-widget-link">Leer las reseñas ↗</span>
-                    </div>
+                    </div> */}
                   </a>
                 )}
 
