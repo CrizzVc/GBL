@@ -22,6 +22,7 @@ import gogLogo from './assets/tiendas/gogLogo.png'
 import steamBanner from './assets/tiendas/steamBanner.png'
 import epicBanner from './assets/tiendas/EpicBanner.png'
 import gogBanner from './assets/tiendas/gogBanner.png'
+import Teen from './assets/ratings/T.png'
 
 /* ────────────────────────────────────────────
    Types
@@ -1362,7 +1363,7 @@ function App(): React.JSX.Element {
                 )}
               </div>
 
-              <div className="detail-meta-section">
+              <div className="detail-meta-section2">
                 {detailInfo?.metacritic && (
                   <a
                     className="metacritic-widget"
@@ -1385,7 +1386,7 @@ function App(): React.JSX.Element {
                     </span>
                     <div className="metacritic-widget-body">
                       <div className="metacritic-widget-brand">
-                        <span className="metacritic-widget-logo">M</span>
+                        <img src="https://store.fastly.steamstatic.com/public/images/v6/mc_logo_no_text.png" alt="" />
                         <span className="metacritic-widget-name">metacritic</span>
                       </div>
                       <span className="metacritic-widget-link">Leer las reseñas ↗</span>
@@ -1395,7 +1396,7 @@ function App(): React.JSX.Element {
 
                 {detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
                   <div className="rating-widget">
-                    <div className="rating-widget-badge">
+                    {/* <div className="rating-widget-badge">
                       <span className="rating-widget-badge-top">
                         {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).top}
                       </span>
@@ -1403,7 +1404,8 @@ function App(): React.JSX.Element {
                         {formatRatingBadge(detailInfo.rating.rating, detailInfo.rating.board).letter}
                       </span>
                       <span className="rating-widget-badge-board">{detailInfo.rating.board}</span>
-                    </div>
+                    </div> */}
+                    <img src={Teen} alt="" style={{ width: '80px' }} />
                     <div className="rating-widget-body">
                       {detailInfo.rating.descriptors.length > 0 && (
                         <ul className="rating-widget-descriptors">
