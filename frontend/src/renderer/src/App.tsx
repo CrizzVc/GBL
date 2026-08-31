@@ -1465,6 +1465,7 @@ function App(): React.JSX.Element {
                     </div>
                   )}
                 </div>
+
               )}
 
               {detailInfo?.tags && detailInfo.tags.length > 0 && (
