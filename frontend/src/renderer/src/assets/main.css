@@ -1121,6 +1121,7 @@
 
 .library-hero {
   position: relative;
+  flex-shrink: 0;
   width: calc(100% + 48px);
   min-height: 390px;
   margin: 0 -24px 28px;
@@ -1181,7 +1182,8 @@
   margin: 0 auto;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: max-content;
-  gap: 12px;
+  min-height: 260px;
+  gap: 16px;
   align-content: start;
   max-height: none;
   overflow-y: auto;

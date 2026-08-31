@@ -245,6 +245,7 @@ function App(): React.JSX.Element {
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
   const libraryGridRef = useRef<HTMLDivElement>(null)
+  const previousLibraryIndexRef = useRef<number | null>(null)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
@@ -947,11 +948,28 @@ function App(): React.JSX.Element {
   }, [selectedGameId, visibleGames])
 
   useEffect(() => {
-    if (!libraryView || !selectedGameId) return
+    if (!libraryView) return
+    previousLibraryIndexRef.current = null
     libraryGridRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [libraryView])
+
+  useEffect(() => {
+    if (!libraryView || !selectedGameId || !libraryGridRef.current) return
+    const grid = libraryGridRef.current
     const target = document.getElementById(`library-game-${selectedGameId}`)
-    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }, [libraryView, selectedGameId])
+    if (!target) return
+
+    const currentIndex = games.findIndex((game) => game.id === selectedGameId)
+    const previousIndex = previousLibraryIndexRef.current
+    previousLibraryIndexRef.current = currentIndex
+    const columnCount = getComputedStyle(grid).gridTemplateColumns.split(' ').length
+    if (previousIndex === null || Math.floor(previousIndex / columnCount) === Math.floor(currentIndex / columnCount)) return
+
+    const previousTarget = document.getElementById(`library-game-${games[previousIndex].id}`)
+    const rowDistance = previousTarget ? target.offsetTop - previousTarget.offsetTop : target.offsetHeight
+    const nextScrollTop = Math.max(0, grid.scrollTop + rowDistance)
+    grid.scrollTo({ top: nextScrollTop, behavior: 'smooth' })
+  }, [games, libraryView, selectedGameId])
 
   const handlePrevShot = useCallback(() => {
     setDetailShotIndex((prev) =>
