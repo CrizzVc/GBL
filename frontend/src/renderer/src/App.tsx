@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   PlayIcon,
   PlusIcon,
@@ -33,6 +33,7 @@ interface Game {
   iconDataUrl: string | null
   playtimeMinutes: number
   lastPlayed: string | null
+  createdAt: string
   color: string
   // SteamGridDB fields
   steamGridId?: number | null
@@ -93,6 +94,13 @@ const GAME_COLORS = [
 ]
 
 const BACKEND_URL = 'http://localhost:3000'
+
+const sortGamesByNewestFirst = (items: Game[]): Game[] =>
+  [...items].sort((a, b) => {
+    const aDate = new Date(a.createdAt || a.lastPlayed || 0).getTime()
+    const bDate = new Date(b.createdAt || b.lastPlayed || 0).getTime()
+    return bDate - aDate
+  }).slice(0, 15)
 
 const STORE_IMAGES: Record<string, { banner: string; logo: string }> = {
   steam: { banner: steamBanner, logo: steamLogo },
@@ -233,6 +241,7 @@ function App(): React.JSX.Element {
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
 
+  const visibleGames = useMemo(() => sortGamesByNewestFirst(games), [games])
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const detailGame = games.find((g) => g.id === detailGameId) || null
   const compactDetailReviewLayout =
@@ -273,8 +282,13 @@ function App(): React.JSX.Element {
       try {
         const stored = await window.api.getGames()
         if (Array.isArray(stored) && stored.length > 0) {
-          setGames(stored)
-          setSelectedGameId(stored[0].id)
+          const normalizedGames = stored.map((game) => ({
+            ...game,
+            createdAt: game.createdAt || game.lastPlayed || new Date().toISOString()
+          }))
+          const orderedGames = sortGamesByNewestFirst(normalizedGames)
+          setGames(orderedGames)
+          setSelectedGameId(orderedGames[0]?.id ?? null)
         }
       } catch (err) {
         console.error('Error loading games:', err)
@@ -489,8 +503,9 @@ function App(): React.JSX.Element {
   // ── Persist games ──
   const saveGames = useCallback(
     (newGames: Game[]) => {
-      setGames(newGames)
-      window.api.saveGames(newGames)
+      const orderedGames = sortGamesByNewestFirst(newGames)
+      setGames(orderedGames)
+      window.api.saveGames(orderedGames)
     },
     []
   )
@@ -520,6 +535,7 @@ function App(): React.JSX.Element {
       iconDataUrl: formIconUrl,
       playtimeMinutes: 0,
       lastPlayed: null,
+      createdAt: new Date().toISOString(),
       color: randomColor(),
       steamGridId: null,
       gridImageUrl: null,
@@ -561,7 +577,7 @@ function App(): React.JSX.Element {
     }
 
     setGames((prevGames) => {
-      const newGames = [...prevGames, newGame]
+      const newGames = sortGamesByNewestFirst([...prevGames, newGame])
       window.api.saveGames(newGames)
       return newGames
     })
@@ -842,7 +858,7 @@ function App(): React.JSX.Element {
           setSidebarOpen(false)
         }
       } else {
-        const gameIds = ['library', ...games.map(g => g.id)]
+        const gameIds = ['library', ...visibleGames.map(g => g.id)]
         const currentIndex = gameIds.indexOf(selectedGameId || 'library')
 
         if (e.key === 'ArrowRight') {
@@ -868,7 +884,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [sidebarOpen, sidebarIndex, modal, games, selectedGameId, handleLaunchGame, openAddGameModal, handleOpenSpecs])
+  }, [sidebarOpen, sidebarIndex, modal, visibleGames, selectedGameId, handleLaunchGame, openAddGameModal, handleOpenSpecs])
 
   // ── Detail view handlers ──
   const handleCloseDetail = useCallback(() => {
@@ -879,6 +895,27 @@ function App(): React.JSX.Element {
     setSelectedGameId(gameId)
     setDetailGameId(gameId)
   }, [])
+
+  useEffect(() => {
+    if (!gamesRowRef.current) return
+
+    const targetId = selectedGameId === 'library' ? 'btn-library' : selectedGameId ? `game-card-${selectedGameId}` : null
+    if (!targetId) return
+
+    const target = document.getElementById(targetId)
+    if (!target) return
+
+    const row = gamesRowRef.current
+    const targetLeft = target.offsetLeft
+    const targetWidth = target.offsetWidth
+    const rowWidth = row.clientWidth
+    const desiredLeft = targetLeft - (rowWidth - targetWidth) / 2
+
+    row.scrollTo({
+      left: Math.max(0, desiredLeft),
+      behavior: 'smooth'
+    })
+  }, [selectedGameId, visibleGames])
 
   const handlePrevShot = useCallback(() => {
     setDetailShotIndex((prev) =>
@@ -1043,7 +1080,7 @@ function App(): React.JSX.Element {
             </div>
           </div>
 
-          {games.map((game) => (
+          {visibleGames.map((game) => (
             <div
               key={game.id}
               className={`game-card ${selectedGameId === game.id ? 'selected' : ''}`}
