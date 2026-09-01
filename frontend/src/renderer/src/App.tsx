@@ -1533,15 +1533,19 @@ function App(): React.JSX.Element {
     if (sgdbTargetGameId.startsWith('quick-')) {
       const quickId = sgdbTargetGameId.replace(/^quick-/, '')
 
-      // 1) La app rápida es la fuente de verdad de la tarjeta de abajo:
-      //    aquí es donde antes se perdía el cambio de portada.
+      // Solo la portada/artwork principal debe afectar a la tarjeta rápida.
+      // Logo e icono son variantes auxiliares y no deben reemplazar la portada.
+      const quickCoverUpdate = artField === 'iconDataUrl'
+        ? { iconDataUrl: image.url }
+        : artField === 'logoImageUrl'
+          ? {}
+          : { artworkUrl: image.url }
+
       const updatedApps = quickApps.map((app) =>
         app.id === quickId
           ? {
             ...app,
-            ...(artField === 'iconDataUrl'
-              ? { iconDataUrl: image.url }
-              : { artworkUrl: image.url })
+            ...quickCoverUpdate
           }
           : app
       )
