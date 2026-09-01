@@ -552,6 +552,27 @@ app.whenReady().then(() => {
     } catch {}
     return images
   })
+  ipcMain.handle('set-wallpaper-as-background', async (_event, sourcePath: string) => {
+    if (!sourcePath || !fs.existsSync(sourcePath)) return null
+    const ext = extname(sourcePath).toLowerCase()
+    const destPath = getBackgroundPath() + ext
+    const bgBase = getBackgroundPath()
+    for (const e of ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']) {
+      const p = bgBase + e
+      if (fs.existsSync(p)) {
+        try { fs.unlinkSync(p) } catch {}
+      }
+    }
+    try {
+      fs.copyFileSync(sourcePath, destPath)
+      const data = fs.readFileSync(destPath)
+      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
+      return `data:${mime};base64,${data.toString('base64')}`
+    } catch (err) {
+      console.error('Error setting wallpaper as background:', err)
+      return null
+    }
+  })
 
   // ── User profile handlers ──
   const getProfilePath = (): string => {

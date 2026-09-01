@@ -3715,6 +3715,14 @@
   display: block;
 }
 
+.wallpaper-row-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--gbl-text-muted);
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+
 /* Cuando wallpaper-mode está activo, esconder games row y bottom row */
 .launcher.wallpaper-mode .games-row-container,
 .launcher.wallpaper-mode .bottom-row {

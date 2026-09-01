@@ -1322,6 +1322,21 @@ function App(): React.JSX.Element {
     }
   }, [isHomeFocused, detailGameId, selectedGameId, selectedGame, detailGame, wallpaperFolder, wallpaperImages.length, openSteamGridModal])
 
+  const handleChooseWallpaperAsHome = useCallback(async (idx?: number) => {
+    const targetIdx = typeof idx === 'number' ? idx : wallpaperIndex
+    const img = wallpaperImages[targetIdx]
+    if (!img) return
+    try {
+      const dataUrl = await window.api.setWallpaperAsBackground(img.path)
+      setBackgroundImage(dataUrl || img.dataUrl)
+      setWallpaperMode(false)
+    } catch (err) {
+      console.error('Error fijando fondo:', err)
+      setBackgroundImage(img.dataUrl)
+      setWallpaperMode(false)
+    }
+  }, [wallpaperImages, wallpaperIndex])
+
   // ── Keyboard Navigation ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -1395,7 +1410,7 @@ function App(): React.JSX.Element {
           setWallpaperMode(false)
         } else if (e.key === 'Enter') {
           e.preventDefault()
-          // Enter en wallpaper no hace nada, solo cambia fondo con focus
+          void handleChooseWallpaperAsHome()
         }
       } else {
         const gameIds = ['library', ...visibleGames.map(g => g.id)]
@@ -1424,7 +1439,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome])
 
   // ── Detail view handlers ──
   const handleCloseDetail = useCallback(() => {
@@ -1729,7 +1744,7 @@ function App(): React.JSX.Element {
       {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
       <MusicPlayer isVisible={isHomeFocused && !isWallpaperMode} isIdle={showIdleMode} />
 
-      {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) ── */}
+      {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ── */}
       {isWallpaperMode && (
         <div className="wallpaper-row-container">
           <div className="wallpaper-row" ref={wallpaperRowRef}>
@@ -1739,12 +1754,14 @@ function App(): React.JSX.Element {
                 id={`wallpaper-card-${idx}`}
                 className={`wallpaper-card ${idx === wallpaperIndex ? 'selected' : ''}`}
                 onClick={() => setWallpaperIndex(idx)}
-                title={img.name}
+                onDoubleClick={() => handleChooseWallpaperAsHome(idx)}
+                title={`${img.name} — Enter o doble click para fijar como fondo de Home`}
               >
                 <img src={img.dataUrl} alt={img.name} className="wallpaper-card-img" draggable={false} />
               </div>
             ))}
           </div>
+          <div className="wallpaper-row-hint">← → para navegar · Enter o doble click para elegir fondo de Home · Esc para salir</div>
         </div>
       )}
 
