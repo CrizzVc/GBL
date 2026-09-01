@@ -11,7 +11,8 @@ import {
   PowerIcon,
   TrashIcon,
   EditIcon,
-  FolderIcon
+  FolderIcon,
+  SteamIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
@@ -24,6 +25,8 @@ import epicBanner from './assets/tiendas/EpicBanner.png'
 import gogBanner from './assets/tiendas/gogBanner.png'
 import Teen from './assets/ratings/T.png'
 import installIcon from './assets/images/install.png'
+import controllerImg from './assets/images/controller.png'
+import { useSystemMedia } from './hooks/useSystemMedia'
 
 /* ────────────────────────────────────────────
    Types
@@ -417,6 +420,33 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (modal !== null || detailGameId || libraryView || !isHomeFocused) setIsIdle(false)
   }, [modal, detailGameId, libraryView, isHomeFocused])
+
+  // ── Friends card: música actual para botón Fecha + estado del control ──
+  const { nowPlaying: friendsNowPlaying } = useSystemMedia()
+  const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
+  const [isControllerConnected, setIsControllerConnected] = useState(false)
+  useEffect(() => {
+    const check = (): void => {
+      try {
+        const pads = navigator.getGamepads ? navigator.getGamepads() : []
+        const connected = Array.from(pads || []).some((p) => !!p)
+        setIsControllerConnected(connected)
+      } catch {
+        setIsControllerConnected(false)
+      }
+    }
+    check()
+    const onConnect = (): void => setIsControllerConnected(true)
+    const onDisconnect = (): void => check()
+    window.addEventListener('gamepadconnected', onConnect)
+    window.addEventListener('gamepaddisconnected', onDisconnect)
+    const interval = window.setInterval(check, 1500)
+    return () => {
+      window.removeEventListener('gamepadconnected', onConnect)
+      window.removeEventListener('gamepaddisconnected', onDisconnect)
+      window.clearInterval(interval)
+    }
+  }, [])
 
   // ── Clock ──
   useEffect(() => {
@@ -1785,15 +1815,73 @@ function App(): React.JSX.Element {
           </div>
         </div>
 
-        <div
-          className="bottom-card exit-card"
-          onClick={() => window.close()}
-          id="btn-exit"
-        >
-          <PowerIcon size={22} className="bottom-card-icon" />
-          <div className="bottom-card-text">
-            <span className="bottom-card-title">Salir</span>
-            <span className="bottom-card-sub">Cerrar launcher</span>
+        <div className="bottom-card friends-exit-card" id="btn-exit">
+          <div className="friends-card-left">
+            <div className="friends-ring-wrap">
+              <svg width="110" height="110" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="10" />
+                {isControllerConnected && (
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.92)"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 54}`}
+                    strokeDashoffset={`${2 * Math.PI * 54 * (1 - 0.79)}`}
+                    transform="rotate(-90 60 60)"
+                    style={{ opacity: 0.95 }}
+                  />
+                )}
+              </svg>
+              <div className="friends-ring-center">
+                <img src={controllerImg} alt="controller" className="friends-ring-img" draggable={false} />
+                <span className="friends-ring-pct">79%</span>
+              </div>
+            </div>
+          </div>
+          <div className="friends-card-divider" />
+          <div className="friends-card-right">
+            <div className="friends-header">
+              <SteamIcon size={14} className="friends-steam-icon" />
+              <span>friends</span>
+            </div>
+            <div className="friends-avatars">
+              <div className="friend-avatar" style={{ background: '#ffffff', zIndex: 5 }}><span className="friend-avatar-inner" /></div>
+              <div className="friend-avatar" style={{ background: '#9a9a9a', zIndex: 4 }} />
+              <div className="friend-avatar" style={{ background: '#7a7a7a', zIndex: 3 }} />
+              <div className="friend-avatar" style={{ background: '#5a5a5a', zIndex: 2 }} />
+              <div className="friend-avatar" style={{ background: '#3a3a3a', zIndex: 1 }} />
+            </div>
+            <div className="friends-actions-grid">
+              <div className="friends-row">
+                <button
+                  className="friends-btn fecha-btn"
+                  onClick={(e) => e.stopPropagation()}
+                  title={friendsMusicTitle}
+                >
+                  {friendsMusicTitle}
+                </button>
+                <button
+                  className="friends-btn w-btn"
+                  onClick={(e) => { e.stopPropagation(); handleSelectBackground() }}
+                  title="Cambiar wallpaper del Home"
+                  id="btn-wallpaper"
+                >
+                  W
+                </button>
+              </div>
+              <div className="friends-row">
+                <button className="friends-btn es-btn" onClick={(e) => e.stopPropagation()} title="ES (sin función)">
+                  ES
+                </button>
+                <button className="friends-btn salir-btn" onClick={() => window.close()} title="Salir">
+                  Salir
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
