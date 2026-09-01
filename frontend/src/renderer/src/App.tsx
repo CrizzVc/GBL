@@ -856,35 +856,74 @@ function App(): React.JSX.Element {
   )
 
   // ── Launch game ──
-  const handleLaunchGame = useCallback(async () => {
-    const launchTarget = selectedGame ?? (selectedSteamGame ? {
-      id: `steam-${selectedSteamGame.appid}`,
-      name: selectedSteamGame.name,
-      exePath: `steam://rungameid/${selectedSteamGame.appid}`,
-      playtimeMinutes: Math.round(selectedSteamGame.playtime_forever / 60),
-      lastPlayed: null,
-      createdAt: new Date().toISOString(),
-      color: '#66b2ff',
-      steamAppId: String(selectedSteamGame.appid),
-      isSteam: true,
-      iconDataUrl: selectedSteamGame.iconDataUrl || null,
-      gridImageUrl: selectedSteamGame.gridImageUrl || steamLibraryArtUrl(selectedSteamGame.appid),
-      heroImageUrl: selectedSteamGame.heroImageUrl || steamLibraryArtUrl(selectedSteamGame.appid),
-      logoImageUrl: selectedSteamGame.logoImageUrl || null
-    } as Game : null)
+  const handleLaunchGame = useCallback(async (overrideGameId?: string) => {
+    // Resolver objetivo: prioriza override (corrige bug de estado stale en Steam), luego detail, luego selección
+    let launchTarget: Game | null = null
+
+    const resolveSteamTarget = (appid: string): Game | null => {
+      const steamG = steamLibrary.find((g) => String(g.appid) === String(appid))
+      if (!steamG) return null
+      const installed = Boolean(steamG.installed)
+      return {
+        id: `steam-${steamG.appid}`,
+        name: steamG.name,
+        exePath: installed ? `steam://rungameid/${steamG.appid}` : `steam://install/${steamG.appid}`,
+        playtimeMinutes: Math.round(steamG.playtime_forever / 60),
+        lastPlayed: null,
+        createdAt: new Date().toISOString(),
+        color: '#66b2ff',
+        steamAppId: String(steamG.appid),
+        isSteam: true,
+        iconDataUrl: steamG.iconDataUrl || null,
+        gridImageUrl: steamG.gridImageUrl || steamLibraryArtUrl(steamG.appid),
+        heroImageUrl: steamG.heroImageUrl || steamLibraryArtUrl(steamG.appid),
+        logoImageUrl: steamG.logoImageUrl || null
+      } as Game
+    }
+
+    if (overrideGameId) {
+      if (overrideGameId.startsWith('steam-')) {
+        launchTarget = resolveSteamTarget(overrideGameId.replace(/^steam-/, '')) ?? detailGame
+      } else {
+        launchTarget = games.find((g) => g.id === overrideGameId) ?? null
+      }
+    } else if (detailGame) {
+      // Si hay detalle abierto, ese es el objetivo (corrige Steam que abría otro juego)
+      if (detailGame.isSteam) {
+        const steamResolved = resolveSteamTarget(String(detailGame.steamAppId || detailGame.id.replace(/^steam-/, '')))
+        launchTarget = steamResolved ?? detailGame
+        // asegurar exePath correcto según instalado
+        if (launchTarget && launchTarget.isSteam) {
+          const appid = String(launchTarget.steamAppId || '')
+          const inst = steamLibrary.some((g) => String(g.appid) === appid && g.installed)
+          launchTarget = { ...launchTarget, exePath: inst ? `steam://rungameid/${appid}` : `steam://install/${appid}` }
+        }
+      } else {
+        launchTarget = detailGame
+      }
+    } else if (libraryView && librarySource === 'steam' && selectedSteamGame) {
+      launchTarget = resolveSteamTarget(selectedSteamGame.appid)
+    } else {
+      launchTarget = selectedGame ?? (selectedSteamGame ? resolveSteamTarget(selectedSteamGame.appid) : null)
+    }
 
     if (!launchTarget) return
 
     // Al presionar Jugar, el juego se muestra de primero en el row inmediatamente
     if (!launchTarget.isSteam) {
       setGames((prev) => {
-        if (!prev.some((g) => g.id === launchTarget.id)) return prev
+        if (!prev.some((g) => g.id === launchTarget!.id)) return prev
         const updated = prev.map((g) =>
-          g.id === launchTarget.id ? { ...g, lastPlayed: new Date().toISOString() } : g
+          g.id === launchTarget!.id ? { ...g, lastPlayed: new Date().toISOString() } : g
         )
         window.api.saveGames(updated)
         return updated
       })
+    } else {
+      // Para Steam también asegurar exePath correcto según instalación actual
+      const appid = String(launchTarget.steamAppId || launchTarget.id.replace(/^steam-/, ''))
+      const inst = steamLibrary.some((g) => String(g.appid) === appid && g.installed)
+      launchTarget = { ...launchTarget, exePath: inst ? `steam://rungameid/${appid}` : `steam://install/${appid}` }
     }
 
     setRunningGameId(launchTarget.id)
@@ -894,7 +933,7 @@ function App(): React.JSX.Element {
       console.error('Error launching game:', err)
       setRunningGameId(null)
     }
-  }, [selectedGame, selectedSteamGame, steamLibraryArtUrl])
+  }, [selectedGame, selectedSteamGame, steamLibrary, steamLibraryArtUrl, games, detailGame, libraryView, librarySource])
 
   // ── Open specs modal ──
   const handleOpenSpecs = useCallback(async () => {
@@ -1260,8 +1299,8 @@ function App(): React.JSX.Element {
           e.preventDefault()
           if (selectedGameId === 'library' || !selectedGameId) {
             openLibraryView()
-          } else {
-            handleLaunchGame()
+          } else if (selectedGameId) {
+            handleLaunchGame(selectedGameId)
           }
         }
       }
@@ -1592,7 +1631,7 @@ function App(): React.JSX.Element {
               key={game.id}
               className={`game-card ${selectedGameId === game.id ? 'selected' : ''}`}
               onClick={() => openDetailView(game.id)}
-              onDoubleClick={handleLaunchGame}
+              onDoubleClick={() => handleLaunchGame(game.id)}
               onContextMenu={(e) => handleContextMenu(e, game.id)}
               title={game.name}
               id={`game-card-${game.id}`}
@@ -1760,47 +1799,66 @@ function App(): React.JSX.Element {
       </div>
 
       {/* ── Context Menu ── */}
-      {contextMenu.visible && contextMenu.gameId && (
-        <div
-          className="context-menu"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          <button
-            className="context-menu-item"
-            onClick={() => {
-              setSelectedGameId(contextMenu.gameId)
-              handleLaunchGame()
-            }}
+      {contextMenu.visible && contextMenu.gameId && (() => {
+        const isSteam = contextMenu.gameId!.startsWith('steam-')
+        const steamAppId = isSteam ? contextMenu.gameId!.replace(/^steam-/, '') : null
+        const steamGame = isSteam ? steamLibrary.find((g) => String(g.appid) === String(steamAppId)) : null
+        const steamInstalled = steamGame ? Boolean(steamGame.installed) : false
+        return (
+          <div
+            className="context-menu"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
           >
-            <PlayIcon size={16} /> Jugar
-          </button>
-          <button
-            className="context-menu-item"
-            onClick={() => {
-              if (contextMenu.gameId) openEditGameModal(contextMenu.gameId)
-            }}
-          >
-            <EditIcon size={16} /> Editar
-          </button>
-          <button
-            className="context-menu-item"
-            onClick={() => {
-              if (contextMenu.gameId) openSteamGridModal(contextMenu.gameId)
-            }}
-          >
-            <ImageIcon size={16} /> Buscar Artwork
-          </button>
-          <div className="context-menu-separator" />
-          <button
-            className="context-menu-item danger"
-            onClick={() => {
-              if (contextMenu.gameId) handleDeleteGame(contextMenu.gameId)
-            }}
-          >
-            <TrashIcon size={16} /> Eliminar
-          </button>
-        </div>
-      )}
+            <button
+              className="context-menu-item"
+              onClick={() => {
+                const id = contextMenu.gameId!
+                // Actualiza selección visual según tipo
+                if (isSteam && steamAppId) setSelectedSteamAppId(String(steamAppId))
+                else setSelectedGameId(id)
+                setContextMenu((p) => ({ ...p, visible: false }))
+                handleLaunchGame(id)
+              }}
+            >
+              <PlayIcon size={16} /> {isSteam && !steamInstalled ? 'Descargar' : 'Jugar'}
+            </button>
+            {!isSteam && (
+              <button
+                className="context-menu-item"
+                onClick={() => {
+                  if (contextMenu.gameId) openEditGameModal(contextMenu.gameId)
+                  setContextMenu((p) => ({ ...p, visible: false }))
+                }}
+              >
+                <EditIcon size={16} /> Editar
+              </button>
+            )}
+            <button
+              className="context-menu-item"
+              onClick={() => {
+                if (contextMenu.gameId) openSteamGridModal(contextMenu.gameId)
+                setContextMenu((p) => ({ ...p, visible: false }))
+              }}
+            >
+              <ImageIcon size={16} /> Buscar Artwork
+            </button>
+            {!isSteam && (
+              <>
+                <div className="context-menu-separator" />
+                <button
+                  className="context-menu-item danger"
+                  onClick={() => {
+                    if (contextMenu.gameId) handleDeleteGame(contextMenu.gameId)
+                    setContextMenu((p) => ({ ...p, visible: false }))
+                  }}
+                >
+                  <TrashIcon size={16} /> Eliminar
+                </button>
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Detail View ── */}
       {detailGame && (
@@ -2070,7 +2128,7 @@ function App(): React.JSX.Element {
             <div className="detail-play-actions">
               <button
                 className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
-                onClick={handleLaunchGame}
+                onClick={() => handleLaunchGame(detailGame.id)}
               >
                 <PlayIcon size={20} />
                 {runningGameId === detailGame.id ? 'Ejecutando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
@@ -2361,10 +2419,8 @@ function App(): React.JSX.Element {
                           setSelectedSteamAppId(game.appid)
                           setDetailGameId(`steam-${game.appid}`)
                         }}
-                        onDoubleClick={() => {
-                          setSelectedSteamAppId(game.appid)
-                          void handleLaunchGame()
-                        }}
+                        onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
+                        onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
                       >
                       <div className="library-item-art steam-library-art">
                         <img
@@ -2388,6 +2444,19 @@ function App(): React.JSX.Element {
                         <span className="library-item-playtime">
                           {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
                         </span>
+                      </div>
+                      <div className="library-item-actions">
+                        <button
+                          className="library-action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                            setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
+                          }}
+                          title="Más opciones"
+                        >
+                          <MoreIcon size={14} />
+                        </button>
                       </div>
                       </article>
                     ))
