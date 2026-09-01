@@ -28,6 +28,7 @@ import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
 import { useSystemMedia } from './hooks/useSystemMedia'
 import { playMove, playEnter, playEnterGame, playClose } from './services/soundService'
+import { useGamepadNavigation } from './hooks/useGamepadNavigation'
 
 /* ────────────────────────────────────────────
    Types
@@ -426,6 +427,7 @@ function App(): React.JSX.Element {
   const { nowPlaying: friendsNowPlaying } = useSystemMedia()
   const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
   const [isControllerConnected, setIsControllerConnected] = useState(false)
+  useGamepadNavigation(isControllerConnected)
   useEffect(() => {
     const check = (): void => {
       try {

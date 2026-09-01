@@ -39,7 +39,7 @@ function getWindowsMediaSessionsModule(): any {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       windowsMediaSessionsModule = require(cand)
       return windowsMediaSessionsModule
-    } catch {}
+    } catch { }
   }
   return null
 }
@@ -158,7 +158,7 @@ function stopMediaSessionsBridge(): void {
     mediaSessionsUnsubscribe = null
   }
   const mediaModule = getWindowsMediaSessionsModule()
-  if (mediaModule?.shutdown) mediaModule.shutdown().catch(() => {})
+  if (mediaModule?.shutdown) mediaModule.shutdown().catch(() => { })
 }
 
 function ensureSteamOpenIdServer(): void {
@@ -229,6 +229,26 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  // ── Workaround: en monitores 4K con escalado != 100%, Chromium a veces no
+  // recalcula bien el layout/DPI al entrar o salir de fullscreen (F11 usa el
+  // menú por defecto de Electron -> mainWindow.setFullScreen()). Forzamos un
+  // "nudge" de los bounds para que repinte con las dimensiones correctas, y
+  // avisamos al renderer para que recalcule lo que dependa de window size.
+  const forceLayoutRefresh = (): void => {
+    if (mainWindow.isDestroyed()) return
+    const bounds = mainWindow.getBounds()
+    // Un cambio de 1px y su reversión inmediata basta para forzar el repintado
+    mainWindow.setBounds({ ...bounds, width: bounds.width + 1 })
+    setTimeout(() => {
+      if (mainWindow.isDestroyed()) return
+      mainWindow.setBounds(bounds)
+      mainWindow.webContents.send('force-resize-recalc')
+    }, 30)
+  }
+
+  mainWindow.on('enter-full-screen', forceLayoutRefresh)
+  mainWindow.on('leave-full-screen', forceLayoutRefresh)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -521,7 +541,7 @@ app.whenReady().then(() => {
         thumb = img.resize({ width: WALLPAPER_THUMB_MAX_WIDTH, height: h, quality: 'best' })
       }
       const jpeg = thumb.toJPEG(WALLPAPER_THUMB_QUALITY)
-      try { fs.writeFileSync(cachePath, jpeg) } catch {}
+      try { fs.writeFileSync(cachePath, jpeg) } catch { }
       return `data:image/jpeg;base64,${jpeg.toString('base64')}`
     } catch { return null }
   }
@@ -544,17 +564,17 @@ app.whenReady().then(() => {
             dataUrl = `data:${mime};base64,${data.toString('base64')}`
           }
           out.push({ name: file, path: fullPath, dataUrl, mtime: stat.mtimeMs })
-        } catch {}
+        } catch { }
       }
       out.sort((a, b) => b.mtime - a.mtime)
-    } catch {}
+    } catch { }
     return out
   }
   ipcMain.handle('select-wallpaper-folder', async () => {
     const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     if (result.canceled || !result.filePaths.length) return null
     const folder = result.filePaths[0]
-    try { fs.writeFileSync(getWallpaperFolderConfigPath(), JSON.stringify({ folder }, null, 2), 'utf8') } catch {}
+    try { fs.writeFileSync(getWallpaperFolderConfigPath(), JSON.stringify({ folder }, null, 2), 'utf8') } catch { }
     const images = collectWallpaperImages(folder)
     return { folder, images }
   })
@@ -570,7 +590,7 @@ app.whenReady().then(() => {
     if (!folder) {
       const p = getWallpaperFolderConfigPath()
       if (fs.existsSync(p)) {
-        try { folder = JSON.parse(fs.readFileSync(p, 'utf8')).folder } catch {}
+        try { folder = JSON.parse(fs.readFileSync(p, 'utf8')).folder } catch { }
       }
     }
     if (!folder || !fs.existsSync(folder)) return []
@@ -584,7 +604,7 @@ app.whenReady().then(() => {
     for (const e of ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']) {
       const p = bgBase + e
       if (fs.existsSync(p)) {
-        try { fs.unlinkSync(p) } catch {}
+        try { fs.unlinkSync(p) } catch { }
       }
     }
     try {

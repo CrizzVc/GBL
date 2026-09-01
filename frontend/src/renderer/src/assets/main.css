@@ -2209,91 +2209,91 @@
    ══════════════════════════════════════════ */
 @media (min-width: 1440px) {
   .header-bar {
-   padding: 16px 40px;
+    padding: 16px 40px;
   }
 
   .header-greeting-name {
-   font-size: 15px;
+    font-size: 15px;
   }
 
   .header-clock {
-   font-size: 15px;
-   min-width: 56px;
+    font-size: 15px;
+    min-width: 56px;
   }
 
   .hero-section {
-   padding: 0 52px 32px;
+    padding: 0 52px 32px;
   }
 
   .hero-content {
-   max-width: 520px;
+    max-width: 520px;
   }
 
   .hero-title {
-   font-size: clamp(40px, 2.6vw, 62px);
+    font-size: clamp(40px, 2.6vw, 62px);
   }
 
   .hero-meta {
-   font-size: 15px;
-   gap: 18px;
+    font-size: 15px;
+    gap: 18px;
   }
 
   .btn-play {
-   padding: 12px 34px;
-   font-size: 15px;
+    padding: 12px 34px;
+    font-size: 15px;
   }
 
   .games-row-container {
-   padding: 0 36px 22px;
+    padding: 0 36px 22px;
   }
 
   .game-card {
-   width: clamp(180px, 10vw, 260px);
+    width: clamp(180px, 10vw, 260px);
   }
 
   .bottom-row {
-   padding: 0 36px 28px;
-   gap: 16px;
+    padding: 0 36px 28px;
+    gap: 16px;
   }
 
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-   height: 220px;
+    height: 220px;
   }
 
   .bottom-card-square {
-   width: clamp(220px, 9vw, 320px);
-   max-height: 220px;
+    width: clamp(220px, 9vw, 320px);
+    max-height: 220px;
   }
 }
 
 @media (min-width: 1920px) {
   .hero-section {
-   padding: 0 64px 40px;
+    padding: 0 64px 40px;
   }
 
   .hero-content {
-   max-width: 620px;
+    max-width: 620px;
   }
 
   .games-row-container {
-   padding: 0 40px 26px;
+    padding: 0 40px 26px;
   }
 
   .game-card {
-   width: clamp(200px, 9vw, 300px);
+    width: clamp(200px, 9vw, 300px);
   }
 
   .bottom-row {
-   padding: 0 40px 32px;
-   gap: 18px;
+    padding: 0 40px 32px;
+    gap: 18px;
   }
 
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-   height: 240px;
+    height: 240px;
   }
 }
 

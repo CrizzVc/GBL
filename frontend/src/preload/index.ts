@@ -16,6 +16,16 @@ const api = {
       ipcRenderer.removeListener('game-exited', subscription)
     }
   },
+  // Fuerza a recalcular tamaños en el renderer tras un nudge de bounds del
+  // main process (workaround del desfase de layout al entrar/salir de
+  // fullscreen en monitores 4K con escalado != 100%)
+  onForceResizeRecalc: (callback: () => void) => {
+    const subscription = (): void => callback()
+    ipcRenderer.on('force-resize-recalc', subscription)
+    return () => {
+      ipcRenderer.removeListener('force-resize-recalc', subscription)
+    }
+  },
   // Background image APIs
   selectBackgroundImage: () => ipcRenderer.invoke('select-background-image'),
   getBackgroundImage: () => ipcRenderer.invoke('get-background-image'),
