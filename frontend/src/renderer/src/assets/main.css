@@ -3650,3 +3650,81 @@
     margin: 0 10px;
   }
 }
+
+/* Minimal res: solo círculo visible */
+.friends-exit-card.minimal {
+  justify-content: center;
+  padding: 14px;
+}
+
+.friends-exit-card.minimal .friends-card-left {
+  flex-basis: auto;
+}
+
+.friends-exit-card.minimal .friends-card-divider,
+.friends-exit-card.minimal .friends-card-right {
+  display: none;
+}
+
+/* Wallpaper row — solo en Home, reemplaza games row */
+.wallpaper-row-container {
+  flex-shrink: 0;
+  padding: 0 28px 16px 28px;
+  position: relative;
+  z-index: 10;
+}
+
+.wallpaper-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  scroll-behavior: smooth;
+}
+
+.wallpaper-row::-webkit-scrollbar { height: 4px; }
+
+.wallpaper-card {
+  flex-shrink: 0;
+  width: clamp(140px, 20.5vh, 225px);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--gbl-radius-md);
+  background: var(--gbl-bg-card);
+  border: 2px solid var(--gbl-border);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--gbl-transition-normal);
+  position: relative;
+}
+
+.wallpaper-card:hover {
+  border-color: var(--gbl-border-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--gbl-shadow-md);
+}
+
+.wallpaper-card.selected {
+  border-color: var(--gbl-accent);
+  transform: translateY(-6px);
+}
+
+.wallpaper-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Cuando wallpaper-mode está activo, esconder games row y bottom row */
+.launcher.wallpaper-mode .games-row-container,
+.launcher.wallpaper-mode .bottom-row {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  transform: translateY(12px);
+  transition: max-height 320ms ease, opacity 260ms ease, transform 320ms ease, margin 320ms ease, padding 320ms ease;
+}

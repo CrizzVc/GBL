@@ -20,6 +20,10 @@ const api = {
   selectBackgroundImage: () => ipcRenderer.invoke('select-background-image'),
   getBackgroundImage: () => ipcRenderer.invoke('get-background-image'),
   clearBackgroundImage: () => ipcRenderer.invoke('clear-background-image'),
+  // Wallpaper folder (una sola vez) — para el botón W
+  selectWallpaperFolder: () => ipcRenderer.invoke('select-wallpaper-folder'),
+  getWallpaperFolder: () => ipcRenderer.invoke('get-wallpaper-folder'),
+  getWallpaperImages: (folder?: string) => ipcRenderer.invoke('get-wallpaper-images', folder),
   // Profile APIs
   getProfile: () => ipcRenderer.invoke('get-profile'),
   saveProfile: (profile: { name: string; avatar: string | null }) => ipcRenderer.invoke('save-profile', profile),

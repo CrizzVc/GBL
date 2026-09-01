@@ -448,6 +448,45 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  // ── Wallpaper folder — W (solo Home) / artwork en juego ──
+  const [wallpaperFolder, setWallpaperFolder] = useState<string | null>(null)
+  const [wallpaperImages, setWallpaperImages] = useState<Array<{ name: string; path: string; dataUrl: string; mtime: number }>>([])
+  const [wallpaperMode, setWallpaperMode] = useState(false)
+  const [wallpaperIndex, setWallpaperIndex] = useState(0)
+  const wallpaperRowRef = useRef<HTMLDivElement>(null)
+  const isWallpaperMode = wallpaperMode && isHomeFocused && wallpaperImages.length > 0
+  const selectedWallpaper = isWallpaperMode ? wallpaperImages[wallpaperIndex] ?? null : null
+
+  useEffect(() => {
+    const load = async (): Promise<void> => {
+      try {
+        const folder = await window.api.getWallpaperFolder()
+        if (folder) {
+          setWallpaperFolder(folder)
+          const imgs = await window.api.getWallpaperImages(folder)
+          setWallpaperImages(imgs)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
+
+  useEffect(() => {
+    if (!isHomeFocused) setWallpaperMode(false)
+  }, [isHomeFocused])
+
+  useEffect(() => {
+    if (!isWallpaperMode || !wallpaperRowRef.current) return
+    const target = document.getElementById(`wallpaper-card-${wallpaperIndex}`)
+    if (!target) return
+    const row = wallpaperRowRef.current
+    const targetLeft = target.offsetLeft
+    const targetWidth = target.offsetWidth
+    const rowWidth = row.clientWidth
+    const desiredLeft = targetLeft - (rowWidth - targetWidth) / 2
+    row.scrollTo({ left: Math.max(0, desiredLeft), behavior: 'smooth' })
+  }, [wallpaperIndex, isWallpaperMode, wallpaperImages])
+
   // ── Clock ──
   useEffect(() => {
     const tick = (): void => {
@@ -1250,6 +1289,39 @@ function App(): React.JSX.Element {
     setModal('steamgrid')
   }, [games, steamLibrary])
 
+  const handleWallpaperButton = useCallback(async () => {
+    // En juego: mismo botón edita artwork del juego enfocado
+    if (!isHomeFocused) {
+      const targetId = detailGameId ?? (selectedGameId && selectedGameId !== 'library' ? selectedGameId : null) ?? (selectedGame ? selectedGame.id : null) ?? (detailGame ? detailGame.id : null)
+      if (targetId) {
+        openSteamGridModal(targetId)
+      }
+      return
+    }
+    // En Home: toggle row de wallpapers (solo Home)
+    if (wallpaperFolder && wallpaperImages.length > 0) {
+      setWallpaperMode((v) => !v)
+      return
+    }
+    try {
+      const res = await window.api.selectWallpaperFolder()
+      if (res?.folder && Array.isArray(res.images)) {
+        setWallpaperFolder(res.folder)
+        setWallpaperImages(res.images)
+        setWallpaperIndex(0)
+        setWallpaperMode(true)
+      } else if (res?.folder) {
+        const imgs = await window.api.getWallpaperImages(res.folder)
+        setWallpaperFolder(res.folder)
+        setWallpaperImages(imgs)
+        setWallpaperIndex(0)
+        if (imgs.length > 0) setWallpaperMode(true)
+      }
+    } catch (err) {
+      console.error('Error seleccionando carpeta de wallpapers:', err)
+    }
+  }, [isHomeFocused, detailGameId, selectedGameId, selectedGame, detailGame, wallpaperFolder, wallpaperImages.length, openSteamGridModal])
+
   // ── Keyboard Navigation ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -1311,6 +1383,20 @@ function App(): React.JSX.Element {
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
           setSidebarOpen(false)
         }
+      } else if (isWallpaperMode) {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          setWallpaperIndex((prev) => Math.min(prev + 1, wallpaperImages.length - 1))
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          setWallpaperIndex((prev) => Math.max(prev - 1, 0))
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          setWallpaperMode(false)
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          // Enter en wallpaper no hace nada, solo cambia fondo con focus
+        }
       } else {
         const gameIds = ['library', ...visibleGames.map(g => g.id)]
         const currentIndex = gameIds.indexOf(selectedGameId || 'library')
@@ -1338,7 +1424,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length])
 
   // ── Detail view handlers ──
   const handleCloseDetail = useCallback(() => {
@@ -1441,31 +1527,39 @@ function App(): React.JSX.Element {
     : { background: 'var(--gbl-bg-primary)' }
 
   // ── Background style (con crossfade sin destello negro) ──
-  const bgStyle = selectedGame?.heroImageUrl
+  const wallpaperBg = isWallpaperMode && selectedWallpaper ? selectedWallpaper.dataUrl : null
+  const bgStyle = wallpaperBg
     ? {
-      backgroundImage: `linear-gradient(to bottom, transparent 20%, var(--gbl-bg-primary) 56%), url(${selectedGame.heroImageUrl})`,
-      backgroundSize: 'contain',
-      backgroundPosition: 'top',
+      backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.35) 0%, rgba(12,12,12,0.55) 45%, rgba(12,12,12,0.92) 100%), url(${wallpaperBg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
     }
-    : backgroundImage
+    : selectedGame?.heroImageUrl
       ? {
-        backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.55) 0%, rgba(12,12,12,0.4) 40%, rgba(12,12,12,0.7) 70%, rgba(12,12,12,0.92) 100%), url(${backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundImage: `linear-gradient(to bottom, transparent 20%, var(--gbl-bg-primary) 56%), url(${selectedGame.heroImageUrl})`,
+        backgroundSize: 'contain',
+        backgroundPosition: 'top',
         backgroundRepeat: 'no-repeat'
       }
-      : selectedGame
+      : backgroundImage
         ? {
-          background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
+          backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.55) 0%, rgba(12,12,12,0.4) 40%, rgba(12,12,12,0.7) 70%, rgba(12,12,12,0.92) 100%), url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }
-        : {}
+        : selectedGame
+          ? {
+            background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
+          }
+          : {}
 
   // Crossfade launcher-bg sin espacio en negro: prev conserva imagen anterior hasta que la nueva carga
   const [bgCurrStyle, setBgCurrStyle] = useState<React.CSSProperties>(bgStyle)
   const [bgPrevStyle, setBgPrevStyle] = useState<React.CSSProperties | null>(null)
   const bgKeyRef = useRef<string>('')
-  const bgKey = selectedGame?.heroImageUrl ? `hero:${selectedGame.heroImageUrl}` : backgroundImage ? `custom:${backgroundImage.slice(0, 80)}` : selectedGame ? `color:${selectedGame.color}` : 'default'
+  const bgKey = wallpaperBg ? `wall:${wallpaperBg.slice(0, 80)}` : selectedGame?.heroImageUrl ? `hero:${selectedGame.heroImageUrl}` : backgroundImage ? `custom:${backgroundImage.slice(0, 80)}` : selectedGame ? `color:${selectedGame.color}` : 'default'
   useEffect(() => {
     if (bgKeyRef.current === bgKey) {
       // mismo key pero el objeto bgStyle cambia de referencia — actualizar sin animar
@@ -1474,7 +1568,7 @@ function App(): React.JSX.Element {
     }
     const prev = bgCurrStyle
     const next = bgStyle
-    const heroUrl = selectedGame?.heroImageUrl
+    const heroUrl = wallpaperBg ?? selectedGame?.heroImageUrl
     const doSwap = (): void => {
       setBgPrevStyle(prev)
       setBgCurrStyle(next)
@@ -1534,7 +1628,7 @@ function App(): React.JSX.Element {
   )
 
   return (
-    <div className={`launcher ${showIdleMode ? 'idle' : ''}`}>
+    <div className={`launcher ${showIdleMode ? 'idle' : ''} ${isWallpaperMode ? 'wallpaper-mode' : ''}`}>
       {/* ── Sidebar ── */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
@@ -1633,7 +1727,26 @@ function App(): React.JSX.Element {
       </section>
 
       {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
-      <MusicPlayer isVisible={isHomeFocused} isIdle={showIdleMode} />
+      <MusicPlayer isVisible={isHomeFocused && !isWallpaperMode} isIdle={showIdleMode} />
+
+      {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) ── */}
+      {isWallpaperMode && (
+        <div className="wallpaper-row-container">
+          <div className="wallpaper-row" ref={wallpaperRowRef}>
+            {wallpaperImages.map((img, idx) => (
+              <div
+                key={img.path}
+                id={`wallpaper-card-${idx}`}
+                className={`wallpaper-card ${idx === wallpaperIndex ? 'selected' : ''}`}
+                onClick={() => setWallpaperIndex(idx)}
+                title={img.name}
+              >
+                <img src={img.dataUrl} alt={img.name} className="wallpaper-card-img" draggable={false} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Game cards row ── */}
       <div className="games-row-container">
@@ -1815,7 +1928,7 @@ function App(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="bottom-card friends-exit-card" id="btn-exit">
+        <div className={`bottom-card friends-exit-card ${windowSize.width === 1380 && windowSize.height === 830 ? 'minimal' : ''}`} id="btn-exit">
           <div className="friends-card-left">
             <div className="friends-ring-wrap">
               <svg width="110" height="110" viewBox="0 0 120 120">
@@ -1866,11 +1979,11 @@ function App(): React.JSX.Element {
                 </button>
                 <button
                   className="friends-btn w-btn"
-                  onClick={(e) => { e.stopPropagation(); handleSelectBackground() }}
-                  title="Cambiar wallpaper del Home"
+                  onClick={(e) => { e.stopPropagation(); handleWallpaperButton() }}
+                  title={isHomeFocused ? 'Elegir carpeta de wallpapers (una vez) / Mostrar wallpapers' : 'Editar artwork del juego'}
                   id="btn-wallpaper"
                 >
-                  W
+                  <ImageIcon size={16} />
                 </button>
               </div>
               <div className="friends-row">

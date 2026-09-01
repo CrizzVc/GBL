@@ -491,6 +491,68 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
+  // ── Wallpaper folder (una sola vez) ──
+  const getWallpaperFolderConfigPath = (): string => join(app.getPath('userData'), 'wallpaper-folder.json')
+  ipcMain.handle('select-wallpaper-folder', async () => {
+    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+    if (result.canceled || !result.filePaths.length) return null
+    const folder = result.filePaths[0]
+    try { fs.writeFileSync(getWallpaperFolderConfigPath(), JSON.stringify({ folder }, null, 2), 'utf8') } catch {}
+    const images: Array<{ name: string; path: string; dataUrl: string; mtime: number }> = []
+    try {
+      const files = fs.readdirSync(folder)
+      for (const file of files) {
+        const ext = extname(file).toLowerCase()
+        if (['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'].includes(ext)) {
+          const fullPath = join(folder, file)
+          try {
+            const stat = fs.statSync(fullPath)
+            const data = fs.readFileSync(fullPath)
+            const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
+            images.push({ name: file, path: fullPath, dataUrl: `data:${mime};base64,${data.toString('base64')}`, mtime: stat.mtimeMs })
+          } catch {}
+        }
+      }
+      images.sort((a, b) => b.mtime - a.mtime)
+    } catch {}
+    return { folder, images }
+  })
+  ipcMain.handle('get-wallpaper-folder', async () => {
+    const p = getWallpaperFolderConfigPath()
+    if (fs.existsSync(p)) {
+      try { const d = JSON.parse(fs.readFileSync(p, 'utf8')); return d.folder || null } catch { return null }
+    }
+    return null
+  })
+  ipcMain.handle('get-wallpaper-images', async (_event, folderArg?: string) => {
+    let folder: string | null = folderArg || null
+    if (!folder) {
+      const p = getWallpaperFolderConfigPath()
+      if (fs.existsSync(p)) {
+        try { folder = JSON.parse(fs.readFileSync(p, 'utf8')).folder } catch {}
+      }
+    }
+    if (!folder || !fs.existsSync(folder)) return []
+    const images: Array<{ name: string; path: string; dataUrl: string; mtime: number }> = []
+    try {
+      const files = fs.readdirSync(folder)
+      for (const file of files) {
+        const ext = extname(file).toLowerCase()
+        if (['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'].includes(ext)) {
+          const fullPath = join(folder, file)
+          try {
+            const stat = fs.statSync(fullPath)
+            const data = fs.readFileSync(fullPath)
+            const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
+            images.push({ name: file, path: fullPath, dataUrl: `data:${mime};base64,${data.toString('base64')}`, mtime: stat.mtimeMs })
+          } catch {}
+        }
+      }
+      images.sort((a, b) => b.mtime - a.mtime)
+    } catch {}
+    return images
+  })
+
   // ── User profile handlers ──
   const getProfilePath = (): string => {
     return join(app.getPath('userData'), 'profile.json')
