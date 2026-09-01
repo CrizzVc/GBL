@@ -2252,19 +2252,23 @@
   }
 
   .bottom-row {
-   padding: 0 36px 28px;
+   width: min(100%, 1180px);
+   margin: 0 auto;
+   padding: 0 0 28px;
    gap: 16px;
   }
 
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-   height: 220px;
+   height: 200px;
   }
 
   .bottom-card-square {
-   width: clamp(220px, 9vw, 320px);
-   max-height: 220px;
+   width: 100%;
+   max-width: 220px;
+   min-width: 0;
+   max-height: 200px;
   }
 }
 
@@ -2286,14 +2290,19 @@
   }
 
   .bottom-row {
-   padding: 0 40px 32px;
-   gap: 18px;
+   width: min(100%, 1100px);
+   padding: 0 0 30px;
+   gap: 14px;
   }
 
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-   height: 240px;
+   height: 180px;
+  }
+
+  .bottom-card-square {
+   max-width: 200px;
   }
 }
 
