@@ -2406,10 +2406,10 @@ function App(): React.JSX.Element {
           </div>
           <div className="friends-card-divider" />
           <div className="friends-card-right">
-            {/* <div className="friends-header">
-              <img src="https://cdn2.steamgriddb.com/icon_thumb/21ca6d0cf2f25c4dbb35d8dc0b679c3f.png" alt="" style={{ width: '20px', height: '20px' }} />
+            <div className="friends-header">
+              <SteamIcon size={14} className="friends-steam-icon" />
               <span>friends</span>
-            </div> */}
+            </div>
             <div className="friends-avatars">
               {friendsAvatarSlots.map((friend, index) => (
                 <div
@@ -2432,31 +2432,60 @@ function App(): React.JSX.Element {
               ))}
             </div>
             <div className="friends-actions-grid">
-              <div className="friends-row">
-                <button
-                  className="friends-btn fecha-btn"
-                  onClick={(e) => e.stopPropagation()}
-                  title={friendsMusicTitle}
-                >
-                  {friendsMusicTitle}
-                </button>
-                <button
-                  className="friends-btn w-btn"
-                  onClick={(e) => { e.stopPropagation(); handleWallpaperButton() }}
-                  title={isHomeFocused ? 'Elegir carpeta de wallpapers (una vez) / Mostrar wallpapers' : 'Editar artwork del juego'}
-                  id="btn-wallpaper"
-                >
-                  <ImageIcon size={16} />
-                </button>
-              </div>
-              <div className="friends-row">
-                <button className="friends-btn es-btn" onClick={(e) => e.stopPropagation()} title="ES (sin función)">
-                  ES
-                </button>
-                <button className="friends-btn salir-btn" onClick={() => window.close()} title="Salir">
-                  Salir
-                </button>
-              </div>
+              {windowSize.width < 1600 ? (
+                <>
+                  <div className="friends-row compact">
+                    <button
+                      className="friends-btn fecha-btn"
+                      onClick={(e) => e.stopPropagation()}
+                      title={friendsMusicTitle}
+                    >
+                      {friendsMusicTitle}
+                    </button>
+                  </div>
+                  <div className="friends-row compact">
+                    <button
+                      className="friends-btn w-btn"
+                      onClick={(e) => { e.stopPropagation(); handleWallpaperButton() }}
+                      title={isHomeFocused ? 'Elegir carpeta de wallpapers (una vez) / Mostrar wallpapers' : 'Editar artwork del juego'}
+                      id="btn-wallpaper"
+                    >
+                      <ImageIcon size={16} />
+                    </button>
+                    <button className="friends-btn salir-btn" onClick={() => window.close()} title="Salir">
+                      Salir
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="friends-row">
+                    <button
+                      className="friends-btn fecha-btn"
+                      onClick={(e) => e.stopPropagation()}
+                      title={friendsMusicTitle}
+                    >
+                      {friendsMusicTitle}
+                    </button>
+                    <button
+                      className="friends-btn w-btn"
+                      onClick={(e) => { e.stopPropagation(); handleWallpaperButton() }}
+                      title={isHomeFocused ? 'Elegir carpeta de wallpapers (una vez) / Mostrar wallpapers' : 'Editar artwork del juego'}
+                      id="btn-wallpaper"
+                    >
+                      <ImageIcon size={16} />
+                    </button>
+                  </div>
+                  <div className="friends-row">
+                    <button className="friends-btn es-btn" onClick={(e) => e.stopPropagation()} title="ES (sin función)">
+                      ES
+                    </button>
+                    <button className="friends-btn salir-btn" onClick={() => window.close()} title="Salir">
+                      Salir
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

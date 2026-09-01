@@ -3211,8 +3211,10 @@
 }
 
 .music-player.idle .music-player-cover {
-  width: 300px;
-  height: 300px;
+  width: min(300px, 42vw);
+  height: min(300px, 42vw);
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 18px;
   font-size: 56px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
@@ -3225,6 +3227,26 @@
 
 .music-player.idle .music-player-cover-system {
   font-size: 64px;
+}
+
+@media (max-width: 1080px) {
+  .music-player-wrapper.idle {
+    padding: 0 12px 18px;
+  }
+
+  .music-player.idle:not(.empty) {
+    max-width: 300px;
+  }
+
+  .music-player.idle .music-player-cover {
+    width: min(240px, 40vw);
+    height: min(240px, 40vw);
+    border-radius: 16px;
+  }
+
+  .music-player.idle .music-player-cover-system {
+    font-size: 48px;
+  }
 }
 
 .music-player-main {
@@ -3852,6 +3874,60 @@
 
 .friends-btn.fecha-btn {
   color: rgba(255, 255, 255, 0.38);
+}
+
+@media (max-width: 1600px) {
+  .friends-btn.es-btn {
+    display: none;
+  }
+
+  .friends-row.compact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 56px;
+    gap: 8px;
+  }
+
+  .friends-row.compact .friends-btn {
+    flex: 1;
+    max-width: none;
+  }
+
+  .friends-row.compact .friends-btn.fecha-btn {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .friends-row.compact .friends-btn.w-btn {
+    flex: 0 0 56px;
+    max-width: 56px;
+  }
+
+  .friends-row.compact .friends-btn.salir-btn {
+    flex: 1.15 1 auto;
+    min-width: 72px;
+  }
+}
+
+@media (max-width: 1440px) {
+  .friends-exit-card {
+    justify-content: center;
+    padding: 14px;
+  }
+
+  .friends-card-left {
+    flex-basis: auto;
+  }
+
+  .friends-card-divider,
+  .friends-card-right {
+    display: none;
+  }
+
+  .friends-ring-wrap {
+    width: 94px;
+    height: 94px;
+  }
 }
 
 @media (max-width: 900px) {
