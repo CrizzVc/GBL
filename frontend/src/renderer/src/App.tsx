@@ -138,8 +138,9 @@ function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridIma
 
 const sortGamesByNewestFirst = (items: Game[]): Game[] =>
   [...items].sort((a, b) => {
-    const aDate = new Date(a.createdAt || a.lastPlayed || 0).getTime()
-    const bDate = new Date(b.createdAt || b.lastPlayed || 0).getTime()
+    // El último jugado va primero; si no tiene lastPlayed se usa createdAt
+    const aDate = new Date(a.lastPlayed || a.createdAt || 0).getTime()
+    const bDate = new Date(b.lastPlayed || b.createdAt || 0).getTime()
     return bDate - aDate
   })
 
@@ -357,13 +358,13 @@ function App(): React.JSX.Element {
   const [isIdle, setIsIdle] = useState(false)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const showIdleMode = isIdle && !libraryView && !detailGameId && modal === null
+  const showIdleMode = isIdle && isHomeFocused
 
   const scheduleIdle = useCallback(() => {
-    if (libraryView || detailGameId || modal !== null) return
+    if (!isHomeFocused) return
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     idleTimerRef.current = setTimeout(() => setIsIdle(true), 120000)
-  }, [libraryView, detailGameId, modal])
+  }, [isHomeFocused])
 
   const exitIdle = useCallback(() => {
     setIsIdle(false)
@@ -412,10 +413,10 @@ function App(): React.JSX.Element {
     }
   }, [showIdleMode, exitIdle])
 
-  // Salir de idle al cambiar de foco/modal/biblioteca
+  // Salir de idle al cambiar de foco/modal/biblioteca/home
   useEffect(() => {
-    if (modal !== null || detailGameId || libraryView) setIsIdle(false)
-  }, [modal, detailGameId, libraryView])
+    if (modal !== null || detailGameId || libraryView || !isHomeFocused) setIsIdle(false)
+  }, [modal, detailGameId, libraryView, isHomeFocused])
 
   // ── Clock ──
   useEffect(() => {
@@ -873,6 +874,18 @@ function App(): React.JSX.Element {
     } as Game : null)
 
     if (!launchTarget) return
+
+    // Al presionar Jugar, el juego se muestra de primero en el row inmediatamente
+    if (!launchTarget.isSteam) {
+      setGames((prev) => {
+        if (!prev.some((g) => g.id === launchTarget.id)) return prev
+        const updated = prev.map((g) =>
+          g.id === launchTarget.id ? { ...g, lastPlayed: new Date().toISOString() } : g
+        )
+        window.api.saveGames(updated)
+        return updated
+      })
+    }
 
     setRunningGameId(launchTarget.id)
     try {
