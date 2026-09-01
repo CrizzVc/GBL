@@ -2406,10 +2406,10 @@ function App(): React.JSX.Element {
           </div>
           <div className="friends-card-divider" />
           <div className="friends-card-right">
-            <div className="friends-header">
+            {/* <div className="friends-header">
               <SteamIcon size={14} className="friends-steam-icon" />
               <span>friends</span>
-            </div>
+            </div> */}
             <div className="friends-avatars">
               {friendsAvatarSlots.map((friend, index) => (
                 <div
