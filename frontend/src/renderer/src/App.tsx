@@ -475,7 +475,7 @@ function App(): React.JSX.Element {
   const { nowPlaying: friendsNowPlaying } = useSystemMedia()
   const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
   const [isControllerConnected, setIsControllerConnected] = useState(false)
-  useGamepadNavigation(isControllerConnected)
+  useGamepadNavigation(isControllerConnected && !runningGameId)
   useEffect(() => {
     const check = (): void => {
       try {
