@@ -37,7 +37,30 @@ const api = {
     steamId64: string | null
   }) => ipcRenderer.invoke('save-steam-account', steamAccount),
   openSteamOpenId: () => ipcRenderer.invoke('open-steam-openid'),
-  getSteamInstallationStatus: (appIds: string[]) => ipcRenderer.invoke('get-steam-installation-status', appIds)
+  getSteamInstallationStatus: (appIds: string[]) => ipcRenderer.invoke('get-steam-installation-status', appIds),
+  // System Media (API del PC) — puente nativo como WPS5
+  getSystemMedia: () => ipcRenderer.invoke('get-system-media'),
+  controlSystemMedia: (action: string, target?: any) => ipcRenderer.invoke('control-system-media', action, target),
+  // WPS5-compat — usado por systemMediaService
+  getMediaSessions: () => ipcRenderer.invoke('get-media-sessions'),
+  mediaControl: (action: string, target?: any) => ipcRenderer.invoke('media-control', action, target),
+  onMediaSessionsChanged: (callback: (sessions: any[]) => void) => {
+    const sub = (_event: any, sessions: any[]) => callback(sessions)
+    ipcRenderer.on('media-sessions-changed', sub)
+    return () => ipcRenderer.removeListener('media-sessions-changed', sub)
+  }
+}
+
+// Compat: WPS5 referencia usa window.electronAPI
+const electronAPIExtended = {
+  ...electronAPI,
+  getMediaSessions: () => ipcRenderer.invoke('get-media-sessions'),
+  mediaControl: (action: string, target?: any) => ipcRenderer.invoke('media-control', action, target),
+  onMediaSessionsChanged: (callback: (sessions: any[]) => void) => {
+    const sub = (_event: any, sessions: any[]) => callback(sessions)
+    ipcRenderer.on('media-sessions-changed', sub)
+    return () => ipcRenderer.removeListener('media-sessions-changed', sub)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
@@ -46,6 +69,7 @@ const api = {
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('electronAPI', electronAPIExtended)
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {
     console.error(error)
@@ -53,6 +77,8 @@ if (process.contextIsolated) {
 } else {
   // @ts-ignore (define in dts)
   window.electron = electronAPI
+  // @ts-ignore (define in dts)
+  window.electronAPI = electronAPIExtended
   // @ts-ignore (define in dts)
   window.api = api
 }

@@ -11,9 +11,10 @@ import {
   PowerIcon,
   TrashIcon,
   EditIcon,
-  FolderIcon,
-  BooksIcon
+  FolderIcon
 } from './components/Icons'
+
+import MusicPlayer from './components/MusicPlayer'
 
 import steamLogo from './assets/tiendas/steamLogo.png'
 import epicLogo from './assets/tiendas/EpicLogo.png'
@@ -346,6 +347,38 @@ function App(): React.JSX.Element {
   const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
   const compactDetailReviewLayout =
     Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
+
+  // Reproductor visible solo cuando se enfoca "Home" (tarjeta Biblioteca) en la vista principal
+  const isHomeFocused =
+    !libraryView && !detailGameId && modal === null && (selectedGameId === 'library' || (!selectedGameId && games.length === 0))
+
+  // ── Inactividad: 2 min sin interacción esconden row de juegos y button cards, deja player en grande (200x200)
+  const [isIdle, setIsIdle] = useState(false)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const resetIdleTimer = useCallback(() => {
+    if (libraryView || detailGameId) return
+    setIsIdle(false)
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = setTimeout(() => setIsIdle(true), 120000)
+  }, [libraryView, detailGameId])
+
+  useEffect(() => {
+    resetIdleTimer()
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart', 'click']
+    const handler = (): void => resetIdleTimer()
+    events.forEach((ev) => window.addEventListener(ev, handler, { passive: true }))
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, handler))
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    }
+  }, [resetIdleTimer])
+
+  // Salir de idle al cambiar de foco/modal
+  useEffect(() => {
+    if (modal !== null || detailGameId) setIsIdle(false)
+  }, [modal, detailGameId, libraryView])
+
+  const showIdleMode = isIdle && !libraryView && !detailGameId && modal === null
 
   // ── Clock ──
   useEffect(() => {
@@ -1314,7 +1347,7 @@ function App(): React.JSX.Element {
   )
 
   return (
-    <div className="launcher">
+    <div className={`launcher ${showIdleMode ? 'idle' : ''}`}>
       {/* ── Sidebar ── */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
@@ -1419,6 +1452,9 @@ function App(): React.JSX.Element {
           </div>
         )}
       </section>
+
+      {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
+      <MusicPlayer isVisible={isHomeFocused} isIdle={showIdleMode} />
 
       {/* ── Game cards row ── */}
       <div className="games-row-container">

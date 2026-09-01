@@ -3,6 +3,11 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 declare global {
   interface Window {
     electron: ElectronAPI
+    electronAPI: ElectronAPI & {
+      getMediaSessions: () => Promise<any[]>
+      mediaControl: (action: string, target?: any) => Promise<any>
+      onMediaSessionsChanged: (callback: (sessions: any[]) => void) => () => void
+    }
     api: {
       getSystemInfo: () => Promise<{
         platform: string
@@ -58,6 +63,24 @@ declare global {
         steamId64: string | null
       }>
       getSteamInstallationStatus: (appIds: string[]) => Promise<Record<string, boolean>>
+      getSystemMedia: () => Promise<{
+        hasMedia: boolean
+        title?: string
+        artist?: string
+        albumTitle?: string
+        albumArtist?: string
+        playbackStatus?: string
+        playbackType?: string
+        positionSeconds?: number
+        endSeconds?: number
+        thumbnail?: string
+        error?: string
+        raw?: any
+      }>
+      controlSystemMedia: (action: 'play' | 'pause' | 'toggle' | 'next' | 'previous' | 'prev' | string, target?: any) => Promise<{ success: boolean; error?: string }>
+      getMediaSessions: () => Promise<any[]>
+      mediaControl: (action: string, target?: any) => Promise<any>
+      onMediaSessionsChanged: (callback: (sessions: any[]) => void) => () => void
     }
   }
 }

@@ -23,6 +23,143 @@ let steamOpenIdServer: http.Server | null = null
 let steamOpenIdResolve: ((value: SteamOpenIdResult) => void) | null = null
 let steamOpenIdReject: ((reason?: unknown) => void) | null = null
 
+// ── System Media (windows-media-sessions + win-media-control) como en WPS5 referencia ──
+let mainWindowRef: BrowserWindow | null = null
+let mediaSessionsUnsubscribe: (() => void) | null = null
+let mediaSessionsPollTimer: NodeJS.Timeout | null = null
+let windowsMediaSessionsModule: any = null
+let winMediaControlModulePromise: Promise<any> | null = null
+
+function getWindowsMediaSessionsModule(): any {
+  if (windowsMediaSessionsModule) return windowsMediaSessionsModule
+  const candidates = ['windows-media-sessions', join(__dirname, '..', '..', 'node_modules', 'windows-media-sessions')]
+  for (const cand of candidates) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      windowsMediaSessionsModule = require(cand)
+      return windowsMediaSessionsModule
+    } catch {}
+  }
+  return null
+}
+
+function getWinMediaControlModule(): Promise<any> {
+  if (process.platform !== 'win32') return Promise.resolve(null)
+  if (!winMediaControlModulePromise) {
+    winMediaControlModulePromise = import('win-media-control')
+      .then((m) => m)
+      .catch((err) => {
+        console.warn('[MediaControl] win-media-control no disponible:', (err as Error).message)
+        winMediaControlModulePromise = null
+        return null
+      })
+  }
+  return winMediaControlModulePromise
+}
+
+function resolveMediaControlApp(target: any): string | undefined {
+  if (!target || typeof target !== 'object') return undefined
+  const appName = String(target.appName || '').trim()
+  if (appName) {
+    const lower = appName.toLowerCase()
+    if (lower.includes('chrome') || lower.includes('youtube')) return 'Chrome'
+    if (lower.includes('spotify')) return 'Spotify'
+    if (lower.includes('firefox')) return 'Firefox'
+    if (lower.includes('edge')) return 'Edge'
+    if (lower.includes('groove')) return 'Groove'
+    return appName
+  }
+  const aumid = String(target.sourceAppUserModelId || '').trim()
+  return aumid || undefined
+}
+
+async function sendMediaControlAction(action: string, target: any): Promise<any> {
+  if (process.platform !== 'win32') return { success: false }
+  const media = await getWinMediaControlModule()
+  if (!media) return { success: false, error: 'win-media-control unavailable' }
+  const fnByAction: Record<string, any> = {
+    play_pause: media.togglePlayPause,
+    play: media.togglePlayPause,
+    pause: media.togglePlayPause,
+    toggle: media.togglePlayPause,
+    next: media.next,
+    prev: media.previous,
+    previous: media.previous
+  }
+  const fn = fnByAction[action]
+  if (!fn) return { success: false, error: 'unknown action' }
+  const app = resolveMediaControlApp(target)
+  try {
+    let result = app !== undefined ? await fn(app) : await fn()
+    let ok = Array.isArray(result?.success) && result.success.length > 0
+    if (!ok && app !== undefined) {
+      result = await fn()
+      ok = Array.isArray(result?.success) && result.success.length > 0
+    }
+    setTimeout(broadcastMediaSessions, 350)
+    return { success: ok, ...result }
+  } catch (err: any) {
+    console.warn('[MediaControl]', action, err.message)
+    return { success: false, error: err.message }
+  }
+}
+
+async function fetchMediaSessionsForRenderer(): Promise<any[]> {
+  let sessions: any[] = []
+  const mediaModule = getWindowsMediaSessionsModule()
+  if (process.platform === 'win32' && mediaModule?.getAllSessions) {
+    try {
+      sessions = await mediaModule.getAllSessions()
+    } catch (err: any) {
+      console.warn('[MediaSessions] fetch:', err.message)
+    }
+  }
+  return sessions
+}
+
+function broadcastMediaSessions(): void {
+  fetchMediaSessionsForRenderer()
+    .then((sessions) => {
+      if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+        mainWindowRef.webContents.send('media-sessions-changed', sessions)
+      }
+    })
+    .catch((err: any) => console.warn('[MediaSessions] broadcast:', err.message))
+}
+
+function startMediaSessionsBridge(): void {
+  if (process.platform !== 'win32') return
+  const mediaModule = getWindowsMediaSessionsModule()
+  if (!mediaModule) {
+    console.warn('[MediaSessions] Paquete no instalado. Ejecuta: npm install windows-media-sessions')
+    mediaSessionsPollTimer = setInterval(broadcastMediaSessions, 2500)
+    return
+  }
+  try {
+    broadcastMediaSessions()
+    if (mediaModule.onSessionsChanged) {
+      mediaSessionsUnsubscribe = mediaModule.onSessionsChanged(() => broadcastMediaSessions())
+    }
+    mediaSessionsPollTimer = setInterval(broadcastMediaSessions, 2500)
+  } catch (err: any) {
+    console.warn('[MediaSessions] No disponible:', err.message)
+    mediaSessionsPollTimer = setInterval(broadcastMediaSessions, 2500)
+  }
+}
+
+function stopMediaSessionsBridge(): void {
+  if (mediaSessionsPollTimer) {
+    clearInterval(mediaSessionsPollTimer)
+    mediaSessionsPollTimer = null
+  }
+  if (mediaSessionsUnsubscribe) {
+    mediaSessionsUnsubscribe()
+    mediaSessionsUnsubscribe = null
+  }
+  const mediaModule = getWindowsMediaSessionsModule()
+  if (mediaModule?.shutdown) mediaModule.shutdown().catch(() => {})
+}
+
 function ensureSteamOpenIdServer(): void {
   if (steamOpenIdServer) return
 
@@ -96,6 +233,12 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    broadcastMediaSessions()
+  })
+
+  mainWindowRef = mainWindow
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
@@ -643,6 +786,46 @@ app.whenReady().then(() => {
     })
   })
 
+  // ── System Media IPC (bridge nativo como WPS5) ──
+  ipcMain.handle('get-media-sessions', async () => {
+    try {
+      return await fetchMediaSessionsForRenderer()
+    } catch (err: any) {
+      console.warn('[MediaSessions] get-media-sessions:', err.message)
+      return []
+    }
+  })
+
+  ipcMain.handle('media-control', async (_event, action: string, target: any) => {
+    if (!['play_pause', 'next', 'prev', 'play', 'pause', 'toggle', 'previous'].includes(action)) return { success: false }
+    // normaliza a play_pause para los handlers del WPS5
+    const norm = action === 'play' || action === 'pause' || action === 'toggle' ? 'play_pause' : action === 'previous' ? 'prev' : action
+    return sendMediaControlAction(norm, target)
+  })
+
+  // Compat wrappers para el MusicPlayer actual (getSystemMedia / controlSystemMedia)
+  ipcMain.handle('get-system-media', async () => {
+    const sessions = await fetchMediaSessionsForRenderer()
+    if (sessions.length === 0) return { hasMedia: false }
+    const first = sessions[0]
+    return {
+      hasMedia: true,
+      title: first.title,
+      artist: first.artist,
+      albumTitle: first.albumTitle,
+      thumbnail: first.thumbnail,
+      playbackStatus: first.playbackStatus,
+      positionSeconds: (first.timeline?.positionMs ?? 0) / 1000,
+      endSeconds: (first.timeline?.durationMs ?? 0) / 1000,
+      raw: sessions
+    }
+  })
+  ipcMain.handle('control-system-media', async (_event, action: string, target: any) => {
+    const norm = action === 'play' || action === 'pause' || action === 'toggle' ? 'play_pause' : action === 'previous' ? 'prev' : action
+    return sendMediaControlAction(norm, target)
+  })
+
+  startMediaSessionsBridge()
   createWindow()
 
   app.on('activate', function () {
@@ -656,9 +839,14 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  stopMediaSessionsBridge()
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  stopMediaSessionsBridge()
 })
 
 // In this file you can include the rest of your app's specific main process
