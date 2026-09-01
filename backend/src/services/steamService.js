@@ -256,6 +256,61 @@ export async function resolveSteamId(apiKey, steamIdentifier) {
   return trimmed;
 }
 
+export async function getSteamFriends({ key, steamId }) {
+  const friendsKey = `friends:${key}:${steamId}`;
+  const cached = getCached(friendsKey);
+  if (cached) return cached;
+
+  try {
+    const listRes = await fetch(
+      `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=${encodeURIComponent(key)}&steamid=${encodeURIComponent(steamId)}&relationship=friend`
+    );
+    if (!listRes.ok) {
+      throw new Error(`Steam friends error ${listRes.status}`);
+    }
+
+    const listJson = await listRes.json();
+    const friends = Array.isArray(listJson?.friendslist?.friends) ? listJson.friendslist.friends : [];
+    if (!friends.length) {
+      setCache(friendsKey, []);
+      return [];
+    }
+
+    const limitedFriends = friends.slice(0, 100);
+    const friendIds = limitedFriends.map((friend) => String(friend.steamid));
+    const summariesRes = await fetch(
+      `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${encodeURIComponent(key)}&steamids=${encodeURIComponent(friendIds.join(','))}`
+    );
+    if (!summariesRes.ok) {
+      throw new Error(`Steam friend summaries error ${summariesRes.status}`);
+    }
+
+    const summariesJson = await summariesRes.json();
+    const players = Array.isArray(summariesJson?.response?.players) ? summariesJson.response.players : [];
+    const playersById = new Map(players.map((player) => [String(player.steamid), player]));
+
+    const mappedFriends = limitedFriends
+      .map((friend) => {
+        const player = playersById.get(String(friend.steamid));
+        const avatarUrl = player?.avatarfull || player?.avatar || null;
+        return {
+          steamid: String(friend.steamid),
+          personaname: player?.personaname || 'Steam friend',
+          avatar: player?.avatar || null,
+          avatarfull: avatarUrl,
+          profileurl: player?.profileurl || null
+        };
+      })
+      .filter((friend) => Boolean(friend.avatarfull));
+
+    setCache(friendsKey, mappedFriends);
+    return mappedFriends;
+  } catch (err) {
+    console.error('[SteamService] Error obteniendo amigos:', err.message);
+    return [];
+  }
+}
+
 export async function getSteamLibrary({ key, steamId }) {
   const libraryKey = `library:${key}:${steamId}`;
   const cached = getCached(libraryKey);

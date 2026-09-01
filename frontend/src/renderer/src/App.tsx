@@ -131,7 +131,15 @@ interface SteamLibraryGame {
   logoImageUrl?: string | null
   iconDataUrl?: string | null
 }
-
+ 
+interface SteamFriend {
+  steamid: string
+  personaname: string
+  avatar?: string | null
+  avatarfull?: string | null
+  profileurl?: string | null
+}
+ 
 type SteamGridArtType = 'grids' | 'square_grids' | 'heroes' | 'logos' | 'icons'
 type LibrarySource = 'local' | 'steam'
 
@@ -309,6 +317,7 @@ function App(): React.JSX.Element {
     accountName: '',
     steamId64: null
   })
+  const [steamFriends, setSteamFriends] = useState<SteamFriend[]>([])
   const [steamLibrary, setSteamLibrary] = useState<SteamLibraryGame[]>([])
   const [steamLibraryLoading, setSteamLibraryLoading] = useState(false)
 
@@ -381,6 +390,10 @@ function App(): React.JSX.Element {
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
+  const friendsAvatarSlots = useMemo(
+    () => Array.from({ length: 5 }, (_, index) => steamFriends[index] ?? null),
+    [steamFriends]
+  )
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const selectedSteamGame = useMemo(
     () => steamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? null,
@@ -707,14 +720,52 @@ function App(): React.JSX.Element {
     }
   }, [librarySource, steamAccount])
 
+  const loadSteamFriends = useCallback(async (): Promise<void> => {
+    if (!steamAccount.linked || !steamAccount.apiKey || !steamAccount.steamId) {
+      setSteamFriends([])
+      return
+    }
+
+    try {
+      const query = new URLSearchParams({
+        key: steamAccount.apiKey,
+        steamId: steamAccount.steamId
+      })
+
+      const res = await fetch(`${BACKEND_URL}/api/steam/friends?${query.toString()}`)
+      if (!res.ok) {
+        setSteamFriends([])
+        return
+      }
+
+      const friends = await res.json()
+      const normalizedFriends = (Array.isArray(friends) ? friends : [])
+        .map((friend: SteamFriend) => ({
+          steamid: String(friend.steamid),
+          personaname: friend.personaname || 'Steam friend',
+          avatar: friend.avatar || null,
+          avatarfull: friend.avatarfull || friend.avatar || null,
+          profileurl: friend.profileurl || null
+        }))
+        .filter((friend) => Boolean(friend.avatarfull))
+
+      setSteamFriends(normalizedFriends)
+    } catch (err) {
+      console.error('Error loading Steam friends:', err)
+      setSteamFriends([])
+    }
+  }, [steamAccount])
+
   useEffect(() => {
     if (steamAccount.linked) {
       void loadSteamLibrary()
+      void loadSteamFriends()
     } else {
       setSteamLibrary([])
+      setSteamFriends([])
       setSelectedSteamAppId(null)
     }
-  }, [steamAccount, loadSteamLibrary])
+  }, [steamAccount, loadSteamLibrary, loadSteamFriends])
 
   // ── Store carousel auto-advance (paused on hover) ──
   useEffect(() => {
@@ -2355,16 +2406,30 @@ function App(): React.JSX.Element {
           </div>
           <div className="friends-card-divider" />
           <div className="friends-card-right">
-            <div className="friends-header">
-              <SteamIcon size={14} className="friends-steam-icon" />
+            {/* <div className="friends-header">
+              <img src="https://cdn2.steamgriddb.com/icon_thumb/21ca6d0cf2f25c4dbb35d8dc0b679c3f.png" alt="" style={{ width: '20px', height: '20px' }} />
               <span>friends</span>
-            </div>
+            </div> */}
             <div className="friends-avatars">
-              <div className="friend-avatar" style={{ background: '#ffffff', zIndex: 5 }}><span className="friend-avatar-inner" /></div>
-              <div className="friend-avatar" style={{ background: '#9a9a9a', zIndex: 4 }} />
-              <div className="friend-avatar" style={{ background: '#7a7a7a', zIndex: 3 }} />
-              <div className="friend-avatar" style={{ background: '#5a5a5a', zIndex: 2 }} />
-              <div className="friend-avatar" style={{ background: '#3a3a3a', zIndex: 1 }} />
+              {friendsAvatarSlots.map((friend, index) => (
+                <div
+                  key={friend ? friend.steamid : `friend-slot-${index}`}
+                  className={`friend-avatar ${friend ? '' : 'empty'}`}
+                  style={{ zIndex: 5 - index }}
+                  title={friend ? friend.personaname : 'Vacío'}
+                >
+                  {friend ? (
+                    <img
+                      src={friend.avatarfull || friend.avatar || ''}
+                      alt={friend.personaname}
+                      className="friend-avatar-image"
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="friend-avatar-empty" />
+                  )}
+                </div>
+              ))}
             </div>
             <div className="friends-actions-grid">
               <div className="friends-row">

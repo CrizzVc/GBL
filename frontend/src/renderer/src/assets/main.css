@@ -3757,8 +3757,8 @@
 }
 
 .friend-avatar {
-  width: 32px;
-  height: 32px;
+  width: 23%;
+  height: 23%;
   border-radius: 50%;
   border: 2px solid #0f0f0f;
   margin-left: -8px;
@@ -3768,31 +3768,33 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .friend-avatar:first-child {
   margin-left: 0;
 }
 
-.friend-avatar-inner {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #0f0f0f;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  position: relative;
+.friend-avatar.empty {
+  background: rgba(255, 255, 255, 0.04);
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
-.friend-avatar-inner::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 16px;
-  height: 8px;
-  border-radius: 0 0 10px 10px;
-  background: rgba(255, 255, 255, 0.9);
+.friend-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.friend-avatar-empty {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: block;
 }
 
 .friends-actions-grid {
