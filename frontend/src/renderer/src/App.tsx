@@ -2320,17 +2320,6 @@ function App(): React.JSX.Element {
                   ) : (
                     <div className="quick-app-fallback">{app.name.charAt(0).toUpperCase()}</div>
                   )}
-                  <button
-                    type="button"
-                    className="quick-app-edit-btn"
-                    aria-label={`Editar ${app.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      void handleEditQuickApp(app.id)
-                    }}
-                  >
-                    <EditIcon size={12} />
-                  </button>
                 </div>
               )
             })}
