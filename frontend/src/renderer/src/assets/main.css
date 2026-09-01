@@ -3680,6 +3680,8 @@
   overflow-x: auto;
   padding: 8px 4px;
   scroll-behavior: smooth;
+  will-change: scroll-position;
+  content-visibility: auto;
 }
 
 .wallpaper-row::-webkit-scrollbar { height: 4px; }
@@ -3695,6 +3697,8 @@
   cursor: pointer;
   transition: all var(--gbl-transition-normal);
   position: relative;
+  will-change: transform, border-color;
+  contain: layout style;
 }
 
 .wallpaper-card:hover {

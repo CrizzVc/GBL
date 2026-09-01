@@ -1,8 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
 import { join, dirname, extname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as fs from 'fs'
+import * as crypto from 'crypto'
 import { spawn } from 'child_process'
 import * as http from 'http'
 import { URL } from 'url'
@@ -491,30 +492,70 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
-  // ── Wallpaper folder (una sola vez) ──
+  // ── Wallpaper folder (una sola vez) — optimizado con thumbnails cacheados ──
   const getWallpaperFolderConfigPath = (): string => join(app.getPath('userData'), 'wallpaper-folder.json')
+  const WALLPAPER_THUMB_CACHE_DIR = join(app.getPath('userData'), 'wallpaper-thumb-cache')
+  const WALLPAPER_THUMB_MAX_WIDTH = 360
+  const WALLPAPER_THUMB_QUALITY = 72
+  const ensureWallpaperThumbCache = (): void => {
+    if (!fs.existsSync(WALLPAPER_THUMB_CACHE_DIR)) fs.mkdirSync(WALLPAPER_THUMB_CACHE_DIR, { recursive: true })
+  }
+  const getWallpaperThumbPath = (sourcePath: string, mtime: number): string => {
+    const hash = crypto.createHash('md5').update(`${sourcePath}|${mtime}|${WALLPAPER_THUMB_MAX_WIDTH}`).digest('hex')
+    return join(WALLPAPER_THUMB_CACHE_DIR, `${hash}.jpg`)
+  }
+  const getWallpaperThumbDataUrl = (sourcePath: string, mtime: number): string | null => {
+    try {
+      ensureWallpaperThumbCache()
+      const cachePath = getWallpaperThumbPath(sourcePath, mtime)
+      if (fs.existsSync(cachePath)) {
+        const data = fs.readFileSync(cachePath)
+        return `data:image/jpeg;base64,${data.toString('base64')}`
+      }
+      const img = nativeImage.createFromPath(sourcePath)
+      if (img.isEmpty()) return null
+      const { width, height } = img.getSize()
+      let thumb = img
+      if (width > WALLPAPER_THUMB_MAX_WIDTH) {
+        const h = Math.max(1, Math.round(height * (WALLPAPER_THUMB_MAX_WIDTH / width)))
+        thumb = img.resize({ width: WALLPAPER_THUMB_MAX_WIDTH, height: h, quality: 'best' })
+      }
+      const jpeg = thumb.toJPEG(WALLPAPER_THUMB_QUALITY)
+      try { fs.writeFileSync(cachePath, jpeg) } catch {}
+      return `data:image/jpeg;base64,${jpeg.toString('base64')}`
+    } catch { return null }
+  }
+  const collectWallpaperImages = (folder: string): Array<{ name: string; path: string; dataUrl: string; mtime: number }> => {
+    const out: Array<{ name: string; path: string; dataUrl: string; mtime: number }> = []
+    try {
+      const files = fs.readdirSync(folder)
+      for (const file of files) {
+        const ext = extname(file).toLowerCase()
+        if (!['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'].includes(ext)) continue
+        const fullPath = join(folder, file)
+        try {
+          const stat = fs.statSync(fullPath)
+          // Usa thumbnail cacheado para el row (rápido), solo fallback a original si falla
+          const thumb = getWallpaperThumbDataUrl(fullPath, stat.mtimeMs)
+          let dataUrl: string | null = thumb
+          if (!dataUrl) {
+            const data = fs.readFileSync(fullPath)
+            const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
+            dataUrl = `data:${mime};base64,${data.toString('base64')}`
+          }
+          out.push({ name: file, path: fullPath, dataUrl, mtime: stat.mtimeMs })
+        } catch {}
+      }
+      out.sort((a, b) => b.mtime - a.mtime)
+    } catch {}
+    return out
+  }
   ipcMain.handle('select-wallpaper-folder', async () => {
     const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     if (result.canceled || !result.filePaths.length) return null
     const folder = result.filePaths[0]
     try { fs.writeFileSync(getWallpaperFolderConfigPath(), JSON.stringify({ folder }, null, 2), 'utf8') } catch {}
-    const images: Array<{ name: string; path: string; dataUrl: string; mtime: number }> = []
-    try {
-      const files = fs.readdirSync(folder)
-      for (const file of files) {
-        const ext = extname(file).toLowerCase()
-        if (['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'].includes(ext)) {
-          const fullPath = join(folder, file)
-          try {
-            const stat = fs.statSync(fullPath)
-            const data = fs.readFileSync(fullPath)
-            const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
-            images.push({ name: file, path: fullPath, dataUrl: `data:${mime};base64,${data.toString('base64')}`, mtime: stat.mtimeMs })
-          } catch {}
-        }
-      }
-      images.sort((a, b) => b.mtime - a.mtime)
-    } catch {}
+    const images = collectWallpaperImages(folder)
     return { folder, images }
   })
   ipcMain.handle('get-wallpaper-folder', async () => {
@@ -533,24 +574,7 @@ app.whenReady().then(() => {
       }
     }
     if (!folder || !fs.existsSync(folder)) return []
-    const images: Array<{ name: string; path: string; dataUrl: string; mtime: number }> = []
-    try {
-      const files = fs.readdirSync(folder)
-      for (const file of files) {
-        const ext = extname(file).toLowerCase()
-        if (['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'].includes(ext)) {
-          const fullPath = join(folder, file)
-          try {
-            const stat = fs.statSync(fullPath)
-            const data = fs.readFileSync(fullPath)
-            const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
-            images.push({ name: file, path: fullPath, dataUrl: `data:${mime};base64,${data.toString('base64')}`, mtime: stat.mtimeMs })
-          } catch {}
-        }
-      }
-      images.sort((a, b) => b.mtime - a.mtime)
-    } catch {}
-    return images
+    return collectWallpaperImages(folder)
   })
   ipcMain.handle('set-wallpaper-as-background', async (_event, sourcePath: string) => {
     if (!sourcePath || !fs.existsSync(sourcePath)) return null

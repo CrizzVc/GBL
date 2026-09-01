@@ -1296,11 +1296,13 @@ function App(): React.JSX.Element {
       if (targetId) {
         openSteamGridModal(targetId)
       }
+      window.setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 0)
       return
     }
     // En Home: toggle row de wallpapers (solo Home)
     if (wallpaperFolder && wallpaperImages.length > 0) {
       setWallpaperMode((v) => !v)
+      window.setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 0)
       return
     }
     try {
@@ -1319,6 +1321,8 @@ function App(): React.JSX.Element {
       }
     } catch (err) {
       console.error('Error seleccionando carpeta de wallpapers:', err)
+    } finally {
+      window.setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 0)
     }
   }, [isHomeFocused, detailGameId, selectedGameId, selectedGame, detailGame, wallpaperFolder, wallpaperImages.length, openSteamGridModal])
 
@@ -1334,6 +1338,8 @@ function App(): React.JSX.Element {
       console.error('Error fijando fondo:', err)
       setBackgroundImage(img.dataUrl)
       setWallpaperMode(false)
+    } finally {
+      window.setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 0)
     }
   }, [wallpaperImages, wallpaperIndex])
 
