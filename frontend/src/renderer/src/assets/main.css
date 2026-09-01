@@ -3259,14 +3259,19 @@
   }
 
   .music-player.idle:not(.empty) {
-    max-width: 290px;
-    width: min(290px, 72vw);
+    max-width: 190px;
+    width: min(190px, 0vw);
   }
 
   .music-player.idle .music-player-cover {
-    width: min(220px, 32vw, 24vh);
-    height: min(220px, 32vw, 24vh);
+    width: min(240px, 32vw, 29vh);
+    height: min(220px, 32vw, 28vh);
   }
+  
+  .music-btn.idle .cast {
+   display: none;
+  }
+
 }
 
 .music-player-main {
