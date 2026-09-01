@@ -308,6 +308,7 @@ function App(): React.JSX.Element {
   const previousLibraryIndexRef = useRef<number | null>(null)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
+  const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const selectedSteamGame = useMemo(
     () => steamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? null,
@@ -341,7 +342,7 @@ function App(): React.JSX.Element {
       logoImageUrl: steamGame.logoImageUrl || null
     }
   }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
-  const currentLibraryItems = librarySource === 'steam' ? steamLibrary : games
+  const currentLibraryItems = librarySource === 'steam' ? steamLibrary : sortedLibraryGames
   const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
   const compactDetailReviewLayout =
     Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
@@ -386,7 +387,7 @@ function App(): React.JSX.Element {
             createdAt: game.createdAt || game.lastPlayed || new Date().toISOString()
           }))
           setGames(normalizedGames)
-          setSelectedGameId(normalizedGames[0]?.id ?? null)
+          setSelectedGameId('library')
         }
       } catch (err) {
         console.error('Error loading games:', err)
@@ -1435,9 +1436,8 @@ function App(): React.JSX.Element {
           >
             <div className="library-card-content">
               <div className="library-card-icon-wrapper">
-                <BooksIcon size={64} />
+                <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3.1875L21.4501 10.275L21.0001 11.625H20.25V20.25H3.75005V11.625H3.00005L2.55005 10.275L12 3.1875ZM5.25005 10.125V18.75H18.75V10.125L12 5.0625L5.25005 10.125Z" fill="#ffffff" ></path> </g></svg>
               </div>
-              <span className="library-card-label">My games & apps</span>
             </div>
           </div>
 
@@ -2237,7 +2237,7 @@ function App(): React.JSX.Element {
                       </div>
                       </article>
                     ))
-                    : games.map((game) => (
+                    : sortedLibraryGames.map((game) => (
                       <article
                         key={game.id}
                         id={`library-game-${game.id}`}
