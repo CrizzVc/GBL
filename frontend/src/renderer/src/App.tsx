@@ -52,6 +52,8 @@ interface Game {
   logoImageUrl?: string | null
 }
 
+type QuickAppKind = 'game' | 'program'
+
 interface QuickApp {
   id: string
   name: string
@@ -60,6 +62,7 @@ interface QuickApp {
   iconDataUrl: string | null
   lastPlayed: string | null
   createdAt: string
+  kind: QuickAppKind
 }
 
 type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | 'steamgrid' | null
@@ -158,7 +161,11 @@ function getStoredQuickApps(): QuickApp[] {
     const stored = localStorage.getItem(QUICK_APPS_STORAGE_KEY)
     if (!stored) return []
     const parsed = JSON.parse(stored)
-    return Array.isArray(parsed) ? parsed.filter((app): app is QuickApp => !!app && typeof app.id === 'string' && typeof app.name === 'string' && typeof app.exePath === 'string') : []
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((app): app is QuickApp => !!app && typeof app.id === 'string' && typeof app.name === 'string' && typeof app.exePath === 'string')
+      // Compat: apps guardadas antes de introducir "kind" se tratan como 'game' (comportamiento previo)
+      .map((app) => ({ ...app, kind: app.kind === 'program' ? 'program' : 'game' }))
   } catch {
     return []
   }
@@ -205,23 +212,23 @@ function formatPlaytime(minutes: number): string {
 
 async function fetchAutoArtworkUrl(appName: string): Promise<string | null> {
   try {
-   const searchRes = await fetch(`${BACKEND_URL}/api/steamgrid/search?term=${encodeURIComponent(appName)}`)
-   if (!searchRes.ok) return null
+    const searchRes = await fetch(`${BACKEND_URL}/api/steamgrid/search?term=${encodeURIComponent(appName)}`)
+    if (!searchRes.ok) return null
 
-   const searchData = await searchRes.json()
-   if (!Array.isArray(searchData) || searchData.length === 0) return null
+    const searchData = await searchRes.json()
+    if (!Array.isArray(searchData) || searchData.length === 0) return null
 
-   const gameId = searchData[0].id
-   const gridsRes = await fetch(`${BACKEND_URL}/api/steamgrid/grids/${gameId}`)
-   if (!gridsRes.ok) return null
+    const gameId = searchData[0].id
+    const gridsRes = await fetch(`${BACKEND_URL}/api/steamgrid/grids/${gameId}`)
+    if (!gridsRes.ok) return null
 
-   const grids = await gridsRes.json()
-   if (!Array.isArray(grids) || grids.length === 0) return null
+    const grids = await gridsRes.json()
+    if (!Array.isArray(grids) || grids.length === 0) return null
 
-   return grids[0].url || null
+    return grids[0].url || null
   } catch (err) {
-   console.error('Error auto-fetching artwork:', err)
-   return null
+    console.error('Error auto-fetching artwork:', err)
+    return null
   }
 }
 
@@ -310,6 +317,16 @@ function App(): React.JSX.Element {
 
   // Quick access apps state
   const [quickApps, setQuickApps] = useState<QuickApp[]>(getStoredQuickApps())
+  // Paso intermedio: tras elegir el ejecutable, se pregunta si es Juego o Programa
+  // antes de guardar (evita segunda ventana de explorador y define el comportamiento al lanzar)
+  const [pendingQuickApp, setPendingQuickApp] = useState<{
+    mode: 'add' | 'edit'
+    editId?: string
+    filePath: string
+    name: string
+    iconDataUrl: string | null
+    autoArtworkUrl: string | null
+  } | null>(null)
 
   // User profile state
   const [profileName, setProfileName] = useState('')
@@ -892,6 +909,9 @@ function App(): React.JSX.Element {
     }
   }, [formName])
 
+  // Solo abre el explorador de archivos UNA vez. El artwork se resuelve
+  // automáticamente (SteamGridDB / icono del .exe); ya no se pide una segunda
+  // imagen manualmente aquí (eso generaba el "segundo explorador").
   const handleAddQuickApp = useCallback(async () => {
     const filePath = await window.api.selectGameFile()
     if (!filePath) return
@@ -900,20 +920,15 @@ function App(): React.JSX.Element {
     const fileName = filePath.split(/[\\/]/).pop() || 'App'
     const appName = fileName.replace(/\.[^.]+$/, '') || 'App'
     const autoArtworkUrl = await fetchAutoArtworkUrl(appName)
-    const artworkUrl = await window.api.selectBackgroundImage()
 
-    const newApp: QuickApp = {
-      id: generateId(),
+    setPendingQuickApp({
+      mode: 'add',
+      filePath,
       name: appName,
-      exePath: filePath,
-      artworkUrl: artworkUrl || autoArtworkUrl || iconDataUrl || null,
       iconDataUrl: iconDataUrl || null,
-      lastPlayed: null,
-      createdAt: new Date().toISOString()
-    }
-
-    saveQuickApps([...quickApps, newApp])
-  }, [quickApps, saveQuickApps])
+      autoArtworkUrl
+    })
+  }, [])
 
   const handleEditQuickApp = useCallback(async (appId: string) => {
     const target = quickApps.find((app) => app.id === appId)
@@ -924,24 +939,70 @@ function App(): React.JSX.Element {
 
     const iconDataUrl = await window.api.getFileIcon(filePath)
     const appName = filePath.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') || target.name
-    const customArtworkUrl = await window.api.selectBackgroundImage()
     const autoArtworkUrl = await fetchAutoArtworkUrl(appName)
 
-    const updatedApps = quickApps.map((app) => app.id === appId
-      ? {
-          ...app,
-          name: appName,
-          exePath: filePath,
-          artworkUrl: customArtworkUrl || autoArtworkUrl || app.artworkUrl || iconDataUrl || null,
-          iconDataUrl: iconDataUrl || app.iconDataUrl || null
-        }
-      : app)
+    setPendingQuickApp({
+      mode: 'edit',
+      editId: appId,
+      filePath,
+      name: appName,
+      iconDataUrl: iconDataUrl || target.iconDataUrl || null,
+      autoArtworkUrl
+    })
+  }, [quickApps])
 
-    saveQuickApps(updatedApps)
-  }, [quickApps, saveQuickApps])
+  // Confirma el tipo (Juego / Programa) elegido en el modal y persiste la app rápida
+  const finalizeQuickApp = useCallback((kind: QuickAppKind) => {
+    if (!pendingQuickApp) return
+
+    if (pendingQuickApp.mode === 'add') {
+      const newApp: QuickApp = {
+        id: generateId(),
+        name: pendingQuickApp.name,
+        exePath: pendingQuickApp.filePath,
+        artworkUrl: pendingQuickApp.autoArtworkUrl || pendingQuickApp.iconDataUrl || null,
+        iconDataUrl: pendingQuickApp.iconDataUrl,
+        lastPlayed: null,
+        createdAt: new Date().toISOString(),
+        kind
+      }
+      saveQuickApps([...quickApps, newApp])
+    } else if (pendingQuickApp.editId) {
+      const updatedApps = quickApps.map((app) => app.id === pendingQuickApp.editId
+        ? {
+          ...app,
+          name: pendingQuickApp.name,
+          exePath: pendingQuickApp.filePath,
+          iconDataUrl: pendingQuickApp.iconDataUrl || app.iconDataUrl,
+          artworkUrl: pendingQuickApp.autoArtworkUrl || app.artworkUrl,
+          kind
+        }
+        : app)
+      saveQuickApps(updatedApps)
+    }
+
+    setPendingQuickApp(null)
+  }, [pendingQuickApp, quickApps, saveQuickApps])
 
   const handleLaunchQuickApp = useCallback(async (app: QuickApp) => {
     const now = new Date().toISOString()
+
+    // Programas: se abren directo, sin crear una entrada en "games", así que
+    // nunca aparecen en el row de recientes/biblioteca y por lo tanto nunca
+    // disparan el Detail View de juegos.
+    if (app.kind === 'program') {
+      saveQuickApps(quickApps.map((a) => (a.id === app.id ? { ...a, lastPlayed: now } : a)))
+      playEnter()
+      try {
+        await window.api.launchGame(`quick-${app.id}`, app.exePath)
+      } catch (err) {
+        console.error('Error launching program:', err)
+      }
+      return
+    }
+
+    // Juegos: comportamiento original — crean/actualizan una entrada en "games"
+    // (id `quick-<id>`) para que aparezcan en recientes y puedan abrir el Detail View.
     const quickGameId = `quick-${app.id}`
     const newGame: Game = {
       id: quickGameId,
@@ -969,6 +1030,7 @@ function App(): React.JSX.Element {
       return updatedGames
     })
 
+    saveQuickApps(quickApps.map((a) => (a.id === app.id ? { ...a, lastPlayed: now } : a)))
     setSelectedGameId(quickGameId)
     setRunningGameId(quickGameId)
     playEnterGame()
@@ -979,7 +1041,7 @@ function App(): React.JSX.Element {
       console.error('Error launching quick app:', err)
       setRunningGameId(null)
     }
-  }, [])
+  }, [quickApps, saveQuickApps])
 
   // ── Add game ──
   const handleAddGame = useCallback(async () => {
@@ -1419,6 +1481,47 @@ function App(): React.JSX.Element {
       return
     }
 
+    if (sgdbTargetGameId.startsWith('quick-')) {
+      const quickId = sgdbTargetGameId.replace(/^quick-/, '')
+
+      // 1) La app rápida es la fuente de verdad de la tarjeta de abajo:
+      //    aquí es donde antes se perdía el cambio de portada.
+      const updatedApps = quickApps.map((app) =>
+        app.id === quickId
+          ? {
+            ...app,
+            ...(artField === 'iconDataUrl'
+              ? { iconDataUrl: image.url }
+              : { artworkUrl: image.url })
+          }
+          : app
+      )
+      saveQuickApps(updatedApps)
+
+      // 2) Si ya se lanzó antes (existe como Game con id `quick-<id>`), sincroniza
+      //    también esa entrada para que el Hero/Detail view reflejen el mismo artwork.
+      if (games.some((g) => g.id === sgdbTargetGameId)) {
+        const syncedGames = games.map((g) =>
+          g.id === sgdbTargetGameId
+            ? {
+              ...g,
+              [artField]: image.url,
+              ...((sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? { gridImageUrl: image.url } : {})
+            }
+            : g
+        )
+        saveGames(syncedGames)
+      }
+
+      setModal(null)
+      setSgdbSearch('')
+      setSgdbResults([])
+      setSgdbSelectedGame(null)
+      setSgdbImages([])
+      setSgdbTargetGameId(null)
+      return
+    }
+
     const newGames = games.map((g) =>
       g.id === sgdbTargetGameId
         ? {
@@ -1438,7 +1541,7 @@ function App(): React.JSX.Element {
     setSgdbSelectedGame(null)
     setSgdbImages([])
     setSgdbTargetGameId(null)
-  }, [sgdbTargetGameId, sgdbSelectedGame, sgdbArtType, games, saveGames])
+  }, [sgdbTargetGameId, sgdbSelectedGame, sgdbArtType, games, saveGames, quickApps, saveQuickApps])
 
   const openSteamGridModal = useCallback((gameId: string) => {
     if (gameId.startsWith('steam-')) {
@@ -1447,6 +1550,22 @@ function App(): React.JSX.Element {
       if (!steamGame) return
       setSgdbTargetGameId(gameId)
       setSgdbSearch(steamGame.name)
+      setSgdbArtType('grids')
+      setSgdbResults([])
+      setSgdbSelectedGame(null)
+      setSgdbImages([])
+      setModal('steamgrid')
+      return
+    }
+
+    if (gameId.startsWith('quick-')) {
+      // La app rápida es la fuente de verdad del nombre/artwork, exista o no
+      // todavía una entrada en "games" (solo se crea al lanzarla la primera vez).
+      const quickId = gameId.replace(/^quick-/, '')
+      const quickApp = quickApps.find((app) => app.id === quickId)
+      if (!quickApp) return
+      setSgdbTargetGameId(gameId)
+      setSgdbSearch(quickApp.name)
       setSgdbArtType('grids')
       setSgdbResults([])
       setSgdbSelectedGame(null)
@@ -1464,7 +1583,7 @@ function App(): React.JSX.Element {
     setSgdbSelectedGame(null)
     setSgdbImages([])
     setModal('steamgrid')
-  }, [games, steamLibrary])
+  }, [games, steamLibrary, quickApps])
 
   const handleWallpaperButton = useCallback(async () => {
     // En juego: mismo botón edita artwork del juego enfocado
@@ -2192,9 +2311,9 @@ function App(): React.JSX.Element {
                   onContextMenu={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    void handleEditQuickApp(app.id)
+                    handleContextMenu(e, `quick-${app.id}`)
                   }}
-                  title={`${app.name} — clic derecho para cambiar arte`}
+                  title={`${app.name} — clic derecho para más opciones`}
                 >
                   {app.artworkUrl ? (
                     <img src={app.artworkUrl} alt={app.name} draggable={false} />
@@ -2292,9 +2411,12 @@ function App(): React.JSX.Element {
       {/* ── Context Menu ── */}
       {contextMenu.visible && contextMenu.gameId && (() => {
         const isSteam = contextMenu.gameId!.startsWith('steam-')
+        const isQuickApp = contextMenu.gameId!.startsWith('quick-') && !games.some((g) => g.id === contextMenu.gameId)
         const steamAppId = isSteam ? contextMenu.gameId!.replace(/^steam-/, '') : null
         const steamGame = isSteam ? steamLibrary.find((g) => String(g.appid) === String(steamAppId)) : null
         const steamInstalled = steamGame ? Boolean(steamGame.installed) : false
+        const quickAppId = contextMenu.gameId!.startsWith('quick-') ? contextMenu.gameId!.replace(/^quick-/, '') : null
+        const quickAppTarget = quickAppId ? quickApps.find((a) => a.id === quickAppId) : null
         return (
           <div
             className="context-menu"
@@ -2304,16 +2426,25 @@ function App(): React.JSX.Element {
               className="context-menu-item"
               onClick={() => {
                 const id = contextMenu.gameId!
+                setContextMenu((p) => ({ ...p, visible: false }))
+                if (quickAppTarget) {
+                  void handleLaunchQuickApp(quickAppTarget)
+                  return
+                }
                 // Actualiza selección visual según tipo
                 if (isSteam && steamAppId) setSelectedSteamAppId(String(steamAppId))
                 else setSelectedGameId(id)
-                setContextMenu((p) => ({ ...p, visible: false }))
                 handleLaunchGame(id)
               }}
             >
-              <PlayIcon size={16} /> {isSteam && !steamInstalled ? 'Descargar' : 'Jugar'}
+              <PlayIcon size={16} />{' '}
+              {isSteam && !steamInstalled
+                ? 'Descargar'
+                : quickAppTarget?.kind === 'program'
+                  ? 'Abrir'
+                  : 'Jugar'}
             </button>
-            {!isSteam && (
+            {!isSteam && !isQuickApp && !quickAppTarget && (
               <button
                 className="context-menu-item"
                 onClick={() => {
@@ -2322,6 +2453,17 @@ function App(): React.JSX.Element {
                 }}
               >
                 <EditIcon size={16} /> Editar
+              </button>
+            )}
+            {quickAppTarget && (
+              <button
+                className="context-menu-item"
+                onClick={() => {
+                  if (quickAppId) void handleEditQuickApp(quickAppId)
+                  setContextMenu((p) => ({ ...p, visible: false }))
+                }}
+              >
+                <EditIcon size={16} /> Cambiar archivo
               </button>
             )}
             <button
@@ -2339,7 +2481,11 @@ function App(): React.JSX.Element {
                 <button
                   className="context-menu-item danger"
                   onClick={() => {
-                    if (contextMenu.gameId) handleDeleteGame(contextMenu.gameId)
+                    if (quickAppId && quickAppTarget) {
+                      saveQuickApps(quickApps.filter((a) => a.id !== quickAppId))
+                    } else if (contextMenu.gameId) {
+                      handleDeleteGame(contextMenu.gameId)
+                    }
                     setContextMenu((p) => ({ ...p, visible: false }))
                   }}
                 >
@@ -2679,6 +2825,41 @@ function App(): React.JSX.Element {
                 <div className="spec-label">Tiempo Activo</div>
                 <div className="spec-value">{systemInfo.uptime}</div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Quick App: elegir tipo (Juego / Programa) ── */}
+      {pendingQuickApp && (
+        <div className="modal-overlay" onClick={() => setPendingQuickApp(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">¿Qué es "{pendingQuickApp.name}"?</h2>
+              <button className="modal-close" onClick={() => setPendingQuickApp(null)}>
+                <CloseIcon size={20} />
+              </button>
+            </div>
+            {(pendingQuickApp.autoArtworkUrl || pendingQuickApp.iconDataUrl) && (
+              <div className="icon-preview">
+                <img src={pendingQuickApp.autoArtworkUrl || pendingQuickApp.iconDataUrl || ''} alt={pendingQuickApp.name} />
+                <span className="icon-preview-text">Artwork detectado automáticamente</span>
+              </div>
+            )}
+            <p className="settings-profile-hint" style={{ margin: '14px 0' }}>
+              Los <strong>juegos</strong> aparecen en recientes/biblioteca y al seleccionarlos abren la pantalla de
+              detalles. Los <strong>programas</strong> se abren directo con un clic, sin pantalla de detalles.
+            </p>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setPendingQuickApp(null)}>
+                Cancelar
+              </button>
+              <button className="btn-secondary" onClick={() => finalizeQuickApp('program')}>
+                Es un Programa
+              </button>
+              <button className="btn-primary" onClick={() => finalizeQuickApp('game')}>
+                Es un Juego
+              </button>
             </div>
           </div>
         </div>
