@@ -1695,11 +1695,31 @@ function App(): React.JSX.Element {
   // ── Keyboard Navigation (con sonidos UI) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if (contextMenu.visible && (e.key === 'ContextMenu' || e.key === 'Escape')) {
+        e.preventDefault()
+        setContextMenu((prev) => ({ ...prev, visible: false }))
+        return
+      }
+
       if (libraryView) {
         if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
           setLibraryView(false)
+        }
+        if (e.key === 'BrowserBack' || e.key === 'BrowserForward') {
+          e.preventDefault()
+          const nextSource: LibrarySource = e.key === 'BrowserBack' ? 'local' : 'steam'
+          if (nextSource !== librarySource) {
+            playMove()
+            setLibrarySource(nextSource)
+            if (nextSource === 'steam' && steamLibrary.length > 0) {
+              setSelectedSteamAppId(String(steamLibrary[0].appid))
+            } else if (nextSource === 'local' && games.length > 0) {
+              setSelectedGameId(games[0]?.id ?? null)
+            }
+          }
+          return
         }
         if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown') && currentLibraryItems.length > 0) {
           e.preventDefault()
@@ -1748,6 +1768,12 @@ function App(): React.JSX.Element {
         return
       }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      if (e.key === 'GamepadTouchpad' && isHomeFocused) {
+        e.preventDefault()
+        setIsIdle((prev) => !prev)
+        return
+      }
 
       if (sidebarOpen) {
         if (e.key === 'ArrowDown') {
@@ -1836,7 +1862,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {

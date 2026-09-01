@@ -9,6 +9,10 @@ type NavKey =
   | 'Escape'
   | 'MediaTrackPrevious'
   | 'MediaTrackNext'
+  | 'BrowserBack'
+  | 'BrowserForward'
+  | 'ContextMenu'
+  | 'GamepadTouchpad'
 
 const DEADZONE = 0.4
 const INITIAL_DELAY_MS = 380 // demora antes de empezar a repetir al mantener presionado
@@ -16,7 +20,9 @@ const REPEAT_INTERVAL_MS = 150 // velocidad de repetición (typematic) para nave
 
 // Mapeo estándar del Gamepad API (layout tipo Xbox/PlayStation en "standard mapping")
 // 12-15: D-pad arriba/abajo/izquierda/derecha · 0: A / Cross · 1: B / Circle
-// 4: L1/LB · 5: R1/RB → control de música (pista anterior/siguiente)
+// 4: L1/LB · 5: R1/RB → cambiar biblioteca/Steam
+// 6: L2/LT · 7: R2/RT → control de música (pista anterior/siguiente)
+// 8: Select/Back · 16/17: touchpad (según mando)
 const BUTTON_MAP: Record<number, NavKey> = {
   12: 'ArrowUp',
   13: 'ArrowDown',
@@ -24,8 +30,13 @@ const BUTTON_MAP: Record<number, NavKey> = {
   15: 'ArrowRight',
   0: 'Enter',
   1: 'Escape',
-  4: 'MediaTrackPrevious',
-  5: 'MediaTrackNext'
+  4: 'BrowserBack',
+  5: 'BrowserForward',
+  6: 'MediaTrackPrevious',
+  7: 'MediaTrackNext',
+  8: 'ContextMenu',
+  16: 'GamepadTouchpad',
+  17: 'GamepadTouchpad'
 }
 
 // Enter/Escape no deben "repetirse" solo por mantener el botón presionado
@@ -57,7 +68,11 @@ export function useGamepadNavigation(enabled: boolean = true): void {
     Enter: { next: 0, fired: false },
     Escape: { next: 0, fired: false },
     MediaTrackPrevious: { next: 0, fired: false },
-    MediaTrackNext: { next: 0, fired: false }
+    MediaTrackNext: { next: 0, fired: false },
+    BrowserBack: { next: 0, fired: false },
+    BrowserForward: { next: 0, fired: false },
+    ContextMenu: { next: 0, fired: false },
+    GamepadTouchpad: { next: 0, fired: false }
   })
 
   useEffect(() => {
