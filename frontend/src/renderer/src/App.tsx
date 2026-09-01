@@ -27,6 +27,7 @@ import Teen from './assets/ratings/T.png'
 import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
 import { useSystemMedia } from './hooks/useSystemMedia'
+import { playMove, playEnter, playEnterGame, playClose } from './services/soundService'
 
 /* ────────────────────────────────────────────
    Types
@@ -466,7 +467,7 @@ function App(): React.JSX.Element {
           const imgs = await window.api.getWallpaperImages(folder)
           setWallpaperImages(imgs)
         }
-      } catch {}
+      } catch { }
     }
     load()
   }, [])
@@ -790,11 +791,14 @@ function App(): React.JSX.Element {
     }
   }, [detailGameId])
 
-  // ── Close detail view with Escape ──
+  // ── Close detail view with Escape (sonido close) ──
   useEffect(() => {
     if (!detailGameId) return
     const handleEsc = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setDetailGameId(null)
+      if (e.key === 'Escape') {
+        playClose()
+        setDetailGameId(null)
+      }
     }
     window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
@@ -978,6 +982,8 @@ function App(): React.JSX.Element {
 
     if (!launchTarget) return
 
+    playEnterGame()
+
     // Al presionar Jugar, el juego se muestra de primero en el row inmediatamente
     if (!launchTarget.isSteam) {
       setGames((prev) => {
@@ -1007,6 +1013,7 @@ function App(): React.JSX.Element {
   // ── Open specs modal ──
   const handleOpenSpecs = useCallback(async () => {
     try {
+      playEnter()
       const info = await window.api.getSystemInfo()
       setSystemInfo(info)
       setModal('specs')
@@ -1017,11 +1024,13 @@ function App(): React.JSX.Element {
 
   // ── Open add game modal ──
   const openAddGameModal = useCallback(() => {
+    playEnter()
     resetForm()
     setModal('addGame')
   }, [])
 
   const openLibraryView = useCallback(() => {
+    playEnter()
     setDetailGameId(null)
     setSelectedGameId(games[0]?.id ?? null)
     setLibraryView(true)
@@ -1343,11 +1352,15 @@ function App(): React.JSX.Element {
     }
   }, [wallpaperImages, wallpaperIndex])
 
-  // ── Keyboard Navigation ──
+  // ── Keyboard Navigation (con sonidos UI) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (libraryView) {
-        if (e.key === 'Escape') setLibraryView(false)
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
+          setLibraryView(false)
+        }
         if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowRight' || e.key === 'ArrowDown') && currentLibraryItems.length > 0) {
           e.preventDefault()
           const currentIndex = librarySource === 'steam'
@@ -1358,6 +1371,7 @@ function App(): React.JSX.Element {
             : 1
           const step = e.key === 'ArrowUp' ? -columnCount : e.key === 'ArrowDown' ? columnCount : e.key === 'ArrowLeft' ? -1 : 1
           const nextIndex = Math.max(0, Math.min(currentLibraryItems.length - 1, currentIndex + step))
+          if (nextIndex !== currentIndex) playMove()
           if (librarySource === 'steam') {
             const nextGame = currentLibraryItems[nextIndex] as SteamLibraryGame
             setSelectedSteamAppId(String(nextGame.appid))
@@ -1371,30 +1385,48 @@ function App(): React.JSX.Element {
           if (librarySource === 'steam' && selectedSteamAppId) {
             const steamGame = steamLibrary.find((game) => String(game.appid) === selectedSteamAppId)
             if (steamGame) {
+              playEnter()
               setLibraryView(false)
               setDetailGameId(`steam-${steamGame.appid}`)
             }
             return
           }
           if (librarySelectedGame) {
+            playEnter()
             setLibraryView(false)
             setDetailGameId(librarySelectedGame.id)
           }
         }
         return
       }
-      if (modal !== null) return
+      if (modal !== null) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
+          setModal(null)
+        }
+        return
+      }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
       if (sidebarOpen) {
         if (e.key === 'ArrowDown') {
           e.preventDefault()
-          setSidebarIndex(prev => Math.min(prev + 1, 4))
+          setSidebarIndex((prev) => {
+            const next = Math.min(prev + 1, 4)
+            if (next !== prev) playMove()
+            return next
+          })
         } else if (e.key === 'ArrowUp') {
           e.preventDefault()
-          setSidebarIndex(prev => Math.max(prev - 1, 0))
+          setSidebarIndex((prev) => {
+            const next = Math.max(prev - 1, 0)
+            if (next !== prev) playMove()
+            return next
+          })
         } else if (e.key === 'Enter') {
           e.preventDefault()
+          playEnter()
           if (sidebarIndex === 0) openAddGameModal()
           else if (sidebarIndex === 1) { /* Store action */ }
           else if (sidebarIndex === 2) handleOpenSpecs()
@@ -1402,20 +1434,32 @@ function App(): React.JSX.Element {
           else if (sidebarIndex === 4) window.close()
           setSidebarOpen(false)
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
           setSidebarOpen(false)
         }
       } else if (isWallpaperMode) {
         if (e.key === 'ArrowRight') {
           e.preventDefault()
-          setWallpaperIndex((prev) => Math.min(prev + 1, wallpaperImages.length - 1))
+          setWallpaperIndex((prev) => {
+            const next = Math.min(prev + 1, wallpaperImages.length - 1)
+            if (next !== prev) playMove()
+            return next
+          })
         } else if (e.key === 'ArrowLeft') {
           e.preventDefault()
-          setWallpaperIndex((prev) => Math.max(prev - 1, 0))
+          setWallpaperIndex((prev) => {
+            const next = Math.max(prev - 1, 0)
+            if (next !== prev) playMove()
+            return next
+          })
         } else if (e.key === 'Escape') {
           e.preventDefault()
+          playClose()
           setWallpaperMode(false)
         } else if (e.key === 'Enter') {
           e.preventDefault()
+          playEnter()
           void handleChooseWallpaperAsHome()
         }
       } else {
@@ -1425,34 +1469,43 @@ function App(): React.JSX.Element {
         if (e.key === 'ArrowRight') {
           e.preventDefault()
           if (currentIndex < gameIds.length - 1) {
+            playMove()
             setSelectedGameId(gameIds[currentIndex + 1])
           }
         } else if (e.key === 'ArrowLeft') {
           e.preventDefault()
           if (currentIndex > 0) {
+            playMove()
             setSelectedGameId(gameIds[currentIndex - 1])
           }
         } else if (e.key === 'Enter') {
           e.preventDefault()
           if (selectedGameId === 'library' || !selectedGameId) {
+            playEnter()
             openLibraryView()
           } else if (selectedGameId) {
             handleLaunchGame(selectedGameId)
           }
+        } else if (e.key === 'Escape' && detailGameId) {
+          e.preventDefault()
+          playClose()
+          setDetailGameId(null)
         }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary])
 
-  // ── Detail view handlers ──
+  // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
+    playClose()
     setDetailGameId(null)
   }, [])
 
   const openDetailView = useCallback((gameId: string) => {
+    playEnter()
     if (gameId.startsWith('steam-')) {
       const appid = gameId.replace(/^steam-/, '')
       setSelectedSteamAppId(appid)
@@ -1927,8 +1980,8 @@ function App(): React.JSX.Element {
         </div>
 
         <div className="box-cards">
-          
-       
+
+
           <div className="bottom-card-square" onClick={() => setModal('settings')} id="btn-settings">
             <SettingsIcon size={70} className="bottom-card-icon" />
           </div>
@@ -1936,7 +1989,7 @@ function App(): React.JSX.Element {
           <div className="bottom-card-square carp" >
             <div className="bottom-card-img" style={{ cursor: 'pointer' }}>
               <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
-              <img src={'https://cdn2.steamgriddb.com/thumb/7c3cb8d2a299faabbb2706ae268c0fc0.jpg'} alt={'YouTube'} />
+                <img src={'https://cdn2.steamgriddb.com/thumb/7c3cb8d2a299faabbb2706ae268c0fc0.jpg'} alt={'YouTube'} />
               </a>
             </div>
             <div className="bottom-card-img">
@@ -2606,6 +2659,7 @@ function App(): React.JSX.Element {
                       type="button"
                       className={`library-view-platform ${librarySource === 'local' ? 'active' : 'muted'}`}
                       onClick={() => setLibrarySource('local')}
+
                     >
                       Biblioteca
                     </button>
@@ -2646,42 +2700,42 @@ function App(): React.JSX.Element {
                         onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
                         onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
                       >
-                      <div className="library-item-art steam-library-art">
-                        <img
-                          src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
-                          alt={game.name}
-                          className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
-                          draggable={false}
-                        />
-                        {!game.installed && (
+                        <div className="library-item-art steam-library-art">
                           <img
-                            src={installIcon}
-                            alt="Descargar"
-                            className="library-item-download-badge"
-                            title="Descargar"
+                            src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
+                            alt={game.name}
+                            className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                             draggable={false}
                           />
-                        )}
-                      </div>
-                      <div className="library-item-info">
-                        <span className="library-item-name">{game.name}</span>
-                        <span className="library-item-playtime">
-                          {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
-                        </span>
-                      </div>
-                      <div className="library-item-actions">
-                        <button
-                          className="library-action-btn"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                            setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
-                          }}
-                          title="Más opciones"
-                        >
-                          <MoreIcon size={14} />
-                        </button>
-                      </div>
+                          {!game.installed && (
+                            <img
+                              src={installIcon}
+                              alt="Descargar"
+                              className="library-item-download-badge"
+                              title="Descargar"
+                              draggable={false}
+                            />
+                          )}
+                        </div>
+                        <div className="library-item-info">
+                          <span className="library-item-name">{game.name}</span>
+                          <span className="library-item-playtime">
+                            {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
+                          </span>
+                        </div>
+                        <div className="library-item-actions">
+                          <button
+                            className="library-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                              setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
+                            }}
+                            title="Más opciones"
+                          >
+                            <MoreIcon size={14} />
+                          </button>
+                        </div>
                       </article>
                     ))
                     : sortedLibraryGames.map((game) => (
