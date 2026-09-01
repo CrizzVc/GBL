@@ -1936,6 +1936,18 @@
   /* Asegura legibilidad sobre fondos claros */
 }
 
+.bottom-card,
+.bottom-card-square {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.bottom-card.selected,
+.bottom-card-square.selected {
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18), 0 12px 24px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+}
+
 .bottom-card-square.carp {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1966,6 +1978,13 @@
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.28);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.quick-app-card.selected,
+.quick-app-add-card.selected {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18), 0 12px 24px rgba(0, 0, 0, 0.25);
 }
 
 .quick-app-card img,

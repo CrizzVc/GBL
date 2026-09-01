@@ -13,6 +13,7 @@ type NavKey =
   | 'BrowserForward'
   | 'ContextMenu'
   | 'GamepadTouchpad'
+  | 'Start'
 
 const DEADZONE = 0.4
 const INITIAL_DELAY_MS = 380 // demora antes de empezar a repetir al mantener presionado
@@ -35,6 +36,7 @@ const BUTTON_MAP: Record<number, NavKey> = {
   6: 'MediaTrackPrevious',
   7: 'MediaTrackNext',
   8: 'ContextMenu',
+  9: 'Start',
   16: 'GamepadTouchpad',
   17: 'GamepadTouchpad'
 }
@@ -72,7 +74,8 @@ export function useGamepadNavigation(enabled: boolean = true): void {
     BrowserBack: { next: 0, fired: false },
     BrowserForward: { next: 0, fired: false },
     ContextMenu: { next: 0, fired: false },
-    GamepadTouchpad: { next: 0, fired: false }
+    GamepadTouchpad: { next: 0, fired: false },
+    Start: { next: 0, fired: false }
   })
 
   useEffect(() => {

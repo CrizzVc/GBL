@@ -293,6 +293,9 @@ function MoreIcon({ size = 20 }: { size?: number }): React.JSX.Element {
 function App(): React.JSX.Element {
   const [games, setGames] = useState<Game[]>([])
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
+  const [homeCardMode, setHomeCardMode] = useState<'main' | 'bottom' | 'quick-apps'>('main')
+  const [quickAppFocusIndex, setQuickAppFocusIndex] = useState<number>(0)
+  const [bottomCardIndex, setBottomCardIndex] = useState<number>(0)
   const [runningGameId, setRunningGameId] = useState<string | null>(null)
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
@@ -429,10 +432,24 @@ function App(): React.JSX.Element {
   const currentLibraryItems = librarySource === 'steam' ? steamLibrary : sortedLibraryGames
   const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
   const compactDetailReviewLayout = windowSize.width < 1740 || windowSize.height < 910
+  const quickAppSlots = useMemo(() => Array.from({ length: 4 }, (_, index) => quickApps[index] ?? null), [quickApps])
 
-  // Reproductor visible solo cuando se enfoca "Home" (tarjeta Biblioteca) en la vista principal
+  // En la vista principal de Home seguimos estando "enfocados" aunque el usuario
+  // haya seleccionado un juego concreto del row: eso permite que el touchpad y la
+  // navegación del mando puedan moverse también a las mini tarjetas del carp.
   const isHomeFocused =
-    !libraryView && !detailGameId && modal === null && (selectedGameId === 'library' || (!selectedGameId && games.length === 0))
+    !libraryView && !detailGameId && modal === null && (
+      selectedGameId === 'library' ||
+      !selectedGameId ||
+      visibleGames.some((game) => game.id === selectedGameId)
+    )
+
+  useEffect(() => {
+    if (!isHomeFocused || libraryView || detailGameId || modal !== null) {
+      setHomeCardMode('main')
+      setBottomCardIndex(0)
+    }
+  }, [isHomeFocused, libraryView, detailGameId, modal])
 
   // ── Inactividad: 2 min sin interacción agranda player (200x200);
   // se vuelve a encoger solo al presionar fuera del reproductor (no por cualquier movimiento)
@@ -1701,6 +1718,12 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (e.key === 'Start') {
+        e.preventDefault()
+        setSidebarOpen(true)
+        return
+      }
+
       if (libraryView) {
         if (e.key === 'Escape') {
           e.preventDefault()
@@ -1769,6 +1792,27 @@ function App(): React.JSX.Element {
       }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
+      if (e.key === 'ContextMenu') {
+        e.preventDefault()
+
+        if (libraryView && librarySource === 'steam' && selectedSteamAppId) {
+          setContextMenu({ visible: true, x: window.innerWidth * 0.52, y: window.innerHeight * 0.42, gameId: `steam-${selectedSteamAppId}` })
+          return
+        }
+        if (libraryView && librarySelectedGame) {
+          setContextMenu({ visible: true, x: window.innerWidth * 0.52, y: window.innerHeight * 0.42, gameId: librarySelectedGame.id })
+          return
+        }
+        if (isHomeFocused && homeCardMode === 'quick-apps' && quickAppSlots[quickAppFocusIndex]) {
+          setContextMenu({ visible: true, x: window.innerWidth * 0.55, y: window.innerHeight * 0.45, gameId: `quick-${quickAppSlots[quickAppFocusIndex]!.id}` })
+          return
+        }
+        if (selectedGameId && selectedGameId !== 'library') {
+          setContextMenu({ visible: true, x: window.innerWidth * 0.55, y: window.innerHeight * 0.45, gameId: selectedGameId })
+        }
+        return
+      }
+
       if (e.key === 'GamepadTouchpad' && isHomeFocused) {
         e.preventDefault()
         setIsIdle((prev) => !prev)
@@ -1828,6 +1872,89 @@ function App(): React.JSX.Element {
           playEnter()
           void handleChooseWallpaperAsHome()
         }
+      } else if (isHomeFocused && homeCardMode === 'quick-apps') {
+        const validQuickApps = quickAppSlots.filter((app): app is QuickApp => !!app)
+        if (validQuickApps.length === 0) return
+
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          setQuickAppFocusIndex((prev) => {
+            const next = Math.min(prev + 1, validQuickApps.length - 1)
+            if (next !== prev) playMove()
+            return next
+          })
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          setQuickAppFocusIndex((prev) => {
+            const next = Math.max(prev - 1, 0)
+            if (next !== prev) playMove()
+            return next
+          })
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setQuickAppFocusIndex((prev) => {
+            const next = Math.min(prev + 2, validQuickApps.length - 1)
+            if (next !== prev) playMove()
+            return next
+          })
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setQuickAppFocusIndex((prev) => {
+            const next = Math.max(prev - 2, 0)
+            if (next !== prev) playMove()
+            return next
+          })
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
+          setHomeCardMode('bottom')
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          const app = validQuickApps[quickAppFocusIndex]
+          if (app) {
+            playEnter()
+            void handleLaunchQuickApp(app)
+          }
+        }
+      } else if (isHomeFocused && homeCardMode === 'bottom') {
+        const bottomCardCount = 5
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          setBottomCardIndex((prev) => {
+            const next = (prev + 1) % bottomCardCount
+            if (next !== prev) playMove()
+            return next
+          })
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          setBottomCardIndex((prev) => {
+            const next = (prev - 1 + bottomCardCount) % bottomCardCount
+            if (next !== prev) playMove()
+            return next
+          })
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setHomeCardMode('main')
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          playEnter()
+          if (bottomCardIndex === 0) {
+            openLibraryView()
+          } else if (bottomCardIndex === 1) {
+            setCurrentStoreIndex((prev) => (prev + 1) % Math.max(1, stores.length || 1))
+          } else if (bottomCardIndex === 2) {
+            setModal('settings')
+          } else if (bottomCardIndex === 3) {
+            setHomeCardMode('quick-apps')
+            setQuickAppFocusIndex(0)
+          } else if (bottomCardIndex === 4) {
+            setModal('settings')
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
+          setHomeCardMode('main')
+        }
       } else {
         const gameIds = ['library', ...visibleGames.map(g => g.id)]
         const currentIndex = gameIds.indexOf(selectedGameId || 'library')
@@ -1844,6 +1971,10 @@ function App(): React.JSX.Element {
             playMove()
             setSelectedGameId(gameIds[currentIndex - 1])
           }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setHomeCardMode('bottom')
+          setBottomCardIndex(0)
         } else if (e.key === 'Enter') {
           e.preventDefault()
           if (selectedGameId === 'library' || !selectedGameId) {
@@ -1862,7 +1993,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused, quickAppFocusIndex, quickAppSlots, homeCardMode, handleLaunchQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -2257,7 +2388,7 @@ function App(): React.JSX.Element {
       {/* ── Bottom row ── */}
       <div className="bottom-row">
         <div
-          className="dashboard-container bottom-card"
+          className={`dashboard-container bottom-card ${homeCardMode === 'bottom' && bottomCardIndex === 0 ? 'selected' : ''}`}
           onClick={openLibraryView}
           style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
         >
@@ -2291,7 +2422,7 @@ function App(): React.JSX.Element {
           <div className="floating-title">My games & apps</div>
         </div>
         <div
-          className="bottom-card store-card"
+          className={`bottom-card store-card ${homeCardMode === 'bottom' && bottomCardIndex === 1 ? 'selected' : ''}`}
           id="btn-store"
           onMouseEnter={() => setStoreHover(true)}
           onMouseLeave={() => setStoreHover(false)}
@@ -2353,22 +2484,25 @@ function App(): React.JSX.Element {
         <div className="box-cards">
 
 
-          <div className="bottom-card-square" onClick={() => setModal('settings')} id="btn-settings">
+          <div className={`bottom-card-square ${homeCardMode === 'bottom' && bottomCardIndex === 2 ? 'selected' : ''}`} onClick={() => setModal('settings')} id="btn-settings">
             <SettingsIcon size={70} className="bottom-card-icon" />
           </div>
 
-          <div className="bottom-card-square carp">
+          <div className={`bottom-card-square carp ${homeCardMode === 'bottom' && bottomCardIndex === 3 ? 'selected' : ''}`}>
             {Array.from({ length: 4 }).map((_, index) => {
               const app = quickApps[index]
 
               if (!app) {
+                const isQuickAppFocused = homeCardMode === 'quick-apps' && quickAppFocusIndex === index
                 return (
                   <button
                     key={`quick-app-add-${index}`}
                     type="button"
-                    className="quick-app-card quick-app-add-card"
+                    className={`quick-app-card quick-app-add-card ${isQuickAppFocused ? 'selected' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
+                      setHomeCardMode('quick-apps')
+                      setQuickAppFocusIndex(index)
                       void handleAddQuickApp()
                     }}
                     aria-label="Agregar app rápida"
@@ -2379,12 +2513,16 @@ function App(): React.JSX.Element {
                 )
               }
 
+              const isQuickAppFocused = homeCardMode === 'quick-apps' && quickAppFocusIndex === index
+
               return (
                 <div
                   key={app.id}
-                  className="quick-app-card"
+                  className={`quick-app-card ${isQuickAppFocused ? 'selected' : ''}`}
                   onClick={(e) => {
                     e.stopPropagation()
+                    setHomeCardMode('quick-apps')
+                    setQuickAppFocusIndex(index)
                     void handleLaunchQuickApp(app)
                   }}
                   onContextMenu={(e) => {
@@ -2405,7 +2543,7 @@ function App(): React.JSX.Element {
           </div>
         </div>
 
-        <div className={`bottom-card friends-exit-card ${windowSize.width === 1380 && windowSize.height === 830 ? 'minimal' : ''}`} id="btn-exit">
+        <div className={`bottom-card friends-exit-card ${homeCardMode === 'bottom' && bottomCardIndex === 4 ? 'selected' : ''} ${windowSize.width === 1380 && windowSize.height === 830 ? 'minimal' : ''}`} id="btn-exit">
           <div className="friends-card-left">
             <div className="friends-ring-wrap">
               <svg width="110" height="110" viewBox="0 0 120 120">
