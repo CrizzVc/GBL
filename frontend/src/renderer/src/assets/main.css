@@ -2366,7 +2366,7 @@
   }
 
   .game-card {
-    width: clamp(200px, 9vw, 300px);
+    /* width: clamp(200px, 9vw, 300px); */  /*ESTO ES LO QUE HACE QUE EL ROW DEL JUEGO SALGA MEDIO MOCHO*/
   }
 
   .bottom-row {
@@ -3911,7 +3911,7 @@
 
 .wallpaper-card {
   flex-shrink: 0;
-  width: clamp(140px, 20.5vh, 225px);
+  width: clamp(150px, 20.5vh, 295px);
   aspect-ratio: 16 / 9;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
