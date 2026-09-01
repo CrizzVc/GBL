@@ -359,7 +359,7 @@ function App(): React.JSX.Element {
     if (libraryView || detailGameId) return
     setIsIdle(false)
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
-    idleTimerRef.current = setTimeout(() => setIsIdle(true), 120000)
+    idleTimerRef.current = setTimeout(() => setIsIdle(true), 60000)
   }, [libraryView, detailGameId])
 
   useEffect(() => {

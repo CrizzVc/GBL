@@ -63,6 +63,31 @@ function PlaySmallIcon({ size = 16 }: { size?: number }): React.JSX.Element {
     </svg>
   )
 }
+function MoreDotsIcon({ size = 16 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  )
+}
+function CastIcon({ size = 16 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="13" rx="3" />
+      <path d="M9.5 21l2.5-3 2.5 3z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+// Tiempo restante estilo iOS ("-3:20")
+function formatRemaining(positionMs: number, durationMs: number): string {
+  const remainingSec = Math.max(0, Math.round((durationMs - positionMs) / 1000))
+  const m = Math.floor(remainingSec / 60)
+  const s = remainingSec % 60
+  return `-${m}:${s.toString().padStart(2, '0')}`
+}
 
 const FALLBACK_COLORS = ['#1DB954', '#e40d60', '#6a5acd', '#e67e22', '#2980b9', '#c0392b', '#16a085', '#8e44ad']
 
@@ -240,10 +265,10 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
           <div className="music-player-main">
             <div className="music-player-info">
               <span className="music-player-title muted">Sin música</span>
-              <span className="music-player-artist">{isIdle ? 'Reproduce algo en el PC' : 'Toca + para importar audio o reproduce en Spotify/YouTube'}</span>
+              <span className="music-player-artist">{isIdle ? 'Reproduce algo en el PC' : 'reproduce en Spotify/YouTube'}</span>
               {systemActive && <span className="music-player-source">{headerLabel}</span>}
             </div>
-            <div className="music-player-local-actions">
+            {/* <div className="music-player-local-actions">
               <button
                 className="music-btn add"
                 onClick={() => fileInputRef.current?.click()}
@@ -253,66 +278,51 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
                 {isImporting ? '…' : '+'}
               </button>
               <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.flac,.ogg,.m4a,.aac,.wav" multiple onChange={handleImport} style={{ display: 'none' }} />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className={`music-player-wrapper ${wrapperVisible ? 'visible' : 'hidden'} ${isIdle ? 'idle' : ''}`} aria-hidden={!wrapperVisible}>
-      <div className={`music-player ${isIdle ? 'idle' : ''} ${systemActive ? 'system' : 'local'}`} style={{ borderColor: systemActive ? accentColor + '55' : undefined } as React.CSSProperties}>
-        <audio
-          ref={audioRef}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onEnded={handleEnded}
-          preload="metadata"
-          style={{ display: 'none' }}
-        />
-        {/* Cover con thumbnail real del sistema si existe */}
-        <div className="music-player-cover" style={{ background: displayArtwork ? `url(${displayArtwork}) center/cover` : accentColor } as React.CSSProperties}>
-          {!displayArtwork && <MusicNoteIcon size={isIdle ? 56 : 18} />}
-        </div>
+  const hiddenAudio = (
+    <audio
+      ref={audioRef}
+      onTimeUpdate={handleTimeUpdate}
+      onLoadedMetadata={handleLoadedMetadata}
+      onEnded={handleEnded}
+      preload="metadata"
+      style={{ display: 'none' }}
+    />
+  )
 
-        <div className="music-player-main">
-          <div className="music-player-header">
-            <span className="music-player-app">{headerLabel}</span>
-            <span className="music-player-status" style={{ background: displayPlaying ? accentColor : 'rgba(255,255,255,0.15)' }} />
+  const importInput = (
+    <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.flac,.ogg,.m4a,.aac,.wav" multiple onChange={handleImport} style={{ display: 'none' }} />
+  )
+
+  // ── Vista compacta: pill oscura al estilo "Now Playing" (imagen 1) ──
+  if (!isIdle) {
+    return (
+      <div className={`music-player-wrapper ${wrapperVisible ? 'visible' : 'hidden'}`} aria-hidden={!wrapperVisible}>
+        <div className={`music-player compact ${systemActive ? 'system' : 'local'}`}>
+          {hiddenAudio}
+          <div className="music-player-cover" style={{ background: displayArtwork ? `url(${displayArtwork}) center/cover` : accentColor } as React.CSSProperties}>
+            {!displayArtwork && <MusicNoteIcon size={18} />}
           </div>
 
-          <div className="music-player-info">
+          <div className="music-player-info-row">
             <span className="music-player-title" title={displayTitle || ''}>{displayTitle || '—'}</span>
             <span className="music-player-artist">{displayArtist || '—'}</span>
-            {displayAlbum && <span className="music-player-album">{displayAlbum}</span>}
           </div>
 
-          <div className="music-player-progress">
-            <span className="music-player-time">{formatMediaTime(displayPositionMs)}</span>
-            <div className="music-player-progress-track">
-              <div className="music-player-progress-fill" style={{ width: `${progress * 100}%`, background: accentColor } as React.CSSProperties} />
-            </div>
-            <span className="music-player-time">{displayDurationMs ? formatMediaTime(displayDurationMs) : '--:--'}</span>
-            {/* slider solo para local (sistema es read-only) */}
-            {!systemActive && (
-              <input
-                type="range"
-                className="music-player-range"
-                min={0}
-                max={durationSec || 100}
-                step={0.5}
-                value={Math.min(positionSec, durationSec || 0)}
-                onChange={handleSeek}
-                disabled={!track || !durationSec}
-                style={{ ['--progress' as string]: `${progress * 100}%` } as React.CSSProperties}
-              />
-            )}
-          </div>
+          <button className="music-btn more" onClick={togglePlay} disabled={!canControl} title={displayPlaying ? 'Pausar' : 'Reproducir'}>
+            <MoreDotsIcon size={16} />
+          </button>
 
-          <div className="music-player-controls">
+          {/* Controles reales, ocultos hasta hover para mantener el look minimal de la referencia */}
+          <div className="music-player-hover-controls">
             <button className="music-btn" onClick={skipPrev} disabled={!canControl} title="Anterior">
-              <SkipBackIcon size={14} />
+              <SkipBackIcon size={13} />
             </button>
             <button
               className="music-btn play"
@@ -321,27 +331,91 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
               style={{ background: accentColor, borderColor: accentColor } as React.CSSProperties}
               title={displayPlaying ? 'Pausar' : 'Reproducir'}
             >
-              {displayPlaying ? <PauseIcon size={14} /> : <PlaySmallIcon size={14} />}
+              {displayPlaying ? <PauseIcon size={13} /> : <PlaySmallIcon size={13} />}
             </button>
             <button className="music-btn" onClick={skipNext} disabled={!canControl} title="Siguiente">
-              <SkipForwardIcon size={14} />
+              <SkipForwardIcon size={13} />
             </button>
-            {/* Volumen solo local */}
             {!systemActive && (
-              <div className="music-player-volume">
-                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>{formatLocalTime(positionSec)} / {formatLocalTime(durationSec)}</span>
-                <input type="range" className="music-player-volume-range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volumen" />
-              </div>
-            )}
-            {!systemActive && (
-              <>
-                <button className="music-btn add" onClick={() => fileInputRef.current?.click()} title="Importar audio">
-                  <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
-                </button>
-                <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.flac,.ogg,.m4a,.aac,.wav" multiple onChange={handleImport} style={{ display: 'none' }} />
-              </>
+              <button className="music-btn add" onClick={() => fileInputRef.current?.click()} title="Importar audio">
+                <span style={{ fontSize: '13px', lineHeight: 1 }}>+</span>
+              </button>
             )}
           </div>
+          {!systemActive && importInput}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Vista expandida (idle): tarjeta clara al estilo widget de música (imagen 2) ──
+  return (
+    <div className="music-player-wrapper idle" aria-hidden={!wrapperVisible}>
+      <div className={`music-player idle ${systemActive ? 'system' : 'local'}`}>
+        {hiddenAudio}
+        <div className="music-player-cover" style={{ background: displayArtwork ? `url(${displayArtwork}) center/cover` : accentColor } as React.CSSProperties}>
+          {!displayArtwork && <MusicNoteIcon size={56} />}
+        </div>
+
+        <div className="music-player-panel">
+          <div className="music-player-info">
+            <span className="music-player-title" title={displayTitle || ''}>{displayTitle || '—'}</span>
+            <span className="music-player-artist">{displayArtist || '—'}{displayAlbum ? ` · ${displayAlbum}` : ''}</span>
+          </div>
+
+          <div className="music-player-progress">
+            <span className="music-player-time">{formatMediaTime(displayPositionMs)}</span>
+            <div className="music-player-progress-track">
+              <div className="music-player-progress-fill" style={{ width: `${progress * 100}%`, background: accentColor } as React.CSSProperties} />
+            </div>
+            <span className="music-player-time">{displayDurationMs ? formatRemaining(displayPositionMs, displayDurationMs) : '--:--'}</span>
+          </div>
+          {!systemActive && (
+            <input
+              type="range"
+              className="music-player-range"
+              min={0}
+              max={durationSec || 100}
+              step={0.5}
+              value={Math.min(positionSec, durationSec || 0)}
+              onChange={handleSeek}
+              disabled={!track || !durationSec}
+              style={{ ['--progress' as string]: `${progress * 100}%` } as React.CSSProperties}
+            />
+          )}
+
+          <div className="music-player-controls idle-controls">
+            <button className="music-btn" onClick={skipPrev} disabled={!canControl} title="Anterior">
+              <SkipBackIcon size={15} />
+            </button>
+            <button
+              className="music-btn play"
+              onClick={togglePlay}
+              disabled={!canControl}
+              title={displayPlaying ? 'Pausar' : 'Reproducir'}
+            >
+              {displayPlaying ? <PauseIcon size={16} /> : <PlaySmallIcon size={16} />}
+            </button>
+            <button className="music-btn" onClick={skipNext} disabled={!canControl} title="Siguiente">
+              <SkipForwardIcon size={15} />
+            </button>
+            <button className="music-btn cast" title="Salida de audio">
+              <CastIcon size={15} />
+            </button>
+          </div>
+
+          {!systemActive && (
+            <div className="music-player-local-actions">
+              <div className="music-player-volume">
+                <span>{formatLocalTime(positionSec)} / {formatLocalTime(durationSec)}</span>
+                <input type="range" className="music-player-volume-range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volumen" />
+              </div>
+              <button className="music-btn add" onClick={() => fileInputRef.current?.click()} title="Importar audio">
+                <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
+              </button>
+              {importInput}
+            </div>
+          )}
         </div>
       </div>
     </div>
