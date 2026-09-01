@@ -2377,7 +2377,8 @@
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-    height: 240px;
+    height: 200px;
+    max-height: 240px;
   }
 }
 
