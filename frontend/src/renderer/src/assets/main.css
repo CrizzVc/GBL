@@ -3170,6 +3170,7 @@
 /* ── Panel de la vista expandida: separado de la carátula con gap, sin solapamiento ── */
 .music-player-panel {
   width: 100%;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 10px;
