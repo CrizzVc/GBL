@@ -1575,25 +1575,27 @@ function App(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="box-cards" onClick={handleOpenSpecs} id="btn-specs">
+        <div className="box-cards">
           
        
           <div className="bottom-card-square" onClick={() => setModal('settings')} id="btn-settings">
             <SettingsIcon size={70} className="bottom-card-icon" />
           </div>
 
-          <div className="bottom-card-square carp" onClick={() => setModal('settings')} id="btn-settings">
-            <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/495e5eb9c279d25929ef155384f820f1.jpg'} alt={'spotify'} />
+          <div className="bottom-card-square carp" >
+            <div className="bottom-card-img" style={{ cursor: 'pointer' }}>
+              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+              <img src={'https://cdn2.steamgriddb.com/thumb/7c3cb8d2a299faabbb2706ae268c0fc0.jpg'} alt={'YouTube'} />
+              </a>
             </div>
             <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/7c3cb8d2a299faabbb2706ae268c0fc0.jpg'} alt={'spotify'} />
+              <img src={'https://cdn2.steamgriddb.com/thumb/495e5eb9c279d25929ef155384f820f1.jpg'} alt={'Spotify'} />
             </div>
             <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/c98c37f5078011fb3a1feaf49f8cf6a4.jpg'} alt={'spotify'} />
+              <img src={'https://cdn2.steamgriddb.com/thumb/c98c37f5078011fb3a1feaf49f8cf6a4.jpg'} alt={'netflix'} />
             </div>
             <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/bfea1528d27644913720f4560330443d.jpg'} alt={'spotify'} />
+              <img src={'https://cdn2.steamgriddb.com/thumb/bfea1528d27644913720f4560330443d.jpg'} alt={'crunchyroll'} />
             </div>
           </div>
         </div>

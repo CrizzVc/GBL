@@ -532,6 +532,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+  cursor: initial;
 }
 
 .bottom-card-img {
@@ -560,7 +561,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 18px;
-  cursor: pointer;
+  /* cursor: pointer; */
   transition: all var(--gbl-transition-normal);
 }
 
