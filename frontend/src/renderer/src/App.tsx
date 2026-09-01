@@ -26,6 +26,7 @@ import gogBanner from './assets/tiendas/gogBanner.png'
 import Teen from './assets/ratings/T.png'
 import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
+import defaultHomeBackground from './assets/images/background-defauld.png'
 import { useSystemMedia } from './hooks/useSystemMedia'
 import { playMove, playEnter, playEnterGame, playClose } from './services/soundService'
 import { useGamepadNavigation } from './hooks/useGamepadNavigation'
@@ -49,6 +50,16 @@ interface Game {
   gridImageUrl?: string | null
   heroImageUrl?: string | null
   logoImageUrl?: string | null
+}
+
+interface QuickApp {
+  id: string
+  name: string
+  exePath: string
+  artworkUrl: string | null
+  iconDataUrl: string | null
+  lastPlayed: string | null
+  createdAt: string
 }
 
 type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | 'steamgrid' | null
@@ -93,6 +104,7 @@ interface SteamGridImage {
 }
 
 const DEFAULT_STEAM_API_KEY = 'B1F361EA3C07B455DC8B0D06ED179B00'
+const QUICK_APPS_STORAGE_KEY = 'gbl-quick-apps'
 
 interface SteamAccount {
   linked: boolean
@@ -141,6 +153,17 @@ function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridIma
   }
 }
 
+function getStoredQuickApps(): QuickApp[] {
+  try {
+    const stored = localStorage.getItem(QUICK_APPS_STORAGE_KEY)
+    if (!stored) return []
+    const parsed = JSON.parse(stored)
+    return Array.isArray(parsed) ? parsed.filter((app): app is QuickApp => !!app && typeof app.id === 'string' && typeof app.name === 'string' && typeof app.exePath === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 const sortGamesByNewestFirst = (items: Game[]): Game[] =>
   [...items].sort((a, b) => {
     // El último jugado va primero; si no tiene lastPlayed se usa createdAt
@@ -178,6 +201,28 @@ function formatPlaytime(minutes: number): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+async function fetchAutoArtworkUrl(appName: string): Promise<string | null> {
+  try {
+   const searchRes = await fetch(`${BACKEND_URL}/api/steamgrid/search?term=${encodeURIComponent(appName)}`)
+   if (!searchRes.ok) return null
+
+   const searchData = await searchRes.json()
+   if (!Array.isArray(searchData) || searchData.length === 0) return null
+
+   const gameId = searchData[0].id
+   const gridsRes = await fetch(`${BACKEND_URL}/api/steamgrid/grids/${gameId}`)
+   if (!gridsRes.ok) return null
+
+   const grids = await gridsRes.json()
+   if (!Array.isArray(grids) || grids.length === 0) return null
+
+   return grids[0].url || null
+  } catch (err) {
+   console.error('Error auto-fetching artwork:', err)
+   return null
+  }
 }
 
 /* ────────────────────────────────────────────
@@ -261,7 +306,10 @@ function App(): React.JSX.Element {
   const [steamLibraryLoading, setSteamLibraryLoading] = useState(false)
 
   // Background image state
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(defaultHomeBackground)
+
+  // Quick access apps state
+  const [quickApps, setQuickApps] = useState<QuickApp[]>(getStoredQuickApps())
 
   // User profile state
   const [profileName, setProfileName] = useState('')
@@ -824,6 +872,11 @@ function App(): React.JSX.Element {
     []
   )
 
+  const saveQuickApps = useCallback((newApps: QuickApp[]) => {
+    setQuickApps(newApps)
+    localStorage.setItem(QUICK_APPS_STORAGE_KEY, JSON.stringify(newApps))
+  }, [])
+
   // ── Select game file ──
   const handleBrowse = useCallback(async () => {
     const filePath = await window.api.selectGameFile()
@@ -838,6 +891,95 @@ function App(): React.JSX.Element {
       }
     }
   }, [formName])
+
+  const handleAddQuickApp = useCallback(async () => {
+    const filePath = await window.api.selectGameFile()
+    if (!filePath) return
+
+    const iconDataUrl = await window.api.getFileIcon(filePath)
+    const fileName = filePath.split(/[\\/]/).pop() || 'App'
+    const appName = fileName.replace(/\.[^.]+$/, '') || 'App'
+    const autoArtworkUrl = await fetchAutoArtworkUrl(appName)
+    const artworkUrl = await window.api.selectBackgroundImage()
+
+    const newApp: QuickApp = {
+      id: generateId(),
+      name: appName,
+      exePath: filePath,
+      artworkUrl: artworkUrl || autoArtworkUrl || iconDataUrl || null,
+      iconDataUrl: iconDataUrl || null,
+      lastPlayed: null,
+      createdAt: new Date().toISOString()
+    }
+
+    saveQuickApps([...quickApps, newApp])
+  }, [quickApps, saveQuickApps])
+
+  const handleEditQuickApp = useCallback(async (appId: string) => {
+    const target = quickApps.find((app) => app.id === appId)
+    if (!target) return
+
+    const filePath = await window.api.selectGameFile()
+    if (!filePath) return
+
+    const iconDataUrl = await window.api.getFileIcon(filePath)
+    const appName = filePath.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') || target.name
+    const customArtworkUrl = await window.api.selectBackgroundImage()
+    const autoArtworkUrl = await fetchAutoArtworkUrl(appName)
+
+    const updatedApps = quickApps.map((app) => app.id === appId
+      ? {
+          ...app,
+          name: appName,
+          exePath: filePath,
+          artworkUrl: customArtworkUrl || autoArtworkUrl || app.artworkUrl || iconDataUrl || null,
+          iconDataUrl: iconDataUrl || app.iconDataUrl || null
+        }
+      : app)
+
+    saveQuickApps(updatedApps)
+  }, [quickApps, saveQuickApps])
+
+  const handleLaunchQuickApp = useCallback(async (app: QuickApp) => {
+    const now = new Date().toISOString()
+    const quickGameId = `quick-${app.id}`
+    const newGame: Game = {
+      id: quickGameId,
+      name: app.name,
+      exePath: app.exePath,
+      iconDataUrl: app.iconDataUrl,
+      playtimeMinutes: 0,
+      lastPlayed: now,
+      createdAt: now,
+      color: randomColor(),
+      gridImageUrl: app.artworkUrl || app.iconDataUrl || null,
+      heroImageUrl: app.artworkUrl || app.iconDataUrl || null,
+      logoImageUrl: null,
+      steamAppId: null,
+      isSteam: false
+    }
+
+    setGames((prevGames) => {
+      const existingIndex = prevGames.findIndex((g) => g.id === quickGameId)
+      const updatedGames = existingIndex >= 0
+        ? prevGames.map((g) => g.id === quickGameId ? { ...g, ...newGame, lastPlayed: now } : g)
+        : [...prevGames, newGame]
+
+      window.api.saveGames(updatedGames)
+      return updatedGames
+    })
+
+    setSelectedGameId(quickGameId)
+    setRunningGameId(quickGameId)
+    playEnterGame()
+
+    try {
+      await window.api.launchGame(quickGameId, app.exePath)
+    } catch (err) {
+      console.error('Error launching quick app:', err)
+      setRunningGameId(null)
+    }
+  }, [])
 
   // ── Add game ──
   const handleAddGame = useCallback(async () => {
@@ -986,7 +1128,6 @@ function App(): React.JSX.Element {
 
     playEnterGame()
 
-    // Al presionar Jugar, el juego se muestra de primero en el row inmediatamente
     if (!launchTarget.isSteam) {
       setGames((prev) => {
         if (!prev.some((g) => g.id === launchTarget!.id)) return prev
@@ -997,10 +1138,35 @@ function App(): React.JSX.Element {
         return updated
       })
     } else {
-      // Para Steam también asegurar exePath correcto según instalación actual
       const appid = String(launchTarget.steamAppId || launchTarget.id.replace(/^steam-/, ''))
       const inst = steamLibrary.some((g) => String(g.appid) === appid && g.installed)
+      const steamGame = steamLibrary.find((g) => String(g.appid) === appid)
+      const now = new Date().toISOString()
       launchTarget = { ...launchTarget, exePath: inst ? `steam://rungameid/${appid}` : `steam://install/${appid}` }
+      setGames((prev) => {
+        const entry: Game = {
+          id: `steam-${appid}`,
+          name: steamGame?.name || launchTarget!.name,
+          exePath: launchTarget!.exePath,
+          iconDataUrl: steamGame?.iconDataUrl || launchTarget!.iconDataUrl || null,
+          playtimeMinutes: launchTarget!.playtimeMinutes,
+          lastPlayed: now,
+          createdAt: now,
+          color: launchTarget!.color,
+          steamAppId: appid,
+          isSteam: true,
+          gridImageUrl: launchTarget!.gridImageUrl || steamGame?.gridImageUrl || steamLibraryArtUrl(appid),
+          heroImageUrl: launchTarget!.heroImageUrl || steamGame?.heroImageUrl || steamLibraryArtUrl(appid),
+          logoImageUrl: launchTarget!.logoImageUrl || steamGame?.logoImageUrl || null
+        }
+
+        const updated = prev.some((g) => g.id === entry.id)
+          ? prev.map((g) => g.id === entry.id ? { ...g, ...entry, lastPlayed: now } : g)
+          : [...prev, entry]
+
+        window.api.saveGames(updated)
+        return updated
+      })
     }
 
     setRunningGameId(launchTarget.id)
@@ -1629,7 +1795,12 @@ function App(): React.JSX.Element {
           ? {
             background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
           }
-          : {}
+          : {
+            backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.4) 0%, rgba(12,12,12,0.6) 45%, rgba(12,12,12,0.92) 100%), url(${defaultHomeBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }
 
   // Crossfade launcher-bg sin espacio en negro: prev conserva imagen anterior hasta que la nueva carga
   const [bgCurrStyle, setBgCurrStyle] = useState<React.CSSProperties>(bgStyle)
@@ -1988,21 +2159,62 @@ function App(): React.JSX.Element {
             <SettingsIcon size={70} className="bottom-card-icon" />
           </div>
 
-          <div className="bottom-card-square carp" >
-            <div className="bottom-card-img" style={{ cursor: 'pointer' }}>
-              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
-                <img src={'https://cdn2.steamgriddb.com/thumb/7c3cb8d2a299faabbb2706ae268c0fc0.jpg'} alt={'YouTube'} />
-              </a>
-            </div>
-            <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/495e5eb9c279d25929ef155384f820f1.jpg'} alt={'Spotify'} />
-            </div>
-            <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/c98c37f5078011fb3a1feaf49f8cf6a4.jpg'} alt={'netflix'} />
-            </div>
-            <div className="bottom-card-img">
-              <img src={'https://cdn2.steamgriddb.com/thumb/bfea1528d27644913720f4560330443d.jpg'} alt={'crunchyroll'} />
-            </div>
+          <div className="bottom-card-square carp">
+            {Array.from({ length: 4 }).map((_, index) => {
+              const app = quickApps[index]
+
+              if (!app) {
+                return (
+                  <button
+                    key={`quick-app-add-${index}`}
+                    type="button"
+                    className="quick-app-card quick-app-add-card"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void handleAddQuickApp()
+                    }}
+                    aria-label="Agregar app rápida"
+                    title="Agregar app rápida"
+                  >
+                    <PlusIcon size={28} />
+                  </button>
+                )
+              }
+
+              return (
+                <div
+                  key={app.id}
+                  className="quick-app-card"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void handleLaunchQuickApp(app)
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    void handleEditQuickApp(app.id)
+                  }}
+                  title={`${app.name} — clic derecho para cambiar arte`}
+                >
+                  {app.artworkUrl ? (
+                    <img src={app.artworkUrl} alt={app.name} draggable={false} />
+                  ) : (
+                    <div className="quick-app-fallback">{app.name.charAt(0).toUpperCase()}</div>
+                  )}
+                  <button
+                    type="button"
+                    className="quick-app-edit-btn"
+                    aria-label={`Editar ${app.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void handleEditQuickApp(app.id)
+                    }}
+                  >
+                    <EditIcon size={12} />
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
