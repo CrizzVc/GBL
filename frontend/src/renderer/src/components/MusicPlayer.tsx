@@ -259,7 +259,7 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
     return (
       <div className={`music-player-wrapper ${wrapperVisible ? 'visible' : 'hidden'} ${isIdle ? 'idle' : ''}`} aria-hidden={!wrapperVisible}>
         <div className={`music-player ${isIdle ? 'idle' : ''} empty`} style={{ borderColor: isIdle ? accentColor : undefined } as React.CSSProperties}>
-          <div className="music-player-cover" style={{ background: accentColor } as React.CSSProperties}>
+          <div className="music-player-cover" style={{ background: '#a9a9a9' } as React.CSSProperties}>
             <MusicNoteIcon size={isIdle ? 52 : 16} />
           </div>
           <div className="music-player-main">
