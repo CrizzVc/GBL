@@ -3265,7 +3265,7 @@
 
   .music-player.idle .music-player-cover {
     width: min(240px, 32vw, 29vh);
-    height: min(220px, 32vw, 28vh);
+    height: min(240px, 32vw, 29vh);
   }
   
   .music-btn.idle .cast {
