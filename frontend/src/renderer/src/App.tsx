@@ -352,33 +352,70 @@ function App(): React.JSX.Element {
   const isHomeFocused =
     !libraryView && !detailGameId && modal === null && (selectedGameId === 'library' || (!selectedGameId && games.length === 0))
 
-  // ── Inactividad: 2 min sin interacción esconden row de juegos y button cards, deja player en grande (200x200)
+  // ── Inactividad: 2 min sin interacción agranda player (200x200);
+  // se vuelve a encoger solo al presionar fuera del reproductor (no por cualquier movimiento)
   const [isIdle, setIsIdle] = useState(false)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const resetIdleTimer = useCallback(() => {
-    if (libraryView || detailGameId) return
-    setIsIdle(false)
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
-    idleTimerRef.current = setTimeout(() => setIsIdle(true), 60000)
-  }, [libraryView, detailGameId])
-
-  useEffect(() => {
-    resetIdleTimer()
-    const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart', 'click']
-    const handler = (): void => resetIdleTimer()
-    events.forEach((ev) => window.addEventListener(ev, handler, { passive: true }))
-    return () => {
-      events.forEach((ev) => window.removeEventListener(ev, handler))
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
-    }
-  }, [resetIdleTimer])
-
-  // Salir de idle al cambiar de foco/modal
-  useEffect(() => {
-    if (modal !== null || detailGameId) setIsIdle(false)
-  }, [modal, detailGameId, libraryView])
 
   const showIdleMode = isIdle && !libraryView && !detailGameId && modal === null
+
+  const scheduleIdle = useCallback(() => {
+    if (libraryView || detailGameId || modal !== null) return
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = setTimeout(() => setIsIdle(true), 120000)
+  }, [libraryView, detailGameId, modal])
+
+  const exitIdle = useCallback(() => {
+    setIsIdle(false)
+    scheduleIdle()
+  }, [scheduleIdle])
+
+  // Antes de estar en idle: cualquier actividad retrasa el agrandado, pero no lo encoge
+  useEffect(() => {
+    if (showIdleMode) return
+    scheduleIdle()
+    const resetOnly = (): void => {
+      // solo reprograma el timer, no toca isIdle (que ya es false)
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = setTimeout(() => setIsIdle(true), 120000)
+    }
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart']
+    events.forEach((ev) => window.addEventListener(ev, resetOnly, { passive: true }))
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, resetOnly))
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    }
+  }, [scheduleIdle, showIdleMode])
+
+  // En idle: solo un click/touch fuera del reproductor lo encoge
+  useEffect(() => {
+    if (!showIdleMode) return
+    const handleOutside = (e: Event): void => {
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      // si el click cae dentro del reproductor, no hacer nada
+      if (target.closest('.music-player, .music-player-wrapper')) return
+      exitIdle()
+    }
+    // click + touch para cubrir desktop/touch
+    window.addEventListener('click', handleOutside, true)
+    window.addEventListener('touchstart', handleOutside, true)
+    // también permitir Esc para salir si el usuario lo espera
+    const handleEsc = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') exitIdle()
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => {
+      window.removeEventListener('click', handleOutside, true)
+      window.removeEventListener('touchstart', handleOutside, true)
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [showIdleMode, exitIdle])
+
+  // Salir de idle al cambiar de foco/modal/biblioteca
+  useEffect(() => {
+    if (modal !== null || detailGameId || libraryView) setIsIdle(false)
+  }, [modal, detailGameId, libraryView])
 
   // ── Clock ──
   useEffect(() => {

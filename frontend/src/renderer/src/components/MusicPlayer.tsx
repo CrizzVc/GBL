@@ -305,7 +305,7 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
 
   const accentColor = coverPalette?.primary ?? fallbackAccent
   const compactBg = coverPalette
-    ? `linear-gradient(135deg, ${coverPalette.primary} 0%, ${coverPalette.secondary} 55%, #1c1c1e 100%)`
+    ? `linear-gradient(90deg, ${coverPalette.primary} 0%, ${coverPalette.secondary} 5%, #1c1c1e 100%)`
     : undefined
   const compactBorder = coverPalette ? `${coverPalette.primary}22` : undefined
 
