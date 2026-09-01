@@ -2966,13 +2966,12 @@
   overflow: hidden;
 }
 
-/* Vista expandida con música (imagen 2): el contenedor pasa a ser un
-   lienzo transparente — el fondo real vive en .music-player-panel */
+/* Vista expandida con música (imagen 2): lienzo transparente — cover más ancho y separado del panel */
 .music-player.idle:not(.empty) {
   flex-direction: column;
   align-items: stretch;
-  gap: 0;
-  max-width: 300px;
+  gap: 16px;
+  max-width: 360px;
   height: auto;
   padding: 0;
   background: none;
@@ -3008,8 +3007,8 @@
 
 .music-player.idle .music-player-cover {
   width: 100%;
-  height: 260px;
-  border-radius: 20px;
+  height: 200px;
+  border-radius: 18px;
   font-size: 56px;
   box-shadow: 0 16px 40px rgba(0,0,0,0.4);
 }
@@ -3137,15 +3136,15 @@
   pointer-events: auto;
 }
 
-/* ── Panel de la vista expandida (imagen 2): tarjeta clara bajo la carátula ── */
+/* ── Panel de la vista expandida: separado de la carátula con gap, sin solapamiento ── */
 .music-player-panel {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: -18px;
+  margin-top: 0;
   padding: 16px 16px 14px;
-  border-radius: 20px;
+  border-radius: 18px;
   background: rgba(250,248,246,0.94);
   backdrop-filter: blur(20px);
   box-shadow: 0 12px 30px rgba(0,0,0,0.25);

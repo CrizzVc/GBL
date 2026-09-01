@@ -108,7 +108,7 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
   const [positionSec, setPositionSec] = useState(0)
   const [durationSec, setDurationSec] = useState(0)
   const [volume, setVolume] = useState(0.7)
-  const [isImporting, setIsImporting] = useState(false)
+  const [, setIsImporting] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -247,10 +247,67 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
   const displayPositionMs = systemActive ? nowPlaying!.positionMs : positionSec * 1000
   const displayDurationMs = systemActive ? nowPlaying!.durationMs : durationSec * 1000
   const displayPlaying = systemActive ? nowPlaying!.playbackStatus === 'playing' : isPlaying
-  const accentColor = systemActive ? getAppIconName(nowPlaying!.appName).bg : (track?.color ?? '#1DB954')
+  const fallbackAccent = systemActive ? getAppIconName(nowPlaying!.appName).bg : (track?.color ?? '#1DB954')
   const headerLabel = systemActive ? `En ${nowPlaying!.appName}` : tracks.length > 0 ? 'Música local' : 'Música'
   const progress = displayDurationMs > 0 ? displayPositionMs / displayDurationMs : 0
   const canControl = systemActive || !!track
+
+  // ── Degradado del fondo compacto a partir de la portada (tintado con colores extraídos) ──
+  const [coverPalette, setCoverPalette] = useState<{ primary: string; secondary: string } | null>(null)
+  useEffect(() => {
+    if (!displayArtwork) {
+      setCoverPalette(null)
+      return
+    }
+    let cancelled = false
+    const img = new Image()
+    // No forzar crossOrigin: muchos thumbnails vienen de local-file:// o https sin CORS y tildarían el canvas.
+    // Intentamos cargar normal; si tilda, el catch hará fallback al color de la app.
+    img.onload = () => {
+      if (cancelled) return
+      try {
+        const canvas = document.createElement('canvas')
+        const w = (canvas.width = 32)
+        const h = (canvas.height = 32)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.drawImage(img, 0, 0, w, h)
+        const { data } = ctx.getImageData(0, 0, w, h)
+        let r = 0, g = 0, b = 0, count = 0
+        let r2 = 0, g2 = 0, b2 = 0, count2 = 0
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4
+            const alpha = data[i + 3]
+            if (alpha < 10) continue
+            if (y < h * 0.5) {
+              r += data[i]; g += data[i + 1]; b += data[i + 2]; count++
+            } else {
+              r2 += data[i]; g2 += data[i + 1]; b2 += data[i + 2]; count2++
+            }
+          }
+        }
+        if (count === 0 || count2 === 0) return
+        const avg = (v: number, c: number): number => Math.round(v / c)
+        const toHex = (n: number): string => n.toString(16).padStart(2, '0')
+        const primary = `#${toHex(avg(r, count))}${toHex(avg(g, count))}${toHex(avg(b, count))}`
+        const secondary = `#${toHex(avg(r2, count2))}${toHex(avg(g2, count2))}${toHex(avg(b2, count2))}`
+        if (!cancelled) setCoverPalette({ primary, secondary })
+      } catch {
+        // canvas tildado (cross-origin sin CORS) — fallback silencioso
+        if (!cancelled) setCoverPalette(null)
+      }
+    }
+    img.onerror = () => { if (!cancelled) setCoverPalette(null) }
+    img.src = displayArtwork
+    return () => { cancelled = true }
+  }, [displayArtwork])
+
+  const accentColor = coverPalette?.primary ?? fallbackAccent
+  const compactBg = coverPalette
+    ? `linear-gradient(135deg, ${coverPalette.primary} 0%, ${coverPalette.secondary} 55%, #1c1c1e 100%)`
+    : undefined
+  const compactBorder = coverPalette ? `${coverPalette.primary}22` : undefined
 
   const wrapperVisible = isVisible || isIdle
 
@@ -300,11 +357,14 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
     <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.flac,.ogg,.m4a,.aac,.wav" multiple onChange={handleImport} style={{ display: 'none' }} />
   )
 
-  // ── Vista compacta: pill oscura al estilo "Now Playing" (imagen 1) ──
+  // ── Vista compacta: pill con degradado de la portada (tonalidad de la carátula) ──
   if (!isIdle) {
     return (
       <div className={`music-player-wrapper ${wrapperVisible ? 'visible' : 'hidden'}`} aria-hidden={!wrapperVisible}>
-        <div className={`music-player compact ${systemActive ? 'system' : 'local'}`}>
+        <div
+          className={`music-player compact ${systemActive ? 'system' : 'local'}`}
+          style={compactBg ? ({ background: compactBg, borderColor: compactBorder } as React.CSSProperties) : undefined}
+        >
           {hiddenAudio}
           <div className="music-player-cover" style={{ background: displayArtwork ? `url(${displayArtwork}) center/cover` : accentColor } as React.CSSProperties}>
             {!displayArtwork && <MusicNoteIcon size={18} />}
