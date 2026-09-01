@@ -3120,6 +3120,7 @@
   justify-content: flex-start;
   align-items: flex-end;
   flex: 1;
+  overflow: visible;
 }
 
 /* cuando el launcher entra en idle, ocultamos filas */
@@ -3177,6 +3178,7 @@
   align-items: stretch;
   gap: 16px;
   max-width: 360px;
+  width: min(360px, 72vw);
   height: auto;
   padding: 0;
   background: none;
@@ -3211,8 +3213,8 @@
 }
 
 .music-player.idle .music-player-cover {
-  width: min(300px, 42vw);
-  height: min(300px, 42vw);
+  width: min(300px, 42vw, 44vh);
+  height: min(300px, 42vw, 44vh);
   max-width: 100%;
   max-height: 100%;
   border-radius: 18px;
@@ -3236,16 +3238,34 @@
 
   .music-player.idle:not(.empty) {
     max-width: 300px;
+    width: min(300px, 72vw);
   }
 
   .music-player.idle .music-player-cover {
-    width: min(240px, 40vw);
-    height: min(240px, 40vw);
+    width: min(240px, 34vw, 28vh);
+    height: min(240px, 34vw, 28vh);
     border-radius: 16px;
   }
 
   .music-player.idle .music-player-cover-system {
     font-size: 48px;
+  }
+}
+
+@media (max-height: 860px) {
+  .music-player-wrapper.idle {
+    max-height: 420px;
+    overflow: visible;
+  }
+
+  .music-player.idle:not(.empty) {
+    max-width: 290px;
+    width: min(290px, 72vw);
+  }
+
+  .music-player.idle .music-player-cover {
+    width: min(220px, 32vw, 24vh);
+    height: min(220px, 32vw, 24vh);
   }
 }
 
@@ -3877,6 +3897,25 @@
 }
 
 @media (max-width: 1600px) {
+  .friends-exit-card {
+    justify-content: center;
+    padding: 14px;
+  }
+
+  .friends-card-left {
+    flex-basis: auto;
+  }
+
+  .friends-card-divider,
+  .friends-card-right {
+    display: none;
+  }
+
+  .friends-ring-wrap {
+    width: 94px;
+    height: 94px;
+  }
+
   .friends-btn.es-btn {
     display: none;
   }
@@ -3906,27 +3945,6 @@
   .friends-row.compact .friends-btn.salir-btn {
     flex: 1.15 1 auto;
     min-width: 72px;
-  }
-}
-
-@media (max-width: 1440px) {
-  .friends-exit-card {
-    justify-content: center;
-    padding: 14px;
-  }
-
-  .friends-card-left {
-    flex-basis: auto;
-  }
-
-  .friends-card-divider,
-  .friends-card-right {
-    display: none;
-  }
-
-  .friends-ring-wrap {
-    width: 94px;
-    height: 94px;
   }
 }
 

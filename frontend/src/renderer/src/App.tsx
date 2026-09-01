@@ -11,8 +11,7 @@ import {
   PowerIcon,
   TrashIcon,
   EditIcon,
-  FolderIcon,
-  SteamIcon
+  FolderIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
@@ -429,8 +428,7 @@ function App(): React.JSX.Element {
   }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
   const currentLibraryItems = librarySource === 'steam' ? steamLibrary : sortedLibraryGames
   const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
-  const compactDetailReviewLayout =
-    Math.abs(windowSize.width - 1380) <= 1 && Math.abs(windowSize.height - 830) <= 1
+  const compactDetailReviewLayout = windowSize.width < 1740 || windowSize.height < 910
 
   // Reproductor visible solo cuando se enfoca "Home" (tarjeta Biblioteca) en la vista principal
   const isHomeFocused =
