@@ -40,34 +40,28 @@
   background-repeat: no-repeat;
 }
 
-/* Capa nueva: Aparece desde opacidad 0 hasta 1 por ENCIMA de la anterior */
+/* Capa nueva: Aparece desde opacidad 0 hasta 1 por ENCIMA de la anterior — 260ms para evitar retraso al volver a Home */
 .bg-fade-in {
   z-index: 2;
-  animation: overlayFadeIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: overlayFadeIn 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: opacity;
 }
 
-/* Capa vieja: Se queda ABAJO y se desvanece lentamente para amortiguar el cambio */
+/* Capa vieja: se desvanece rápido sin dejar negro visible */
 .bg-fade-out {
   z-index: 1;
-  animation: overlayFadeOut 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: overlayFadeOut 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: opacity;
 }
 
 @keyframes overlayFadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 @keyframes overlayFadeOut {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.3; /* No la bajamos a 0 del todo de inmediato para evitar cualquier micro-destello */
-  }
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* Custom background image */
@@ -1207,10 +1201,20 @@
   margin: 0 -24px 28px;
   overflow: hidden;
   background-color: #171717;
+}
+
+.library-hero-bg {
+  position: absolute;
+  inset: 0;
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+  transition: opacity 260ms ease;
+  will-change: opacity;
 }
+
+.library-hero-bg.current { opacity: 1; z-index: 0; }
+.library-hero-bg.prev { opacity: 0; z-index: 0; }
 
 .library-hero-content {
   position: absolute;

@@ -1371,7 +1371,7 @@ function App(): React.JSX.Element {
     }
     : { background: 'var(--gbl-bg-primary)' }
 
-  // ── Background style ──
+  // ── Background style (con crossfade sin destello negro) ──
   const bgStyle = selectedGame?.heroImageUrl
     ? {
       backgroundImage: `linear-gradient(to bottom, transparent 20%, var(--gbl-bg-primary) 56%), url(${selectedGame.heroImageUrl})`,
@@ -1381,7 +1381,7 @@ function App(): React.JSX.Element {
     }
     : backgroundImage
       ? {
-        backgroundImage: `url(${backgroundImage})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.55) 0%, rgba(12,12,12,0.4) 40%, rgba(12,12,12,0.7) 70%, rgba(12,12,12,0.92) 100%), url(${backgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -1391,6 +1391,74 @@ function App(): React.JSX.Element {
           background: `radial-gradient(ellipse at 50% 60%, ${selectedGame.color}15 0%, transparent 60%), var(--gbl-bg-primary)`
         }
         : {}
+
+  // Crossfade launcher-bg sin espacio en negro: prev conserva imagen anterior hasta que la nueva carga
+  const [bgCurrStyle, setBgCurrStyle] = useState<React.CSSProperties>(bgStyle)
+  const [bgPrevStyle, setBgPrevStyle] = useState<React.CSSProperties | null>(null)
+  const bgKeyRef = useRef<string>('')
+  const bgKey = selectedGame?.heroImageUrl ? `hero:${selectedGame.heroImageUrl}` : backgroundImage ? `custom:${backgroundImage.slice(0, 80)}` : selectedGame ? `color:${selectedGame.color}` : 'default'
+  useEffect(() => {
+    if (bgKeyRef.current === bgKey) {
+      // mismo key pero el objeto bgStyle cambia de referencia — actualizar sin animar
+      setBgCurrStyle(bgStyle)
+      return undefined
+    }
+    const prev = bgCurrStyle
+    const next = bgStyle
+    const heroUrl = selectedGame?.heroImageUrl
+    const doSwap = (): void => {
+      setBgPrevStyle(prev)
+      setBgCurrStyle(next)
+      bgKeyRef.current = bgKey
+      window.setTimeout(() => setBgPrevStyle(null), 300)
+    }
+    if (heroUrl) {
+      const img = new Image()
+      let done = false
+      const finish = (): void => { if (!done) { done = true; doSwap() } }
+      img.onload = finish
+      img.onerror = finish
+      img.src = heroUrl
+      if (img.complete) finish()
+      const fallback = window.setTimeout(finish, 800)
+      return (): void => { done = true; window.clearTimeout(fallback) }
+    } else {
+      doSwap()
+      return undefined
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bgKey])
+
+  // Biblioteca: hero con crossfade también
+  const libraryHeroUrl = librarySource === 'steam' ? steamBanner : (librarySelectedGame?.heroImageUrl ?? null)
+  const [libPrevUrl, setLibPrevUrl] = useState<string | null>(null)
+  const [libCurrUrl, setLibCurrUrl] = useState<string | null>(libraryHeroUrl)
+  const libKeyRef = useRef<string | null>(libraryHeroUrl)
+  useEffect(() => {
+    if (libKeyRef.current === libraryHeroUrl) return undefined
+    const prev = libCurrUrl
+    const next = libraryHeroUrl
+    const doSwapLib = (): void => {
+      setLibPrevUrl(prev)
+      setLibCurrUrl(next)
+      libKeyRef.current = next
+      window.setTimeout(() => setLibPrevUrl(null), 300)
+    }
+    if (next) {
+      const img = new Image()
+      let done = false
+      const finish = (): void => { if (!done) { done = true; doSwapLib() } }
+      img.onload = finish
+      img.onerror = finish
+      img.src = next
+      if (img.complete) finish()
+      const fb = window.setTimeout(finish, 800)
+      return (): void => { done = true; window.clearTimeout(fb) }
+    } else {
+      doSwapLib()
+      return undefined
+    }
+  }, [libraryHeroUrl, libCurrUrl])
 
   const steamDetailIsInstalled = Boolean(
     detailGame?.isSteam && detailGame.steamAppId && steamLibrary.some((game) => String(game.appid) === detailGame.steamAppId && game.installed)
@@ -1424,20 +1492,12 @@ function App(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Animated background con sobreposición limpia */}
+      {/* Fondo con crossfade sin destello negro: prev se mantiene hasta que la nueva hero carga */}
       <div className="launcher-bg-wrapper">
-        {/* Capa de salida (Fondo anterior que se desvanece) */}
-        <div 
-          key={`old-${selectedGame?.heroImageUrl || backgroundImage || 'default'}`}
-          className="launcher-bg bg-fade-out" 
-          style={bgStyle} 
-        />
-        {/* Capa de entrada (Fondo nuevo que se sobrepone) */}
-        <div
-          key={`new-${selectedGame?.heroImageUrl || backgroundImage || 'default'}`}
-          className={`launcher-bg bg-fade-in ${backgroundImage ? 'has-custom-bg' : ''}`}
-          style={bgStyle}
-        />
+        {bgPrevStyle && (
+          <div key="bg-prev" className="launcher-bg bg-fade-out" style={bgPrevStyle} aria-hidden />
+        )}
+        <div key="bg-curr" className="launcher-bg bg-fade-in" style={bgCurrStyle} />
       </div>
 
 
@@ -2241,14 +2301,20 @@ function App(): React.JSX.Element {
             </div>
           ) : (
             <>
-              <div
-                className="library-hero"
-                style={librarySource === 'steam'
-                  ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${steamBanner})` }
-                  : librarySelectedGame?.heroImageUrl
-                    ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${librarySelectedGame.heroImageUrl})` }
-                    : undefined}
-              >
+              <div className="library-hero">
+                {libPrevUrl && (
+                  <div
+                    key={`lib-prev-${libPrevUrl}`}
+                    className="library-hero-bg prev"
+                    style={{ backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${libPrevUrl})` }}
+                    aria-hidden
+                  />
+                )}
+                <div
+                  key={`lib-curr-${libCurrUrl ?? 'empty'}`}
+                  className="library-hero-bg current"
+                  style={libCurrUrl ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${libCurrUrl})` } : undefined}
+                />
                 <div className="library-hero-content">
                   <button className="library-back-button" onClick={() => setLibraryView(false)}>
                     <ChevronLeftIcon size={20} /> Volver
