@@ -184,7 +184,7 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
     try {
       if (isPlaying) await audioRef.current.pause()
       else await audioRef.current.play()
-    } catch {}
+    } catch { }
   }, [systemActive, systemTarget, track, isPlaying])
 
   const skipNext = useCallback(async () => {
@@ -207,6 +207,21 @@ export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerPr
     }
     if (tracks.length) setTrackIndex((i) => (i - 1 + tracks.length) % tracks.length)
   }, [systemActive, systemTarget, tracks.length, positionSec])
+
+  // ── L1/R1 del mando (vía useGamepadNavigation) → pista anterior/siguiente ──
+  useEffect(() => {
+    const handleMediaKeys = (e: KeyboardEvent): void => {
+      if (e.key === 'MediaTrackNext') {
+        e.preventDefault()
+        void skipNext()
+      } else if (e.key === 'MediaTrackPrevious') {
+        e.preventDefault()
+        void skipPrev()
+      }
+    }
+    window.addEventListener('keydown', handleMediaKeys)
+    return () => window.removeEventListener('keydown', handleMediaKeys)
+  }, [skipNext, skipPrev])
 
   const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (systemActive) return

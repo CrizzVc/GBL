@@ -1,6 +1,14 @@
 import { useEffect, useRef } from 'react'
 
-type NavKey = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | 'Enter' | 'Escape'
+type NavKey =
+  | 'ArrowUp'
+  | 'ArrowDown'
+  | 'ArrowLeft'
+  | 'ArrowRight'
+  | 'Enter'
+  | 'Escape'
+  | 'MediaTrackPrevious'
+  | 'MediaTrackNext'
 
 const DEADZONE = 0.4
 const INITIAL_DELAY_MS = 380 // demora antes de empezar a repetir al mantener presionado
@@ -8,13 +16,16 @@ const REPEAT_INTERVAL_MS = 150 // velocidad de repetición (typematic) para nave
 
 // Mapeo estándar del Gamepad API (layout tipo Xbox/PlayStation en "standard mapping")
 // 12-15: D-pad arriba/abajo/izquierda/derecha · 0: A / Cross · 1: B / Circle
+// 4: L1/LB · 5: R1/RB → control de música (pista anterior/siguiente)
 const BUTTON_MAP: Record<number, NavKey> = {
   12: 'ArrowUp',
   13: 'ArrowDown',
   14: 'ArrowLeft',
   15: 'ArrowRight',
   0: 'Enter',
-  1: 'Escape'
+  1: 'Escape',
+  4: 'MediaTrackPrevious',
+  5: 'MediaTrackNext'
 }
 
 // Enter/Escape no deben "repetirse" solo por mantener el botón presionado
@@ -44,7 +55,9 @@ export function useGamepadNavigation(enabled: boolean = true): void {
     ArrowLeft: { next: 0, fired: false },
     ArrowRight: { next: 0, fired: false },
     Enter: { next: 0, fired: false },
-    Escape: { next: 0, fired: false }
+    Escape: { next: 0, fired: false },
+    MediaTrackPrevious: { next: 0, fired: false },
+    MediaTrackNext: { next: 0, fired: false }
   })
 
   useEffect(() => {
@@ -75,7 +88,7 @@ export function useGamepadNavigation(enabled: boolean = true): void {
         if (y > DEADZONE) pressed.ArrowDown = true
       }
 
-      ;(Object.keys(heldRef.current) as NavKey[]).forEach((key) => {
+      ; (Object.keys(heldRef.current) as NavKey[]).forEach((key) => {
         const isPressed = !!pressed[key]
         const state = heldRef.current[key]
 
