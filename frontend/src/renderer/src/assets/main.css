@@ -4240,7 +4240,7 @@
 .friend-panel-identity { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
 .friend-panel-identity-text { min-width: 0; padding-top: 8px; }
 .friend-panel h2 { margin: 0; overflow: hidden; font-size: 26px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.friend-panel-presence { margin: 8px 0 0; color: rgba(255, 255, 255, 0.46); }
+.friend-panel-presence { color: rgba(255, 255, 255, 0.46); }
 .friend-panel-presence.active { color: #8ef0a0; }
 .friend-panel-activity { min-height: 42px; display: flex; align-items: center; padding: 0 14px; margin: 0 0 16px; color: rgba(255, 255, 255, 0.48); font-size: 13px; }
 .friend-panel-activity.playing { color: #8ef0a0; background: rgba(76, 217, 100, 0.08); border-left: 3px solid #4cd964; }
