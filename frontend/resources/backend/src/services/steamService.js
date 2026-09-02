@@ -257,10 +257,6 @@ export async function resolveSteamId(apiKey, steamIdentifier) {
 }
 
 export async function getSteamFriends({ key, steamId }) {
-  const friendsKey = `friends:${key}:${steamId}`;
-  const cached = getCached(friendsKey);
-  if (cached) return cached;
-
   try {
     const listRes = await fetch(
       `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=${encodeURIComponent(key)}&steamid=${encodeURIComponent(steamId)}&relationship=friend`
@@ -272,7 +268,6 @@ export async function getSteamFriends({ key, steamId }) {
     const listJson = await listRes.json();
     const friends = Array.isArray(listJson?.friendslist?.friends) ? listJson.friendslist.friends : [];
     if (!friends.length) {
-      setCache(friendsKey, []);
       return [];
     }
 
@@ -298,12 +293,14 @@ export async function getSteamFriends({ key, steamId }) {
           personaname: player?.personaname || 'Steam friend',
           avatar: player?.avatar || null,
           avatarfull: avatarUrl,
-          profileurl: player?.profileurl || null
+          profileurl: player?.profileurl || null,
+          personastate: Number(player?.personastate || 0),
+          gameid: player?.gameid || null,
+          gameextrainfo: player?.gameextrainfo || null
         };
       })
       .filter((friend) => Boolean(friend.avatarfull));
 
-    setCache(friendsKey, mappedFriends);
     return mappedFriends;
   } catch (err) {
     console.error('[SteamService] Error obteniendo amigos:', err.message);

@@ -145,10 +145,17 @@ interface SteamFriend {
   avatar?: string | null
   avatarfull?: string | null
   profileurl?: string | null
+  personastate?: number
+  gameid?: string | null
+  gameextrainfo?: string | null
 }
  
 type SteamGridArtType = 'grids' | 'square_grids' | 'heroes' | 'logos' | 'icons'
 type LibrarySource = 'local' | 'steam'
+
+function isFriendActive(friend: SteamFriend): boolean {
+  return Boolean(friend.gameextrainfo) || Number(friend.personastate) > 0
+}
 
 /* ────────────────────────────────────────────
    Helpers
@@ -335,6 +342,7 @@ function App(): React.JSX.Element {
     steamId64: null
   })
   const [steamFriends, setSteamFriends] = useState<SteamFriend[]>([])
+  const [selectedFriend, setSelectedFriend] = useState<SteamFriend | null>(null)
   const [steamLibrary, setSteamLibrary] = useState<SteamLibraryGame[]>([])
   const [steamLibraryLoading, setSteamLibraryLoading] = useState(false)
 
@@ -414,9 +422,13 @@ function App(): React.JSX.Element {
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
-  const friendsAvatarSlots = useMemo(
-    () => Array.from({ length: 5 }, (_, index) => steamFriends[index] ?? null),
+  const sortedSteamFriends = useMemo(
+    () => [...steamFriends].sort((a, b) => Number(isFriendActive(b)) - Number(isFriendActive(a)) || a.personaname.localeCompare(b.personaname)),
     [steamFriends]
+  )
+  const friendsAvatarSlots = useMemo(
+    () => Array.from({ length: 5 }, (_, index) => sortedSteamFriends[index] ?? null),
+    [sortedSteamFriends]
   )
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const selectedSteamGame = useMemo(
@@ -831,7 +843,10 @@ function App(): React.JSX.Element {
           personaname: friend.personaname || 'Steam friend',
           avatar: friend.avatar || null,
           avatarfull: friend.avatarfull || friend.avatar || null,
-          profileurl: friend.profileurl || null
+          profileurl: friend.profileurl || null,
+          personastate: Number(friend.personastate || 0),
+          gameid: friend.gameid || null,
+          gameextrainfo: friend.gameextrainfo || null
         }))
         .filter((friend) => Boolean(friend.avatarfull))
 
@@ -846,13 +861,29 @@ function App(): React.JSX.Element {
     if (steamAccount.linked) {
       void loadSteamLibrary()
       void loadSteamFriends()
+      const friendsRefresh = window.setInterval(() => { void loadSteamFriends() }, 30000)
+      return () => window.clearInterval(friendsRefresh)
     } else {
       setSteamLibrary([])
       setSteamFriends([])
       setSelectedSteamAppId(null)
       achievementsRef.current = {}
     }
+    return undefined
   }, [steamAccount, loadSteamLibrary, loadSteamFriends])
+
+  useEffect(() => {
+    if (!selectedFriend) return
+    const handleFriendPanelKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        playClose()
+        setSelectedFriend(null)
+      }
+    }
+    window.addEventListener('keydown', handleFriendPanelKey)
+    return () => window.removeEventListener('keydown', handleFriendPanelKey)
+  }, [selectedFriend])
 
   useEffect(() => {
     if (!steamAccount.linked || !steamAccount.apiKey || !steamAccount.steamId) return
@@ -2810,17 +2841,30 @@ function App(): React.JSX.Element {
               {friendsAvatarSlots.map((friend, index) => (
                 <div
                   key={friend ? friend.steamid : `friend-slot-${index}`}
-                  className={`friend-avatar ${friend ? '' : 'empty'}`}
+                  className={`friend-avatar ${friend ? '' : 'empty'} ${friend && isFriendActive(friend) ? 'active' : ''}`}
                   style={{ zIndex: 5 - index }}
                   title={friend ? friend.personaname : 'Vacío'}
+                  onClick={friend ? () => { playEnter(); setSelectedFriend(friend) } : undefined}
+                  onKeyDown={friend ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      playEnter()
+                      setSelectedFriend(friend)
+                    }
+                  } : undefined}
+                  role={friend ? 'button' : undefined}
+                  tabIndex={friend ? 0 : undefined}
                 >
                   {friend ? (
-                    <img
-                      src={friend.avatarfull || friend.avatar || ''}
-                      alt={friend.personaname}
-                      className="friend-avatar-image"
-                      draggable={false}
-                    />
+                    <>
+                      <img
+                        src={friend.avatarfull || friend.avatar || ''}
+                        alt={friend.personaname}
+                        className="friend-avatar-image"
+                        draggable={false}
+                      />
+                      {isFriendActive(friend) && <span className="friend-avatar-status" aria-label="Activo" />}
+                    </>
                   ) : (
                     <span className="friend-avatar-empty" />
                   )}
@@ -2886,6 +2930,56 @@ function App(): React.JSX.Element {
           </div>
         </div>
       </div>
+
+      {selectedFriend && (
+        <div className="friend-panel-layer" role="presentation">
+          <button
+            className="friend-panel-backdrop"
+            aria-label="Cerrar panel de amigo"
+            onClick={() => setSelectedFriend(null)}
+          />
+          <aside className="friend-panel" aria-label={`Perfil de ${selectedFriend.personaname}`}>
+            <button className="friend-panel-close" onClick={() => setSelectedFriend(null)} title="Cerrar">
+              <CloseIcon size={18} />
+            </button>
+            <div className="friend-panel-avatar-wrap">
+              <img
+                src={selectedFriend.avatarfull || selectedFriend.avatar || ''}
+                alt={selectedFriend.personaname}
+                className="friend-panel-avatar"
+                draggable={false}
+              />
+              <span className={`friend-panel-status ${isFriendActive(selectedFriend) ? 'active' : ''}`} />
+            </div>
+            <h2>{selectedFriend.personaname}</h2>
+            <p className={`friend-panel-presence ${isFriendActive(selectedFriend) ? 'active' : ''}`}>
+              {isFriendActive(selectedFriend) ? 'Activo' : 'Desconectado'}
+            </p>
+            {selectedFriend.gameextrainfo && (
+              <div className="friend-panel-playing">
+                <span>Jugando ahora</span>
+                <strong>{selectedFriend.gameextrainfo}</strong>
+              </div>
+            )}
+            <a
+              className="friend-panel-action"
+              href={`steam://url/SteamIDFriendsPage/${selectedFriend.steamid}`}
+              onClick={() => playEnter()}
+            >
+              Ver perfil en Steam
+            </a>
+            {selectedFriend.gameid && (
+              <a
+                className="friend-panel-action primary"
+                href={`steam://rungameid/${selectedFriend.gameid}`}
+                onClick={() => playEnter()}
+              >
+                Unirse al juego
+              </a>
+            )}
+          </aside>
+        </div>
+      )}
 
       {/* ── Context Menu ── */}
       {contextMenu.visible && contextMenu.gameId && (() => {

@@ -3848,8 +3848,8 @@
 }
 
 .friend-avatar {
-  width: 23%;
-  height: 23%;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid #0f0f0f;
   margin-left: -8px;
@@ -3860,6 +3860,8 @@
   position: relative;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: transform var(--gbl-transition-fast), border-color var(--gbl-transition-fast);
 }
 
 .friend-avatar:first-child {
@@ -3870,6 +3872,27 @@
   background: rgba(255, 255, 255, 0.04);
   border-style: dashed;
   border-color: rgba(255, 255, 255, 0.18);
+  cursor: default;
+}
+
+.friend-avatar:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.72);
+}
+
+.friend-avatar.active {
+  border-color: rgba(76, 217, 100, 0.9);
+}
+
+.friend-avatar-status {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #0f0f0f;
+  border-radius: 50%;
+  background: #4cd964;
 }
 
 .friend-avatar-image {
@@ -3955,8 +3978,15 @@
     flex-basis: auto;
   }
 
-  .friends-card-divider,
+  .friends-card-divider {
+    display: none;
+  }
+
   .friends-card-right {
+    display: flex;
+  }
+
+  .friends-actions-grid {
     display: none;
   }
 
@@ -4108,3 +4138,87 @@
   transform: translateY(12px);
   transition: max-height 320ms ease, opacity 260ms ease, transform 320ms ease, margin 320ms ease, padding 320ms ease;
 }
+
+.friend-panel-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.friend-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.34);
+  pointer-events: auto;
+  cursor: default;
+}
+
+.friend-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 88vw);
+  padding: 72px 30px 34px;
+  color: #fff;
+  background: linear-gradient(160deg, rgba(38, 38, 43, 0.98), rgba(18, 18, 21, 0.99));
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -20px 0 55px rgba(0, 0, 0, 0.42);
+  pointer-events: auto;
+  animation: friend-panel-in 220ms ease-out both;
+}
+
+.friend-panel-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.friend-panel-avatar-wrap {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  margin-bottom: 22px;
+}
+
+.friend-panel-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.14);
+}
+
+.friend-panel-status {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #202024;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.friend-panel-status.active { background: #4cd964; }
+.friend-panel h2 { margin: 0; font-size: 26px; font-weight: 600; }
+.friend-panel-presence { margin: 8px 0 30px; color: rgba(255, 255, 255, 0.46); }
+.friend-panel-presence.active { color: #8ef0a0; }
+.friend-panel-playing { display: grid; gap: 6px; padding: 16px; margin-bottom: 26px; background: rgba(76, 217, 100, 0.08); border-left: 3px solid #4cd964; }
+.friend-panel-playing span { color: rgba(255, 255, 255, 0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.friend-panel-playing strong { font-size: 16px; font-weight: 500; }
+.friend-panel-action { display: block; padding: 13px 16px; margin-top: 10px; color: rgba(255, 255, 255, 0.78); text-align: center; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(255, 255, 255, 0.05); }
+.friend-panel-action.primary { color: #101812; background: #8ef0a0; border-color: #8ef0a0; }
+@keyframes friend-panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
