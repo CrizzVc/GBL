@@ -4,7 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
-import { spawn } from 'child_process'
+import { spawn, fork, type ChildProcess } from 'child_process'
 import * as http from 'http'
 import { URL } from 'url'
 
@@ -30,6 +30,47 @@ let mediaSessionsUnsubscribe: (() => void) | null = null
 let mediaSessionsPollTimer: NodeJS.Timeout | null = null
 let windowsMediaSessionsModule: any = null
 let winMediaControlModulePromise: Promise<any> | null = null
+
+// ── Backend Express server (proceso hijo) ──
+let backendProcess: ChildProcess | null = null
+
+function startBackend(): void {
+  if (is.dev) return // En dev se corre manualmente con "npm run dev" en backend/
+
+  const backendDir = join(process.resourcesPath, 'backend')
+  const scriptPath = join(backendDir, 'src', 'app.js')
+
+  try {
+    backendProcess = fork(scriptPath, {
+      cwd: backendDir,
+      env: {
+        ...process.env,
+        PORT: '3000'
+      }
+    })
+
+    backendProcess.on('error', (err) => {
+      console.error('[Backend] Error starting:', err.message)
+    })
+
+    backendProcess.on('exit', (code) => {
+      console.log(`[Backend] Process exited with code ${code}`)
+      backendProcess = null
+    })
+
+    console.log('[Backend] Started on port 3000')
+  } catch (err: any) {
+    console.error('[Backend] Failed to start:', err.message)
+  }
+}
+
+function stopBackend(): void {
+  if (backendProcess && !backendProcess.killed) {
+    console.log('[Backend] Stopping...')
+    backendProcess.kill()
+    backendProcess = null
+  }
+}
 
 function getWindowsMediaSessionsModule(): any {
   if (windowsMediaSessionsModule) return windowsMediaSessionsModule
@@ -952,6 +993,7 @@ app.whenReady().then(() => {
     return sendMediaControlAction(norm, target)
   })
 
+  startBackend()
   startMediaSessionsBridge()
   createWindow()
 
@@ -966,6 +1008,7 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  stopBackend()
   stopMediaSessionsBridge()
   if (process.platform !== 'darwin') {
     app.quit()
@@ -973,6 +1016,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  stopBackend()
   stopMediaSessionsBridge()
 })
 
