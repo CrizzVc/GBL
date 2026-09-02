@@ -667,8 +667,8 @@ function App(): React.JSX.Element {
   useEffect(() => {
     const updateWindowSize = (): void => {
       setWindowSize({
-        width: window.outerWidth,
-        height: window.outerHeight
+        width: window.innerWidth,
+        height: window.innerHeight
       })
     }
 

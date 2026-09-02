@@ -6,6 +6,7 @@
 #root {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -520,6 +521,7 @@
 
 .bottom-card-square {
   aspect-ratio: 1 / 1;
+  height: clamp(140px, 23vh, 200px);
   max-height: 200px;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
@@ -559,7 +561,7 @@
 
 
 .box-cards {
-  height: 200px;
+  height: clamp(140px, 23vh, 200px);
   border-radius: var(--gbl-radius-md);
   /* background: var(--gbl-bg-card); */
   /* border: 1px solid var(--gbl-border); */
@@ -574,7 +576,7 @@
 
 
 .bottom-card {
-  height: 200px;
+  height: clamp(140px, 23vh, 200px);
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
   /* border: 1px solid var(--gbl-border); */
@@ -1872,7 +1874,7 @@
   position: relative;
   width: 100%;
   max-width: 900px;
-  height: 200px;
+  height: clamp(140px, 23vh, 200px);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -2379,7 +2381,7 @@
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-    height: 220px;
+    height: clamp(140px, 23vh, 200px);
   }
 
   .bottom-card-square {
@@ -2409,7 +2411,7 @@
   .bottom-card,
   .box-cards,
   .bottom-card-square {
-    height: 200px;
+    height: clamp(140px, 23vh, 200px);
     max-height: 240px;
   }
 }
