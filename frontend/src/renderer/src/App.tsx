@@ -656,11 +656,11 @@ function App(): React.JSX.Element {
     const target = document.getElementById(`wallpaper-card-${wallpaperIndex}`)
     if (!target) return
     const row = wallpaperRowRef.current
-    const targetLeft = target.offsetLeft
-    const targetWidth = target.offsetWidth
-    const rowWidth = row.clientWidth
-    const desiredLeft = targetLeft - (rowWidth - targetWidth) / 2
-    row.scrollTo({ left: Math.max(0, desiredLeft), behavior: 'smooth' })
+    const targetTop = target.offsetTop
+    const targetHeight = target.offsetHeight
+    const rowHeight = row.clientHeight
+    const desiredTop = targetTop - (rowHeight - targetHeight) / 2
+    row.scrollTo({ top: Math.max(0, desiredTop), behavior: 'smooth' })
   }, [wallpaperIndex, isWallpaperMode, wallpaperImages])
 
   // ── Clock ──
@@ -2010,14 +2010,14 @@ function App(): React.JSX.Element {
           setSidebarOpen(false)
         }
       } else if (isWallpaperMode) {
-        if (e.key === 'ArrowRight') {
+        if (e.key === 'ArrowDown') {
           e.preventDefault()
           setWallpaperIndex((prev) => {
             const next = Math.min(prev + 1, wallpaperImages.length - 1)
             if (next !== prev) playMove()
             return next
           })
-        } else if (e.key === 'ArrowLeft') {
+        } else if (e.key === 'ArrowUp') {
           e.preventDefault()
           setWallpaperIndex((prev) => {
             const next = Math.max(prev - 1, 0)
@@ -2526,7 +2526,7 @@ function App(): React.JSX.Element {
               </div>
             ))}
           </div>
-          <div className="wallpaper-row-hint">← → para navegar · Enter o doble click para elegir fondo de Home · Esc para salir</div>
+          <div className="wallpaper-row-hint">↑ ↓ para navegar · Enter o doble click para elegir fondo de Home · Esc para salir</div>
         </div>
       )}
 

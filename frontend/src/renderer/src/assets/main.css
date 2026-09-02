@@ -4028,52 +4028,107 @@
   display: none;
 }
 
-/* Wallpaper row — solo en Home, reemplaza games row */
+/* Wallpaper row — solo en Home, vertical a la izquierda con perspectiva 3D */
 .wallpaper-row-container {
-  flex-shrink: 0;
-  padding: 0 28px 16px 28px;
-  position: relative;
-  z-index: 10;
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  perspective: 1000px;
 }
 
 .wallpaper-row {
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 8px 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  overflow-y: auto;
+  overflow-x: visible;
+  padding: 8px 40px 8px 8px;
   scroll-behavior: smooth;
   will-change: scroll-position;
-  content-visibility: auto;
+  max-height: 78vh;
 }
 
 .wallpaper-row::-webkit-scrollbar {
-  height: 4px;
+  width: 4px;
 }
 
 .wallpaper-card {
   flex-shrink: 0;
-  width: clamp(150px, 20.5vh, 295px);
+  width: clamp(150px, 16vw, 260px);
   aspect-ratio: 16 / 9;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
   border: 2px solid var(--gbl-border);
   overflow: hidden;
   cursor: pointer;
-  transition: all var(--gbl-transition-normal);
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
-  will-change: transform, border-color;
-  contain: layout style;
+  will-change: transform, border-color, opacity;
+  transform-origin: left center;
+  margin-top: -18px;
+}
+
+.wallpaper-card:first-child {
+  margin-top: 0;
+}
+
+.wallpaper-card:nth-child(1) {
+  transform: rotateZ(-6deg) rotateY(4deg);
+  z-index: 5;
+  opacity: 1;
+}
+
+.wallpaper-card:nth-child(2) {
+  transform: rotateZ(2deg) rotateY(-3deg);
+  z-index: 4;
+  opacity: 0.95;
+}
+
+.wallpaper-card:nth-child(3) {
+  transform: rotateZ(-4deg) rotateY(5deg);
+  z-index: 3;
+  opacity: 0.88;
+}
+
+.wallpaper-card:nth-child(4) {
+  transform: rotateZ(3deg) rotateY(-2deg);
+  z-index: 2;
+  opacity: 0.8;
+}
+
+.wallpaper-card:nth-child(5) {
+  transform: rotateZ(-2deg) rotateY(3deg);
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.wallpaper-card:nth-child(n+6) {
+  transform: rotateZ(1deg) rotateY(-1deg);
+  z-index: 0;
+  opacity: 0.6;
 }
 
 .wallpaper-card:hover {
   border-color: var(--gbl-border-hover);
-  transform: translateY(-4px);
-  box-shadow: var(--gbl-shadow-md);
+  transform: rotateZ(0deg) rotateY(0deg) scale(1.08) translateX(8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 50;
+  opacity: 1;
 }
 
 .wallpaper-card.selected {
   border-color: var(--gbl-accent);
-  transform: translateY(-6px);
+  transform: rotateZ(0deg) rotateY(0deg) scale(1.12) translateX(12px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  z-index: 60;
+  opacity: 1;
 }
 
 .wallpaper-card-img {
@@ -4081,14 +4136,19 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
 }
 
 .wallpaper-row-hint {
-  margin-top: 8px;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--gbl-text-muted);
-  text-align: center;
+  text-align: left;
   letter-spacing: 0.2px;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  margin-top: 8px;
 }
 
 /* Cuando wallpaper-mode está activo, esconder games row y bottom row */
