@@ -1971,19 +1971,24 @@ function App(): React.JSX.Element {
           setHomeCardMode('main')
         } else if (e.key === 'Enter') {
           e.preventDefault()
-          playEnter()
           if (bottomCardIndex === 0) {
+            playEnter()
             openLibraryView()
           } else if (bottomCardIndex === 1) {
-            setCurrentStoreIndex((prev) => (prev + 1) % Math.max(1, stores.length || 1))
+            const store = stores[currentStoreIndex]
+            if (store) {
+              playEnter()
+              void handleOpenStore(store.id)
+            }
           } else if (bottomCardIndex === 2) {
+            playEnter()
             setModal('settings')
           } else if (bottomCardIndex === 3) {
+            playEnter()
             setHomeCardMode('quick-apps')
             setQuickAppFocusIndex(0)
-          } else if (bottomCardIndex === 4) {
-            setModal('settings')
           }
+          // bottomCardIndex === 4 (carga): no hace nada
         } else if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
@@ -2027,7 +2032,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, handleLaunchQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -2367,7 +2372,7 @@ function App(): React.JSX.Element {
         <div className="games-row" ref={gamesRowRef}>
           {/* Library card */}
           <div
-            className={`game-card library-card ${selectedGameId === 'library' || (!selectedGameId && games.length === 0) ? 'selected' : ''}`}
+            className={`game-card library-card ${homeCardMode === 'main' && (selectedGameId === 'library' || (!selectedGameId && games.length === 0)) ? 'selected' : ''}`}
             onClick={() => {
               if (selectedGameId === 'library') openLibraryView()
               else setSelectedGameId('library');
@@ -2386,7 +2391,7 @@ function App(): React.JSX.Element {
           {visibleGames.map((game) => (
             <div
               key={game.id}
-              className={`game-card ${selectedGameId === game.id ? 'selected' : ''}`}
+              className={`game-card ${homeCardMode === 'main' && selectedGameId === game.id ? 'selected' : ''}`}
               onClick={() => openDetailView(game.id)}
               onDoubleClick={() => handleLaunchGame(game.id)}
               onContextMenu={(e) => handleContextMenu(e, game.id)}
@@ -2425,7 +2430,11 @@ function App(): React.JSX.Element {
       <div className="bottom-row">
         <div
           className={`dashboard-container bottom-card ${homeCardMode === 'bottom' && bottomCardIndex === 0 ? 'selected' : ''}`}
-          onClick={openLibraryView}
+          onClick={() => {
+            setHomeCardMode('bottom')
+            setBottomCardIndex(0)
+            openLibraryView()
+          }}
           style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
         >
           <div className="dashboard">
@@ -2520,7 +2529,7 @@ function App(): React.JSX.Element {
         <div className="box-cards">
 
 
-          <div className={`bottom-card-square ${homeCardMode === 'bottom' && bottomCardIndex === 2 ? 'selected' : ''}`} onClick={() => setModal('settings')} id="btn-settings">
+          <div className={`bottom-card-square ${homeCardMode === 'bottom' && bottomCardIndex === 2 ? 'selected' : ''}`} onClick={() => { setHomeCardMode('bottom'); setBottomCardIndex(2); setModal('settings') }} id="btn-settings">
             <SettingsIcon size={70} className="bottom-card-icon" />
           </div>
 
