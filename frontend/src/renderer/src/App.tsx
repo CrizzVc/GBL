@@ -234,13 +234,18 @@ async function fetchAutoArtworkUrl(appName: string): Promise<string | null> {
     if (!Array.isArray(searchData) || searchData.length === 0) return null
 
     const gameId = searchData[0].id
+    const squareGridsRes = await fetch(`${BACKEND_URL}/api/steamgrid/square_grids/${gameId}`)
+    if (squareGridsRes.ok) {
+      const squareGrids = await squareGridsRes.json()
+      if (Array.isArray(squareGrids) && squareGrids.length > 0 && squareGrids[0].url) {
+        return squareGrids[0].url
+      }
+    }
+
     const gridsRes = await fetch(`${BACKEND_URL}/api/steamgrid/grids/${gameId}`)
     if (!gridsRes.ok) return null
-
     const grids = await gridsRes.json()
-    if (!Array.isArray(grids) || grids.length === 0) return null
-
-    return grids[0].url || null
+    return Array.isArray(grids) && grids.length > 0 ? grids[0].url || null : null
   } catch (err) {
     console.error('Error auto-fetching artwork:', err)
     return null
@@ -1289,13 +1294,18 @@ function App(): React.JSX.Element {
           const gameId = searchData[0].id
           newGame.steamGridId = gameId
 
-          const [gridsRes, heroesRes, logosRes] = await Promise.all([
+          const [squareGridsRes, gridsRes, heroesRes, logosRes] = await Promise.all([
+            fetch(`${BACKEND_URL}/api/steamgrid/square_grids/${gameId}`),
             fetch(`${BACKEND_URL}/api/steamgrid/grids/${gameId}`),
             fetch(`${BACKEND_URL}/api/steamgrid/heroes/${gameId}`),
             fetch(`${BACKEND_URL}/api/steamgrid/logos/${gameId}`)
           ])
 
-          if (gridsRes.ok) {
+          if (squareGridsRes.ok) {
+            const squareGrids = await squareGridsRes.json()
+            if (squareGrids && squareGrids.length > 0) newGame.gridImageUrl = squareGrids[0].url
+          }
+          if (!newGame.gridImageUrl && gridsRes.ok) {
             const grids = await gridsRes.json()
             if (grids && grids.length > 0) newGame.gridImageUrl = grids[0].url
           }
@@ -3853,7 +3863,7 @@ function App(): React.JSX.Element {
                 </div>
 
                 <div className="sgdb-tabs">
-                  {(['grids', 'square_grids', 'heroes', 'logos', 'icons'] as SteamGridArtType[]).map((type) => (
+                  {(['square_grids', 'grids', 'heroes', 'logos', 'icons'] as SteamGridArtType[]).map((type) => (
                     <button
                       key={type}
                       className={`sgdb-tab ${sgdbArtType === type ? 'active' : ''}`}
