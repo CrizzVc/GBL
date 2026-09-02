@@ -2866,25 +2866,30 @@ function App(): React.JSX.Element {
                 draggable={false}
               />
             </div>
-            <div className="friend-panel-avatar-wrap">
-              <img
-                src={selectedFriend.avatarfull || selectedFriend.avatar || ''}
-                alt=""
-                className="friend-panel-avatar"
-                draggable={false}
-              />
-              <span className={`friend-panel-status ${isFriendActive(selectedFriend) ? 'active' : ''}`} />
-            </div>
-            <h2>{selectedFriend.personaname}</h2>
-            <p className={`friend-panel-presence ${isFriendActive(selectedFriend) ? 'active' : ''}`}>
-              {isFriendActive(selectedFriend) ? 'Activo' : 'Desconectado'}
-            </p>
-            {selectedFriend.gameextrainfo && (
-              <div className="friend-panel-playing">
-                <span>Jugando ahora</span>
-                <strong>{selectedFriend.gameextrainfo}</strong>
+            <div className="friend-panel-identity">
+              <div className="friend-panel-avatar-wrap">
+                <img
+                  src={selectedFriend.avatarfull || selectedFriend.avatar || ''}
+                  alt=""
+                  className="friend-panel-avatar"
+                  draggable={false}
+                />
+                <span className={`friend-panel-status ${isFriendActive(selectedFriend) ? 'active' : ''}`} />
               </div>
-            )}
+              <div className="friend-panel-identity-text">
+                <h2>{selectedFriend.personaname}</h2>
+                <p className={`friend-panel-presence ${isFriendActive(selectedFriend) ? 'active' : ''}`}>
+                  {isFriendActive(selectedFriend) ? 'Conectado' : 'Desconectado'}
+                </p>
+              </div>
+            </div>
+            <p className={`friend-panel-activity ${selectedFriend.gameextrainfo ? 'playing' : ''}`}>
+              {selectedFriend.gameextrainfo
+                ? `Jugando a ${selectedFriend.gameextrainfo}`
+                : isFriendActive(selectedFriend)
+                  ? 'Está conectado, pero no está jugando'
+                  : 'No está conectado'}
+            </p>
             <button
               className="friend-panel-action"
               onClick={async () => {

@@ -4213,7 +4213,7 @@
   position: relative;
   width: 112px;
   height: 112px;
-  margin: -56px 0 22px;
+  margin: -56px 0 0;
   z-index: 1;
 }
 
@@ -4237,12 +4237,13 @@
 }
 
 .friend-panel-status.active { background: #4cd964; }
-.friend-panel h2 { margin: 0; font-size: 26px; font-weight: 600; }
-.friend-panel-presence { margin: 8px 0 30px; color: rgba(255, 255, 255, 0.46); }
+.friend-panel-identity { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+.friend-panel-identity-text { min-width: 0; padding-top: 8px; }
+.friend-panel h2 { margin: 0; overflow: hidden; font-size: 26px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.friend-panel-presence { margin: 8px 0 0; color: rgba(255, 255, 255, 0.46); }
 .friend-panel-presence.active { color: #8ef0a0; }
-.friend-panel-playing { display: grid; gap: 6px; padding: 16px; margin-bottom: 26px; background: rgba(76, 217, 100, 0.08); border-left: 3px solid #4cd964; }
-.friend-panel-playing span { color: rgba(255, 255, 255, 0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
-.friend-panel-playing strong { font-size: 16px; font-weight: 500; }
+.friend-panel-activity { min-height: 42px; display: flex; align-items: center; padding: 0 14px; margin: 0 0 16px; color: rgba(255, 255, 255, 0.48); font-size: 13px; }
+.friend-panel-activity.playing { color: #8ef0a0; background: rgba(76, 217, 100, 0.08); border-left: 3px solid #4cd964; }
 .friend-panel-action { display: block; width: 100%; padding: 13px 16px; margin-top: 10px; color: rgba(255, 255, 255, 0.78); text-align: center; font: inherit; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(255, 255, 255, 0.05); }
 .friend-panel-action.primary { color: #101812; background: #8ef0a0; border-color: #8ef0a0; }
 .friend-panel-list { margin-top: 28px; }
