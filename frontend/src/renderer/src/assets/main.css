@@ -4247,8 +4247,8 @@
 .friend-panel-action.primary { color: #101812; background: #8ef0a0; border-color: #8ef0a0; }
 .friend-panel-list { margin-top: 28px; }
 .friend-panel-list h3 { margin: 0 0 10px; color: rgba(255, 255, 255, 0.46); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-.friend-panel-friend-card { display: flex; align-items: center; width: 100%; gap: 11px; padding: 9px; margin-top: 6px; color: #fff; text-align: left; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 9px; background: rgba(255, 255, 255, 0.04); }
-.friend-panel-friend-card:hover { border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.08); }
+.friend-panel-friend-card { display: flex; align-items: center; width: calc(100% + 60px); gap: 11px; padding: 12px 30px; margin: 6px -30px 0; color: #fff; text-align: left; cursor: pointer; border: 0; border-radius: 0; background: rgba(255, 255, 255, 0.04); }
+.friend-panel-friend-card:hover { background: rgba(255, 255, 255, 0.08); }
 .friend-panel-friend-avatar { width: 35px; height: 35px; flex: 0 0 35px; object-fit: cover; border-radius: 50%; }
 .friend-panel-friend-info { display: grid; min-width: 0; gap: 3px; }
 .friend-panel-friend-info strong { overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
