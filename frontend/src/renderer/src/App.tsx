@@ -3315,14 +3315,6 @@ function App(): React.JSX.Element {
             <div className="library-empty library-view-empty">
               Vincula tu cuenta de Steam desde Ajustes para ver tu biblioteca.
             </div>
-          ) : librarySource === 'steam' && steamLibraryLoading ? (
-            <div className="library-empty library-view-empty">
-              Cargando juegos de Steam...
-            </div>
-          ) : librarySource === 'steam' && steamLibrary.length === 0 ? (
-            <div className="library-empty library-view-empty">
-              No se encontraron juegos en tu biblioteca de Steam.
-            </div>
           ) : (
             <>
               <div className="library-hero">
@@ -3365,7 +3357,9 @@ function App(): React.JSX.Element {
                     </button>
                   </div>
                   <p className="library-view-subtitle">
-                    {currentLibraryCount} {currentLibraryCount === 1 ? 'juego' : 'juegos'}
+                    {librarySource === 'steam' && steamLibraryLoading
+                      ? 'Cargando juegos...'
+                      : `${currentLibraryCount} ${currentLibraryCount === 1 ? 'juego' : 'juegos'}`}
                   </p>
                   {librarySource === 'local' && (
                     <button className="btn-primary library-add-button" onClick={openAddGameModal}>
@@ -3376,8 +3370,17 @@ function App(): React.JSX.Element {
               </div>
               <div key={librarySource} className="library-source-panel">
                 <div className="library-grid library-view-grid" ref={libraryGridRef}>
-                  {librarySource === 'steam'
-                    ? steamLibrary.map((game) => (
+                  {librarySource === 'steam' ? (
+                    steamLibraryLoading ? (
+                      Array.from({ length: 15 }).map((_, i) => (
+                        <div key={`steam-skeleton-${i}`} className="library-item-skeleton" />
+                      ))
+                    ) : steamLibrary.length === 0 ? (
+                      <div className="library-empty library-view-empty">
+                        No se encontraron juegos en tu biblioteca de Steam.
+                      </div>
+                    ) : (
+                      steamLibrary.map((game) => (
                       <article
                         key={game.appid}
                         id={`library-game-${game.appid}`}
@@ -3425,9 +3428,11 @@ function App(): React.JSX.Element {
                             <MoreIcon size={14} />
                           </button>
                         </div>
-                      </article>
-                    ))
-                    : sortedLibraryGames.map((game) => (
+                                            </article>
+                      ))
+                    )
+                  ) : (
+                    sortedLibraryGames.map((game) => (
                       <article
                         key={game.id}
                         id={`library-game-${game.id}`}
@@ -3466,7 +3471,8 @@ function App(): React.JSX.Element {
                           </button>
                         </div>
                       </article>
-                    ))}
+                    ))
+                  )}
                 </div>
               </div>
             </>

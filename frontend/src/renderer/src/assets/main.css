@@ -1092,6 +1092,27 @@
   font-size: 14px;
 }
 
+
+.library-item-skeleton {
+  aspect-ratio: 1;
+  border-radius: var(--gbl-radius-sm);
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.04) 30%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  cursor: default;
+  pointer-events: none;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ── Library View ── */
 .library-view {
   position: absolute;
@@ -2505,7 +2526,7 @@
 }
 
 .btn-play-detail {
-  width: 320px;
+  width: 32vh;
   height: 60px;
   padding: 0;
   font-size: 15px;
