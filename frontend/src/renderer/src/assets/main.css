@@ -40,41 +40,11 @@
   background-size: contain;
   background-position: top;
   background-repeat: no-repeat;
+  will-change: mask-image, -webkit-mask-image, transform;
+  transform-origin: center;
 }
 
-/* Capa nueva: Aparece desde opacidad 0 hasta 1 por ENCIMA de la anterior — 260ms para evitar retraso al volver a Home */
-.bg-fade-in {
-  z-index: 2;
-  animation: overlayFadeIn 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  will-change: opacity;
-}
-
-/* Capa vieja: se desvanece rápido sin dejar negro visible */
-.bg-fade-out {
-  z-index: 1;
-  animation: overlayFadeOut 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  will-change: opacity;
-}
-
-@keyframes overlayFadeIn {
-  0% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes overlayFadeOut {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
+/* Wipe transition is now handled by inline radial-gradient mask styles in App.tsx */
 
 /* Custom background image */
 .launcher-bg.has-custom-bg {

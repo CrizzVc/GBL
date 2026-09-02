@@ -412,6 +412,7 @@ function App(): React.JSX.Element {
   const gamesRowRef = useRef<HTMLDivElement>(null)
   const libraryGridRef = useRef<HTMLDivElement>(null)
   const previousLibraryIndexRef = useRef<number | null>(null)
+  const wipeDirectionRef = useRef<1 | -1>(1)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
@@ -2133,12 +2134,14 @@ function App(): React.JSX.Element {
           e.preventDefault()
           if (currentIndex < gameIds.length - 1) {
             playMove()
+            wipeDirectionRef.current = 1
             setSelectedGameId(gameIds[currentIndex + 1])
           }
         } else if (e.key === 'ArrowLeft') {
           e.preventDefault()
           if (currentIndex > 0) {
             playMove()
+            wipeDirectionRef.current = -1
             setSelectedGameId(gameIds[currentIndex - 1])
           }
         } else if (e.key === 'ArrowDown') {
@@ -2302,25 +2305,66 @@ function App(): React.JSX.Element {
             backgroundRepeat: 'no-repeat'
           }
 
-  // Crossfade launcher-bg sin espacio en negro: prev conserva imagen anterior hasta que la nueva carga
+  // Crossfade launcher-bg con wipe circular direccional (estilo PS5)
   const [bgCurrStyle, setBgCurrStyle] = useState<React.CSSProperties>(bgStyle)
   const [bgPrevStyle, setBgPrevStyle] = useState<React.CSSProperties | null>(null)
   const bgKeyRef = useRef<string>('')
+  const wipeRafRef = useRef<number>(0)
   const bgKey = wallpaperBg ? `wall:${wallpaperBg.slice(0, 80)}` : selectedGame?.heroImageUrl ? `hero:${selectedGame.heroImageUrl}` : backgroundImage ? `custom:${backgroundImage.slice(0, 80)}` : selectedGame ? `color:${selectedGame.color}` : 'default'
   useEffect(() => {
     if (bgKeyRef.current === bgKey) {
-      // mismo key pero el objeto bgStyle cambia de referencia — actualizar sin animar
       setBgCurrStyle(bgStyle)
       return undefined
     }
     const prev = bgCurrStyle
     const next = bgStyle
+    const dir = wipeDirectionRef.current
     const heroUrl = wallpaperBg ?? selectedGame?.heroImageUrl
+    const buildMask = (originX: string, p: number): string =>
+      `radial-gradient(circle at ${originX} 50%, black ${p}%, transparent ${p + 100}%)`
     const doSwap = (): void => {
-      setBgPrevStyle(prev)
-      setBgCurrStyle(next)
+      const duration = 600
+      const ease = (t: number): number => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+      const startTime = performance.now()
+      const originX = dir === 1 ? '0%' : '100%'
+      // Prev layer: starts fully visible (p=150), will shrink to hidden (p=-100)
+      setBgPrevStyle({ ...prev, zIndex: 1 })
+      // New layer: starts hidden (p=-100), will expand to fully visible (p=150)
+      setBgCurrStyle({ ...next, zIndex: 2 })
       bgKeyRef.current = bgKey
-      window.setTimeout(() => setBgPrevStyle(null), 300)
+      const animate = (now: number): void => {
+        const elapsed = now - startTime
+        const raw = Math.min(elapsed / duration, 1)
+        const fade = ease(raw)
+        // Prev layer progress: 1→0 (visible→hidden)
+        const prevP = Math.round((1 - fade) * 250 - 100)
+        // New layer progress: 0→1 (hidden→visible)
+        const currP = Math.round(fade * 250 - 100)
+        const prevMask = buildMask(originX, prevP)
+        const currMask = buildMask(originX, currP)
+        const scalePrev = 1 + (1 - fade) * 0.04
+        const scaleCurr = 1 + fade * 0.04
+        setBgPrevStyle(s => s ? {
+          ...s,
+          WebkitMaskImage: prevMask,
+          maskImage: prevMask,
+          transform: `scale(${scalePrev})`,
+        } : s)
+        setBgCurrStyle(s => ({
+          ...s,
+          WebkitMaskImage: currMask,
+          maskImage: currMask,
+          transform: `scale(${scaleCurr})`,
+        }))
+        if (raw < 1) {
+          wipeRafRef.current = requestAnimationFrame(animate)
+        } else {
+          setBgCurrStyle(s => ({ ...s, WebkitMaskImage: 'none', maskImage: 'none', transform: 'none' }))
+          setBgPrevStyle(null)
+        }
+      }
+      cancelAnimationFrame(wipeRafRef.current)
+      wipeRafRef.current = requestAnimationFrame(animate)
     }
     if (heroUrl) {
       const img = new Image()
@@ -2331,7 +2375,7 @@ function App(): React.JSX.Element {
       img.src = heroUrl
       if (img.complete) finish()
       const fallback = window.setTimeout(finish, 800)
-      return (): void => { done = true; window.clearTimeout(fallback) }
+      return (): void => { done = true; window.clearTimeout(fallback); cancelAnimationFrame(wipeRafRef.current) }
     } else {
       doSwap()
       return undefined
@@ -2402,12 +2446,12 @@ function App(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Fondo con crossfade sin destello negro: prev se mantiene hasta que la nueva hero carga */}
+      {/* Fondo con wipe direccional: prev se desvanece mientras la nueva hero se revela con radial-gradient */}
       <div className="launcher-bg-wrapper">
         {bgPrevStyle && (
-          <div key="bg-prev" className="launcher-bg bg-fade-out" style={bgPrevStyle} aria-hidden />
+          <div key="bg-prev" className="launcher-bg" style={bgPrevStyle} aria-hidden />
         )}
-        <div key="bg-curr" className="launcher-bg bg-fade-in" style={bgCurrStyle} />
+        <div key="bg-curr" className="launcher-bg" style={bgCurrStyle} />
       </div>
 
 
