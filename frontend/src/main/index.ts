@@ -206,6 +206,15 @@ function stopMediaSessionsBridge(): void {
   if (mediaModule?.shutdown) mediaModule.shutdown().catch(() => { })
 }
 
+// ── Suspend / Resume activities during gameplay ──
+function suspendActivities(): void {
+  stopMediaSessionsBridge()
+}
+
+function resumeActivities(): void {
+  startMediaSessionsBridge()
+}
+
 function ensureSteamOpenIdServer(): void {
   if (steamOpenIdServer) return
 
@@ -272,7 +281,16 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    if (!isGameRunning) {
+      mainWindow.show()
+    }
+  })
+
+  // Guard: prevent window from being shown while a game is running
+  mainWindow.on('show', () => {
+    if (isGameRunning) {
+      mainWindow.hide()
+    }
   })
 
   // ── Workaround: en monitores 4K con escalado != 100%, Chromium a veces no
@@ -413,6 +431,7 @@ app.whenReady().then(() => {
       if (isTrackedExe) {
         // Juego real (.exe) — ocultar launcher y suspender actividades
         isGameRunning = true
+        suspendActivities()
         if (win && !win.isDestroyed()) {
           win.hide()
         }
@@ -430,6 +449,7 @@ app.whenReady().then(() => {
 
         child.on('exit', () => {
           isGameRunning = false
+          resumeActivities()
           if (win && !win.isDestroyed()) {
             win.show()
             win.focus()
@@ -485,7 +505,7 @@ app.whenReady().then(() => {
       return { success: true, tracked: false, startTime }
     } catch (error: any) {
       console.error('Error launching game:', error)
-      if (win && !win.isDestroyed()) {
+      if (win && !win.isDestroyed() && !isGameRunning) {
         win.restore()
         win.focus()
       }
