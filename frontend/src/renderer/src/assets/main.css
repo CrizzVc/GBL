@@ -3982,11 +3982,8 @@
     display: none;
   }
 
-  .friends-card-right {
-    display: flex;
-  }
-
-  .friends-actions-grid {
+  .friends-card-right,
+  .friends-card-divider {
     display: none;
   }
 
@@ -4162,7 +4159,7 @@
   right: 0;
   bottom: 0;
   width: min(360px, 88vw);
-  padding: 72px 30px 34px;
+  padding: 0 30px 34px;
   color: #fff;
   background: linear-gradient(160deg, rgba(38, 38, 43, 0.98), rgba(18, 18, 21, 0.99));
   border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -4184,13 +4181,39 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   cursor: pointer;
+  z-index: 2;
+}
+
+.friend-panel-cover {
+  height: 145px;
+  margin: 0 -30px 0;
+  overflow: hidden;
+  background: #19191d;
+  position: relative;
+}
+
+.friend-panel-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(18, 18, 21, 0.9));
+}
+
+.friend-panel-cover-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(0.82) brightness(0.72);
+  transform: scale(1.08);
 }
 
 .friend-panel-avatar-wrap {
   position: relative;
   width: 112px;
   height: 112px;
-  margin-bottom: 22px;
+  margin: -56px 0 22px;
+  z-index: 1;
 }
 
 .friend-panel-avatar {

@@ -2942,10 +2942,18 @@ function App(): React.JSX.Element {
             <button className="friend-panel-close" onClick={() => setSelectedFriend(null)} title="Cerrar">
               <CloseIcon size={18} />
             </button>
-            <div className="friend-panel-avatar-wrap">
+            <div className="friend-panel-cover">
               <img
                 src={selectedFriend.avatarfull || selectedFriend.avatar || ''}
                 alt={selectedFriend.personaname}
+                className="friend-panel-cover-image"
+                draggable={false}
+              />
+            </div>
+            <div className="friend-panel-avatar-wrap">
+              <img
+                src={selectedFriend.avatarfull || selectedFriend.avatar || ''}
+                alt=""
                 className="friend-panel-avatar"
                 draggable={false}
               />
