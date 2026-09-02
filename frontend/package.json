@@ -11,14 +11,17 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "prepare:backend": "node scripts/prepare-backend.mjs",
+    "copy:backend-dist": "node scripts/copy-backend-dist.mjs",
+    "prebuild": "npm --prefix ../backend install --include=dev --no-fund --no-audit && npm run prepare:backend",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:unpack": "npm run build && electron-builder --dir && npm run copy:backend-dist",
+    "build:win": "npm run build && electron-builder --win && npm run copy:backend-dist",
+    "build:mac": "electron-vite build && electron-builder --mac && npm run copy:backend-dist",
+    "build:linux": "electron-vite build && electron-builder --linux && npm run copy:backend-dist"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

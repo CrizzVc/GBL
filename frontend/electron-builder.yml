@@ -10,11 +10,16 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 extraResources:
-  - from: ../backend
+  - from: ./resources/backend
     to: backend
     filter:
-      - "!.gitignore"
-      - "!.env.example"
+      - "**/*"
+      - "!**/.gitignore"
+      - "!**/.env"
+      - "!**/.env.*"
+      - "!**/.DS_Store"
+      - "!**/.git/**"
+      - "node_modules/**"
 asarUnpack:
   - resources/**
 win:
