@@ -405,50 +405,12 @@ app.whenReady().then(() => {
       const hasExecutable = exePath && exePath.trim() !== ''
       const isSteamProtocol = /^steam:\/\//i.test(exePath)
       const fileExists = isSteamProtocol ? false : hasExecutable ? fs.existsSync(exePath) : false
-
-      if (win) {
-        win.minimize()
-      }
+      const ext = hasExecutable && fileExists ? extname(exePath).toLowerCase() : ''
+      const isTrackedExe = hasExecutable && fileExists && ext !== '.lnk' && ext !== '.url' && !isSteamProtocol
 
       const startTime = Date.now()
 
-      if (isSteamProtocol) {
-        await shell.openExternal(exePath)
-        setTimeout(() => {
-          if (win && !win.isDestroyed()) {
-            win.restore()
-            win.focus()
-          }
-        }, 1500)
-        return { success: true, tracked: false, startTime, steamProtocol: true }
-      }
-
-      if (!hasExecutable || !fileExists) {
-        setTimeout(() => {
-          if (win && !win.isDestroyed()) {
-            win.restore()
-            win.focus()
-            const simulatedMinutes = Math.floor(Math.random() * 4) + 2
-            win.webContents.send('game-exited', { gameId, durationMinutes: simulatedMinutes })
-          }
-        }, 4000)
-        return { success: true, tracked: false, startTime, simulated: true }
-      }
-
-      const ext = extname(exePath).toLowerCase()
-
-      if (ext === '.lnk' || ext === '.url') {
-        await shell.openPath(exePath)
-        setTimeout(() => {
-          if (win && !win.isDestroyed()) {
-            win.restore()
-            win.focus()
-            const simulatedMinutes = Math.floor(Math.random() * 8) + 3
-            win.webContents.send('game-exited', { gameId, durationMinutes: simulatedMinutes })
-          }
-        }, 6000)
-        return { success: true, tracked: false, startTime }
-      } else {
+      if (isTrackedExe) {
         // Juego real (.exe) — ocultar launcher y suspender actividades
         isGameRunning = true
         if (win && !win.isDestroyed()) {
@@ -478,6 +440,49 @@ app.whenReady().then(() => {
 
         return { success: true, tracked: true, startTime }
       }
+
+      // No-tracked: minimize para los demás casos
+      if (win) {
+        win.minimize()
+      }
+
+      if (isSteamProtocol) {
+        await shell.openExternal(exePath)
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+          }
+        }, 1500)
+        return { success: true, tracked: false, startTime, steamProtocol: true }
+      }
+
+      if (!hasExecutable || !fileExists) {
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+            const simulatedMinutes = Math.floor(Math.random() * 4) + 2
+            win.webContents.send('game-exited', { gameId, durationMinutes: simulatedMinutes })
+          }
+        }, 4000)
+        return { success: true, tracked: false, startTime, simulated: true }
+      }
+
+      if (ext === '.lnk' || ext === '.url') {
+        await shell.openPath(exePath)
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.restore()
+            win.focus()
+            const simulatedMinutes = Math.floor(Math.random() * 8) + 3
+            win.webContents.send('game-exited', { gameId, durationMinutes: simulatedMinutes })
+          }
+        }, 6000)
+        return { success: true, tracked: false, startTime }
+      }
+
+      return { success: true, tracked: false, startTime }
     } catch (error: any) {
       console.error('Error launching game:', error)
       if (win && !win.isDestroyed()) {
