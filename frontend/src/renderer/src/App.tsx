@@ -444,6 +444,19 @@ function App(): React.JSX.Element {
       visibleGames.some((game) => game.id === selectedGameId)
     )
 
+  const [wallpaperFolder, setWallpaperFolder] = useState<string | null>(null)
+  const [wallpaperImages, setWallpaperImages] = useState<Array<{ name: string; path: string; dataUrl: string; mtime: number }>>([])
+  const [wallpaperMode, setWallpaperMode] = useState(false)
+  const [wallpaperIndex, setWallpaperIndex] = useState(0)
+
+  // Solo la card de Home (biblioteca), no juegos, bottom row ni wallpapers.
+  const isHomeCardFocused =
+    isHomeFocused &&
+    !wallpaperMode &&
+    !sidebarOpen &&
+    homeCardMode === 'main' &&
+    (selectedGameId === 'library' || selectedGameId === null)
+
   useEffect(() => {
     if (!isHomeFocused || libraryView || detailGameId || modal !== null) {
       setHomeCardMode('main')
@@ -451,27 +464,44 @@ function App(): React.JSX.Element {
     }
   }, [isHomeFocused, libraryView, detailGameId, modal])
 
-  // ── Inactividad: 2 min sin interacción agranda player (200x200);
+  // ── Inactividad: 2 min en la card de Home agranda el player;
   // se vuelve a encoger solo al presionar fuera del reproductor (no por cualquier movimiento)
   const [isIdle, setIsIdle] = useState(false)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const preserveIdleRef = useRef(false)
 
-  const showIdleMode = isIdle && isHomeFocused
+  const showIdleMode = isIdle && isHomeCardFocused
 
   const scheduleIdle = useCallback(() => {
-    if (!isHomeFocused) return
+    if (!isHomeCardFocused) return
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     idleTimerRef.current = setTimeout(() => setIsIdle(true), 120000)
-  }, [isHomeFocused])
+  }, [isHomeCardFocused])
 
   const exitIdle = useCallback(() => {
     setIsIdle(false)
     scheduleIdle()
   }, [scheduleIdle])
 
+  const enterHomeIdle = useCallback(() => {
+    preserveIdleRef.current = true
+    setLibraryView(false)
+    setDetailGameId(null)
+    setModal(null)
+    setSidebarOpen(false)
+    setWallpaperMode(false)
+    setHomeCardMode('main')
+    setSelectedGameId('library')
+    setIsIdle(true)
+  }, [])
+
   // Antes de estar en idle: cualquier actividad retrasa el agrandado, pero no lo encoge
   useEffect(() => {
     if (showIdleMode) return
+    if (!isHomeCardFocused) {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      return
+    }
     scheduleIdle()
     const resetOnly = (): void => {
       // solo reprograma el timer, no toca isIdle (que ya es false)
@@ -484,7 +514,7 @@ function App(): React.JSX.Element {
       events.forEach((ev) => window.removeEventListener(ev, resetOnly))
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     }
-  }, [scheduleIdle, showIdleMode])
+  }, [scheduleIdle, showIdleMode, isHomeCardFocused])
 
   // En idle: solo un click/touch fuera del reproductor lo encoge
   useEffect(() => {
@@ -511,10 +541,14 @@ function App(): React.JSX.Element {
     }
   }, [showIdleMode, exitIdle])
 
-  // Salir de idle al cambiar de foco/modal/biblioteca/home
+  // Salir de idle al dejar la card de Home / modal / biblioteca
   useEffect(() => {
-    if (modal !== null || detailGameId || libraryView || !isHomeFocused) setIsIdle(false)
-  }, [modal, detailGameId, libraryView, isHomeFocused])
+    if (preserveIdleRef.current) {
+      preserveIdleRef.current = false
+      return
+    }
+    if (modal !== null || detailGameId || libraryView || !isHomeCardFocused) setIsIdle(false)
+  }, [modal, detailGameId, libraryView, isHomeCardFocused])
 
   // ── Friends card: música actual para botón Fecha + estado del control ──
   const { nowPlaying: friendsNowPlaying } = useSystemMedia()
@@ -545,10 +579,6 @@ function App(): React.JSX.Element {
   }, [])
 
   // ── Wallpaper folder — W (solo Home) / artwork en juego ──
-  const [wallpaperFolder, setWallpaperFolder] = useState<string | null>(null)
-  const [wallpaperImages, setWallpaperImages] = useState<Array<{ name: string; path: string; dataUrl: string; mtime: number }>>([])
-  const [wallpaperMode, setWallpaperMode] = useState(false)
-  const [wallpaperIndex, setWallpaperIndex] = useState(0)
   const wallpaperRowRef = useRef<HTMLDivElement>(null)
   const isWallpaperMode = wallpaperMode && isHomeFocused && wallpaperImages.length > 0
   const selectedWallpaper = isWallpaperMode ? wallpaperImages[wallpaperIndex] ?? null : null
@@ -1724,6 +1754,16 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (e.key === 'GamepadTouchpad') {
+        e.preventDefault()
+        if (isHomeCardFocused) {
+          setIsIdle((prev) => !prev)
+        } else {
+          enterHomeIdle()
+        }
+        return
+      }
+
       if (libraryView) {
         if (e.key === 'Escape') {
           e.preventDefault()
@@ -1810,12 +1850,6 @@ function App(): React.JSX.Element {
         if (selectedGameId && selectedGameId !== 'library') {
           setContextMenu({ visible: true, x: window.innerWidth * 0.55, y: window.innerHeight * 0.45, gameId: selectedGameId })
         }
-        return
-      }
-
-      if (e.key === 'GamepadTouchpad' && isHomeFocused) {
-        e.preventDefault()
-        setIsIdle((prev) => !prev)
         return
       }
 
@@ -1993,7 +2027,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused, quickAppFocusIndex, quickAppSlots, homeCardMode, handleLaunchQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, handleLaunchQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -2303,7 +2337,9 @@ function App(): React.JSX.Element {
       </section>
 
       {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
-      <MusicPlayer isVisible={isHomeFocused && !isWallpaperMode} isIdle={showIdleMode} />
+      {(isHomeCardFocused || showIdleMode) && (
+        <MusicPlayer isVisible={isHomeCardFocused && !showIdleMode} isIdle={showIdleMode} />
+      )}
 
       {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ── */}
       {isWallpaperMode && (
