@@ -2342,24 +2342,20 @@ function App(): React.JSX.Element {
         const currP = Math.round(fade * 250 - 100)
         const prevMask = buildMask(originX, prevP)
         const currMask = buildMask(originX, currP)
-        const scalePrev = 1 + (1 - fade) * 0.04
-        const scaleCurr = 1 + fade * 0.04
         setBgPrevStyle(s => s ? {
           ...s,
           WebkitMaskImage: prevMask,
           maskImage: prevMask,
-          transform: `scale(${scalePrev})`,
         } : s)
         setBgCurrStyle(s => ({
           ...s,
           WebkitMaskImage: currMask,
           maskImage: currMask,
-          transform: `scale(${scaleCurr})`,
         }))
         if (raw < 1) {
           wipeRafRef.current = requestAnimationFrame(animate)
         } else {
-          setBgCurrStyle(s => ({ ...s, WebkitMaskImage: 'none', maskImage: 'none', transform: 'none' }))
+          setBgCurrStyle(s => ({ ...s, WebkitMaskImage: 'none', maskImage: 'none' }))
           setBgPrevStyle(null)
         }
       }
