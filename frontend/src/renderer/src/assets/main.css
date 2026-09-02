@@ -4028,7 +4028,10 @@
   display: none;
 }
 
-/* Wallpaper row — solo en Home, vertical a la izquierda con perspectiva 3D */
+/* Wallpaper row — solo en Home. Ventana fija de 5 cards (2 anteriores, centro
+   enfocado, 2 próximas), rectas (sin rotación), compactas. No hay scroll: solo
+   se renderizan las 5 que corresponden, así el contenedor nunca corta nada
+   arriba/abajo — su alto es simplemente el de esas 5 cards + separación. */
 .wallpaper-row-container {
   position: fixed;
   left: 16px;
@@ -4039,29 +4042,21 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
-  perspective: 1000px;
 }
 
 .wallpaper-row {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0;
-  overflow-y: auto;
-  overflow-x: visible;
-  padding: 8px 40px 8px 8px;
-  scroll-behavior: smooth;
-  will-change: scroll-position;
-  max-height: 78vh;
-}
-
-.wallpaper-row::-webkit-scrollbar {
-  width: 4px;
+  gap: 14px;
+  overflow: visible;
+  width: clamp(420px, 42vw, 560px);
+  padding: 4px 8px;
 }
 
 .wallpaper-card {
   flex-shrink: 0;
-  width: clamp(150px, 16vw, 260px);
+  width: clamp(200px, 20vw, 300px);
   aspect-ratio: 16 / 9;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
@@ -4072,63 +4067,39 @@
   position: relative;
   will-change: transform, border-color, opacity;
   transform-origin: left center;
-  margin-top: -18px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
 }
 
-.wallpaper-card:first-child {
-  margin-top: 0;
+/* Rectas (sin rotateZ/rotateY): la cercana al centro queda más a la
+   izquierda que la lejana, y el centro sobresale más a la derecha que
+   ambas. Las próximas usan las mismas posiciones que las anteriores. */
+.wallpaper-card.far {
+  transform: translateX(116px);
+  z-index: 1;
+  opacity: 0.75;
 }
 
-.wallpaper-card:nth-child(1) {
-  transform: rotateZ(-6deg) rotateY(4deg);
+.wallpaper-card.near {
+  transform: translateX(192px);
+  z-index: 2;
+  opacity: 0.9;
+}
+
+.wallpaper-card.center {
+  transform: translateX(270px) scale(1.2);
   z-index: 5;
   opacity: 1;
 }
 
-.wallpaper-card:nth-child(2) {
-  transform: rotateZ(2deg) rotateY(-3deg);
-  z-index: 4;
-  opacity: 0.95;
-}
-
-.wallpaper-card:nth-child(3) {
-  transform: rotateZ(-4deg) rotateY(5deg);
-  z-index: 3;
-  opacity: 0.88;
-}
-
-.wallpaper-card:nth-child(4) {
-  transform: rotateZ(3deg) rotateY(-2deg);
-  z-index: 2;
-  opacity: 0.8;
-}
-
-.wallpaper-card:nth-child(5) {
-  transform: rotateZ(-2deg) rotateY(3deg);
-  z-index: 1;
-  opacity: 0.7;
-}
-
-.wallpaper-card:nth-child(n+6) {
-  transform: rotateZ(1deg) rotateY(-1deg);
-  z-index: 0;
-  opacity: 0.6;
-}
-
 .wallpaper-card:hover {
   border-color: var(--gbl-border-hover);
-  transform: rotateZ(0deg) rotateY(0deg) scale(1.08) translateX(8px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  z-index: 50;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
   opacity: 1;
 }
 
 .wallpaper-card.selected {
   border-color: var(--gbl-accent);
-  transform: rotateZ(0deg) rotateY(0deg) scale(1.12) translateX(12px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-  z-index: 60;
-  opacity: 1;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65);
 }
 
 .wallpaper-card-img {
@@ -4137,18 +4108,6 @@
   object-fit: cover;
   display: block;
   pointer-events: none;
-}
-
-.wallpaper-row-hint {
-  font-size: 10px;
-  color: var(--gbl-text-muted);
-  text-align: left;
-  letter-spacing: 0.2px;
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-  white-space: nowrap;
-  margin-top: 8px;
 }
 
 /* Cuando wallpaper-mode está activo, esconder games row y bottom row */

@@ -633,6 +633,26 @@ function App(): React.JSX.Element {
   const isWallpaperMode = wallpaperMode && isHomeFocused && wallpaperImages.length > 0
   const selectedWallpaper = isWallpaperMode ? wallpaperImages[wallpaperIndex] ?? null : null
 
+  // El dataUrl de wallpaperImages es una miniatura (pensada para las cards chicas);
+  // usarla también como fondo a pantalla completa se ve pixelado/de baja calidad.
+  // Acá intentamos cargar el archivo real desde disco (mejor resolución) y si falla
+  // (protocolo bloqueado, ruta inválida, etc.) caemos de vuelta al dataUrl de siempre.
+  const [wallpaperBgHiRes, setWallpaperBgHiRes] = useState<string | null>(null)
+  useEffect(() => {
+    if (!selectedWallpaper?.path) {
+      setWallpaperBgHiRes(null)
+      return undefined
+    }
+    let cancelled = false
+    const normalized = selectedWallpaper.path.replace(/\\/g, '/')
+    const fileUrl = `file://${normalized.startsWith('/') ? '' : '/'}${encodeURI(normalized)}`
+    const probe = new Image()
+    probe.onload = () => { if (!cancelled) setWallpaperBgHiRes(fileUrl) }
+    probe.onerror = () => { if (!cancelled) setWallpaperBgHiRes(null) }
+    probe.src = fileUrl
+    return () => { cancelled = true }
+  }, [selectedWallpaper?.path])
+
   useEffect(() => {
     const load = async (): Promise<void> => {
       try {
@@ -650,18 +670,6 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (!isHomeFocused) setWallpaperMode(false)
   }, [isHomeFocused])
-
-  useEffect(() => {
-    if (!isWallpaperMode || !wallpaperRowRef.current) return
-    const target = document.getElementById(`wallpaper-card-${wallpaperIndex}`)
-    if (!target) return
-    const row = wallpaperRowRef.current
-    const targetTop = target.offsetTop
-    const targetHeight = target.offsetHeight
-    const rowHeight = row.clientHeight
-    const desiredTop = targetTop - (rowHeight - targetHeight) / 2
-    row.scrollTo({ top: Math.max(0, desiredTop), behavior: 'smooth' })
-  }, [wallpaperIndex, isWallpaperMode, wallpaperImages])
 
   // ── Clock ──
   useEffect(() => {
@@ -2272,10 +2280,10 @@ function App(): React.JSX.Element {
     : { background: 'var(--gbl-bg-primary)' }
 
   // ── Background style (con crossfade sin destello negro) ──
-  const wallpaperBg = isWallpaperMode && selectedWallpaper ? selectedWallpaper.dataUrl : null
+  const wallpaperBg = isWallpaperMode && selectedWallpaper ? (wallpaperBgHiRes || selectedWallpaper.dataUrl) : null
   const bgStyle = wallpaperBg
     ? {
-      backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.35) 0%, rgba(12,12,12,0.55) 45%, rgba(12,12,12,0.92) 100%), url(${wallpaperBg})`,
+      backgroundImage: `linear-gradient(to bottom, rgba(12,12,12,0.1) 0%, rgba(12,12,12,0.18) 45%, rgba(12,12,12,0.45) 100%), url(${wallpaperBg})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
@@ -2509,24 +2517,30 @@ function App(): React.JSX.Element {
         <MusicPlayer isVisible={isHomeCardFocused && !showIdleMode} isIdle={showIdleMode} isGameRunning={isGameRunning} />
       )}
 
-      {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ── */}
+      {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ──
+          Ventana fija de 5: 2 anteriores, la enfocada en el centro, 2 próximas. Sin scroll: solo
+          se renderizan las cards dentro de esa ventana, así el alto nunca corta nada. */}
       {isWallpaperMode && (
         <div className="wallpaper-row-container">
           <div className="wallpaper-row" ref={wallpaperRowRef}>
-            {wallpaperImages.map((img, idx) => (
-              <div
-                key={img.path}
-                id={`wallpaper-card-${idx}`}
-                className={`wallpaper-card ${idx === wallpaperIndex ? 'selected' : ''}`}
-                onClick={() => setWallpaperIndex(idx)}
-                onDoubleClick={() => handleChooseWallpaperAsHome(idx)}
-                title={`${img.name} — Enter o doble click para fijar como fondo de Home`}
-              >
-                <img src={img.dataUrl} alt={img.name} className="wallpaper-card-img" draggable={false} />
-              </div>
-            ))}
+            {wallpaperImages.map((img, idx) => {
+              const distance = idx - wallpaperIndex
+              if (Math.abs(distance) > 2) return null
+              const proximity = distance === 0 ? 'center' : Math.abs(distance) === 1 ? 'near' : 'far'
+              return (
+                <div
+                  key={img.path}
+                  id={`wallpaper-card-${idx}`}
+                  className={`wallpaper-card ${proximity} ${idx === wallpaperIndex ? 'selected' : ''}`}
+                  onClick={() => setWallpaperIndex(idx)}
+                  onDoubleClick={() => handleChooseWallpaperAsHome(idx)}
+                  title={`${img.name} — Enter o doble click para fijar como fondo de Home`}
+                >
+                  <img src={img.dataUrl} alt={img.name} className="wallpaper-card-img" draggable={false} />
+                </div>
+              )
+            })}
           </div>
-          <div className="wallpaper-row-hint">↑ ↓ para navegar · Enter o doble click para elegir fondo de Home · Esc para salir</div>
         </div>
       )}
 
