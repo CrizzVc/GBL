@@ -343,6 +343,7 @@ function App(): React.JSX.Element {
   })
   const [steamFriends, setSteamFriends] = useState<SteamFriend[]>([])
   const [selectedFriend, setSelectedFriend] = useState<SteamFriend | null>(null)
+  const [selectedFriendBackground, setSelectedFriendBackground] = useState<string | null>(null)
   const [steamLibrary, setSteamLibrary] = useState<SteamLibraryGame[]>([])
   const [steamLibraryLoading, setSteamLibraryLoading] = useState(false)
 
@@ -887,6 +888,26 @@ function App(): React.JSX.Element {
     }
     window.addEventListener('keydown', handleFriendPanelKey)
     return () => window.removeEventListener('keydown', handleFriendPanelKey)
+  }, [selectedFriend])
+
+  useEffect(() => {
+    if (!selectedFriend) {
+      setSelectedFriendBackground(null)
+      return
+    }
+
+    let cancelled = false
+    setSelectedFriendBackground(null)
+    fetch(`${BACKEND_URL}/api/steam/friends/${selectedFriend.steamid}/background`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { background?: string | null } | null) => {
+        if (!cancelled) setSelectedFriendBackground(data?.background || null)
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedFriendBackground(null)
+      })
+
+    return () => { cancelled = true }
   }, [selectedFriend])
 
   useEffect(() => {
@@ -2948,7 +2969,7 @@ function App(): React.JSX.Element {
             </button>
             <div className="friend-panel-cover">
               <img
-                src={selectedFriend.avatarfull || selectedFriend.avatar || ''}
+                src={selectedFriendBackground || selectedFriend.avatarfull || selectedFriend.avatar || ''}
                 alt={selectedFriend.personaname}
                 className="friend-panel-cover-image"
                 draggable={false}

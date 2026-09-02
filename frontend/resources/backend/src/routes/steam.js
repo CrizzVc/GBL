@@ -4,6 +4,7 @@ import {
   getScreenshots,
   getAppDetails,
   getSteamFriends,
+  getSteamProfileBackground,
   getSteamLibrary,
   getSteamAchievements,
   resolveSteamId
@@ -101,6 +102,18 @@ router.get('/friends', async (req, res) => {
     res.json(friends);
   } catch (error) {
     console.error('[Steam] Error obteniendo amigos:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/friends/:steamid/background', async (req, res) => {
+  try {
+    const { steamid } = req.params;
+    if (!/^\d+$/.test(steamid)) return res.status(400).json({ error: 'Steam ID no válido' });
+    const background = await getSteamProfileBackground(steamid);
+    res.json({ background });
+  } catch (error) {
+    console.error('[Steam] Error obteniendo fondo de perfil:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

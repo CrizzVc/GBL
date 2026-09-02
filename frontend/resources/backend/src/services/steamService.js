@@ -308,6 +308,31 @@ export async function getSteamFriends({ key, steamId }) {
   }
 }
 
+export async function getSteamProfileBackground(steamId) {
+  const cacheKey = `profile-background:${steamId}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(`https://steamcommunity.com/profiles/${encodeURIComponent(steamId)}/`, {
+      headers: { 'User-Agent': 'GBL Steam Friends/1.0' }
+    });
+    if (!response.ok) return null;
+    const html = await response.text();
+    const match = html.match(/class="profile_background_image"[^>]*style="[^"]*url\(\s*['"]?([^'"\)\s]+)['"]?\s*\)/i);
+    const backgroundUrl = match?.[1] ? decodeHtmlEntities(match[1]) : null;
+    if (backgroundUrl) setCache(cacheKey, backgroundUrl);
+    return backgroundUrl;
+  } catch (err) {
+    console.error('[SteamService] Error obteniendo fondo de perfil:', err.message);
+    return null;
+  }
+}
+
+function decodeHtmlEntities(value) {
+  return value.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+}
+
 export async function getSteamAchievements({ key, steamId, appid }) {
   const achievementsKey = `achievements:${key}:${steamId}:${appid}`;
   const cached = getCached(achievementsKey);
