@@ -869,19 +869,6 @@ function App(): React.JSX.Element {
   }, [steamAccount, loadSteamLibrary, loadSteamFriends])
 
   useEffect(() => {
-    if (!selectedFriend) return
-    const handleFriendPanelKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        playClose()
-        setSelectedFriend(null)
-      }
-    }
-    window.addEventListener('keydown', handleFriendPanelKey)
-    return () => window.removeEventListener('keydown', handleFriendPanelKey)
-  }, [selectedFriend])
-
-  useEffect(() => {
     if (!selectedFriend) {
       setSelectedFriendBackground(null)
       return
@@ -1854,6 +1841,39 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (selectedFriend) {
+        const friendIndex = sortedSteamFriends.findIndex((friend) => friend.steamid === selectedFriend.steamid)
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          e.preventDefault()
+          const next = Math.min(friendIndex + 1, sortedSteamFriends.length - 1)
+          if (next !== friendIndex) {
+            playMove()
+            setSelectedFriend(sortedSteamFriends[next])
+          }
+          return
+        }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          e.preventDefault()
+          const previous = Math.max(friendIndex - 1, 0)
+          if (previous !== friendIndex) {
+            playMove()
+            setSelectedFriend(sortedSteamFriends[previous])
+          }
+          return
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          playEnter()
+          return
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
+          setSelectedFriend(null)
+          return
+        }
+      }
+
       if (e.key === 'Start') {
         e.preventDefault()
         setSidebarOpen(true)
@@ -2093,8 +2113,13 @@ function App(): React.JSX.Element {
             playEnter()
             setHomeCardMode('quick-apps')
             setQuickAppFocusIndex(0)
+          } else if (bottomCardIndex === 4) {
+            const firstFriend = sortedSteamFriends[0]
+            if (firstFriend) {
+              playEnter()
+              setSelectedFriend(firstFriend)
+            }
           }
-          // bottomCardIndex === 4 (carga): no hace nada
         } else if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
@@ -2139,7 +2164,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
