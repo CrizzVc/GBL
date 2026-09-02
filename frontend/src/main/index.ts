@@ -246,7 +246,63 @@ function ensureSteamOpenIdServer(): void {
         steamOpenIdReject = null
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-        res.end('<html><body><h2>Steam conectado.</h2><p>Puedes cerrar esta ventana.</p></body></html>')
+        res.end(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steam conectado</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #fff; color: #202124;
+  }
+  .container { text-align: center; max-width: 600px; padding: 40px; }
+
+  .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 32px; }
+  .logo svg { width: 36px; height: 36px; }
+  .logo-text { font-size: 28px; font-weight: 400; color: #202124; letter-spacing: -0.3px; }
+
+  .title { font-size: 24px; font-weight: 400; color: #202124; margin-bottom: 16px; }
+
+  .subtitle { font-size: 14px; color: #5f6368; line-height: 1.6; }
+  .subtitle a { color: #1a73e8; text-decoration: none; font-weight: 500; }
+  .subtitle a:hover { text-decoration: underline; }
+
+  .links { margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
+  .links span { color: #dadce0; }
+  .links a { color: #5f6368; text-decoration: none; font-weight: 500; }
+  .links a:hover { color: #202124; }
+
+  .fade-in { opacity: 0; animation: fadeIn 0.5s ease forwards; }
+  .fade-in-d1 { animation-delay: 0.1s; }
+  .fade-in-d2 { animation-delay: 0.2s; }
+  .fade-in-d3 { animation-delay: 0.35s; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo fade-in">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" stroke="#1a73e8" stroke-width="1.5"/>
+        <path d="M7 12.5l3 3 7-7" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="logo-text">Steam</span>
+    </div>
+    <h1 class="title fade-in fade-in-d1">Te has conectado correctamente.</h1>
+    <p class="subtitle fade-in fade-in-d2">Puedes cerrar esta ventana o <a href="#" onclick="window.close()">cerrarla automaticamente</a>.</p>
+    <div class="links fade-in fade-in-d3">
+      <a href="https://store.steampowered.com" target="_blank">Steam Store</a>
+      <span>|</span>
+      <a href="https://steamcommunity.com" target="_blank">Community</a>
+    </div>
+  </div>
+</body>
+</html>`)
         return
       }
     }
@@ -257,8 +313,64 @@ function ensureSteamOpenIdServer(): void {
     steamOpenIdResolve = null
     steamOpenIdReject = null
 
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
-    res.end('La autenticación de Steam no pudo completarse.')
+    res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+    res.end(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steam - Error</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #fff; color: #202124;
+  }
+  .container { text-align: center; max-width: 600px; padding: 40px; }
+
+  .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 32px; }
+  .logo svg { width: 36px; height: 36px; }
+  .logo-text { font-size: 28px; font-weight: 400; color: #202124; letter-spacing: -0.3px; }
+
+  .title { font-size: 24px; font-weight: 400; color: #202124; margin-bottom: 16px; }
+
+  .subtitle { font-size: 14px; color: #5f6368; line-height: 1.6; }
+  .subtitle a { color: #1a73e8; text-decoration: none; font-weight: 500; }
+  .subtitle a:hover { text-decoration: underline; }
+
+  .links { margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
+  .links span { color: #dadce0; }
+  .links a { color: #5f6368; text-decoration: none; font-weight: 500; }
+  .links a:hover { color: #202124; }
+
+  .fade-in { opacity: 0; animation: fadeIn 0.5s ease forwards; }
+  .fade-in-d1 { animation-delay: 0.1s; }
+  .fade-in-d2 { animation-delay: 0.2s; }
+  .fade-in-d3 { animation-delay: 0.35s; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo fade-in">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" stroke="#ea4335" stroke-width="1.5"/>
+        <path d="M8 8l8 8M16 8l-8 8" stroke="#ea4335" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">Steam</span>
+    </div>
+    <h1 class="title fade-in fade-in-d1">No se pudo conectar con Steam.</h1>
+    <p class="subtitle fade-in fade-in-d2">La autenticación no se completó. <a href="#" onclick="window.close()">Intentar de nuevo</a>.</p>
+    <div class="links fade-in fade-in-d3">
+      <a href="https://help.steampowered.com" target="_blank">Steam Support</a>
+      <span>|</span>
+      <a href="https://store.steampowered.com" target="_blank">Steam Store</a>
+    </div>
+  </div>
+</body>
+</html>`)
   })
 
   steamOpenIdServer.listen(8765, '127.0.0.1')
