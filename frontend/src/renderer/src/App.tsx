@@ -449,6 +449,7 @@ function App(): React.JSX.Element {
   const currentLibraryItems = librarySource === 'steam' ? steamLibrary : sortedLibraryGames
   const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
   const compactDetailReviewLayout = windowSize.width < 1740 || windowSize.height < 910
+  const smallDetailLayout = windowSize.width < 1366 || windowSize.height < 768
   const quickAppSlots = useMemo(() => Array.from({ length: 4 }, (_, index) => quickApps[index] ?? null), [quickApps])
 
   // En la vista principal de Home seguimos estando "enfocados" aunque el usuario
@@ -2142,7 +2143,8 @@ function App(): React.JSX.Element {
             playEnter()
             openLibraryView()
           } else if (selectedGameId) {
-            handleLaunchGame(selectedGameId)
+            playEnter()
+            setDetailGameId(selectedGameId)
           }
         } else if (e.key === 'Escape' && detailGameId) {
           e.preventDefault()
@@ -3075,7 +3077,7 @@ function App(): React.JSX.Element {
                 )}
               </div>
 
-              <div className="detail-meta-section2" style={{ maxWidth: '400px' }}>
+              {!smallDetailLayout && <div className="detail-meta-section2" style={{ maxWidth: '400px' }}>
                 {detailInfo?.metacritic && (
                   <a
                     className="metacritic-widget"
@@ -3132,12 +3134,30 @@ function App(): React.JSX.Element {
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
 
             {/* Reviews, then release info, then tags */}
-            <div className="detail-ratings-panel">
-              {compactDetailReviewLayout ? (
+            <div className={`detail-ratings-panel ${smallDetailLayout ? 'esrb-only' : ''}`}>
+              {smallDetailLayout ? (
+                detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
+                  <div className="rating-widget">
+                    <img src={Teen} alt="" style={{ width: '80px' }} />
+                    <div className="rating-widget-body">
+                      {detailInfo.rating.descriptors.length > 0 && (
+                        <ul className="rating-widget-descriptors">
+                          {detailInfo.rating.descriptors.map((d) => (
+                            <li key={d}>{d}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <span className="rating-widget-caption">
+                        Clasificación por edades para: {detailInfo.rating.board}
+                      </span>
+                    </div>
+                  </div>
+                )
+              ) : compactDetailReviewLayout ? (
                 <>
                   {(detailInfo?.reviewsPositive || detailInfo?.reviewsNegative) && (
                     <div className="detail-meta-section">

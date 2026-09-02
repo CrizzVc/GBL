@@ -2899,6 +2899,13 @@
   padding: 4px 20px;
 }
 
+.detail-ratings-panel.esrb-only {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
 .detail-meta-section {
   padding: 14px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
