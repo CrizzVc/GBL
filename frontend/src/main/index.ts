@@ -812,6 +812,18 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('open-external', async (_event, url: string) => {
+    if (typeof url !== 'string' || !/^(https?:\/\/|steam:)/i.test(url)) {
+      return { success: false, error: 'URL no permitida' }
+    }
+    try {
+      await shell.openExternal(url)
+      return { success: true }
+    } catch (err: any) {
+      return { success: false, error: err.message }
+    }
+  })
+
   const getSteamPaths = (): string[] => {
     const candidates = new Set<string>()
 

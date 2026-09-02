@@ -4165,6 +4165,7 @@
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: -20px 0 55px rgba(0, 0, 0, 0.42);
   pointer-events: auto;
+  overflow-y: auto;
   animation: friend-panel-in 220ms ease-out both;
 }
 
@@ -4242,6 +4243,17 @@
 .friend-panel-playing { display: grid; gap: 6px; padding: 16px; margin-bottom: 26px; background: rgba(76, 217, 100, 0.08); border-left: 3px solid #4cd964; }
 .friend-panel-playing span { color: rgba(255, 255, 255, 0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
 .friend-panel-playing strong { font-size: 16px; font-weight: 500; }
-.friend-panel-action { display: block; padding: 13px 16px; margin-top: 10px; color: rgba(255, 255, 255, 0.78); text-align: center; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(255, 255, 255, 0.05); }
+.friend-panel-action { display: block; width: 100%; padding: 13px 16px; margin-top: 10px; color: rgba(255, 255, 255, 0.78); text-align: center; font: inherit; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: rgba(255, 255, 255, 0.05); }
 .friend-panel-action.primary { color: #101812; background: #8ef0a0; border-color: #8ef0a0; }
+.friend-panel-list { margin-top: 28px; }
+.friend-panel-list h3 { margin: 0 0 10px; color: rgba(255, 255, 255, 0.46); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.friend-panel-friend-card { display: flex; align-items: center; width: 100%; gap: 11px; padding: 9px; margin-top: 6px; color: #fff; text-align: left; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 9px; background: rgba(255, 255, 255, 0.04); }
+.friend-panel-friend-card:hover { border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.08); }
+.friend-panel-friend-avatar { width: 35px; height: 35px; flex: 0 0 35px; object-fit: cover; border-radius: 50%; }
+.friend-panel-friend-info { display: grid; min-width: 0; gap: 3px; }
+.friend-panel-friend-info strong { overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.friend-panel-friend-info small { overflow: hidden; color: rgba(255, 255, 255, 0.4); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.friend-panel-friend-info small.active { color: #8ef0a0; }
+.friend-panel-friend-dot { width: 8px; height: 8px; flex: 0 0 8px; margin-left: auto; border-radius: 50%; background: rgba(255, 255, 255, 0.25); }
+.friend-panel-friend-dot.active { background: #4cd964; }
 @keyframes friend-panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }

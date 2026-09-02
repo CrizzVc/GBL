@@ -430,6 +430,10 @@ function App(): React.JSX.Element {
     () => Array.from({ length: 5 }, (_, index) => sortedSteamFriends[index] ?? null),
     [sortedSteamFriends]
   )
+  const otherFriends = useMemo(
+    () => sortedSteamFriends.filter((friend) => friend.steamid !== selectedFriend?.steamid),
+    [selectedFriend, sortedSteamFriends]
+  )
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
   const selectedSteamGame = useMemo(
     () => steamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? null,
@@ -2969,21 +2973,59 @@ function App(): React.JSX.Element {
                 <strong>{selectedFriend.gameextrainfo}</strong>
               </div>
             )}
-            <a
+            <button
               className="friend-panel-action"
-              href={`steam://url/SteamIDFriendsPage/${selectedFriend.steamid}`}
-              onClick={() => playEnter()}
+              onClick={async () => {
+                playEnter()
+                const profileUrl = selectedFriend.profileurl || `https://steamcommunity.com/profiles/${selectedFriend.steamid}`
+                const result = await window.api.openExternal(`steam://url/SteamIDPage/${selectedFriend.steamid}`)
+                if (!result.success) {
+                  const steamUrlResult = await window.api.openExternal(`steam://openurl/${profileUrl}`)
+                  if (!steamUrlResult.success) await window.api.openExternal(profileUrl)
+                }
+              }}
             >
               Ver perfil en Steam
-            </a>
+            </button>
+            {otherFriends.length > 0 && (
+              <div className="friend-panel-list">
+                <h3>Otros amigos</h3>
+                {otherFriends.map((friend) => (
+                  <button
+                    key={friend.steamid}
+                    className="friend-panel-friend-card"
+                    onClick={() => {
+                      playEnter()
+                      setSelectedFriend(friend)
+                    }}
+                  >
+                    <img
+                      src={friend.avatarfull || friend.avatar || ''}
+                      alt=""
+                      className="friend-panel-friend-avatar"
+                      draggable={false}
+                    />
+                    <span className="friend-panel-friend-info">
+                      <strong>{friend.personaname}</strong>
+                      <small className={isFriendActive(friend) ? 'active' : ''}>
+                        {friend.gameextrainfo || (isFriendActive(friend) ? 'Activo' : 'Desconectado')}
+                      </small>
+                    </span>
+                    <span className={`friend-panel-friend-dot ${isFriendActive(friend) ? 'active' : ''}`} />
+                  </button>
+                ))}
+              </div>
+            )}
             {selectedFriend.gameid && (
-              <a
+              <button
                 className="friend-panel-action primary"
-                href={`steam://rungameid/${selectedFriend.gameid}`}
-                onClick={() => playEnter()}
+                onClick={async () => {
+                  playEnter()
+                  await window.api.openExternal(`steam://rungameid/${selectedFriend.gameid}`)
+                }}
               >
                 Unirse al juego
-              </a>
+              </button>
             )}
           </aside>
         </div>
