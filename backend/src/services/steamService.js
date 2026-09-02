@@ -311,6 +311,45 @@ export async function getSteamFriends({ key, steamId }) {
   }
 }
 
+export async function getSteamAchievements({ key, steamId, appid }) {
+  const achievementsKey = `achievements:${key}:${steamId}:${appid}`;
+  const cached = getCached(achievementsKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(
+      `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v2/?key=${encodeURIComponent(key)}&steamid=${encodeURIComponent(steamId)}&appid=${encodeURIComponent(appid)}`
+    );
+    if (!res.ok) {
+      throw new Error(`Steam achievements error ${res.status}`);
+    }
+
+    const json = await res.json();
+    const achievements = Array.isArray(json?.playerstats?.achievements)
+      ? json.playerstats.achievements
+      : [];
+
+    const mapped = achievements
+      .map((achievement) => ({
+        apiname: String(achievement?.apiname || ''),
+        achieved: Boolean(achievement?.achieved),
+        unlocktime: Number(achievement?.unlocktime || 0),
+        name: achievement?.name || achievement?.displayName || achievement?.apiname || 'Logro desbloqueado',
+        displayName: achievement?.name || achievement?.displayName || achievement?.apiname || 'Logro desbloqueado',
+        description: achievement?.description || null,
+        icon: achievement?.icon || null,
+        icongray: achievement?.icongray || null
+      }))
+      .filter((achievement) => achievement.apiname);
+
+    setCache(achievementsKey, mapped);
+    return mapped;
+  } catch (err) {
+    console.error('[SteamService] Error obteniendo logros:', err.message);
+    return [];
+  }
+}
+
 export async function getSteamLibrary({ key, steamId }) {
   const libraryKey = `library:${key}:${steamId}`;
   const cached = getCached(libraryKey);

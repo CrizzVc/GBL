@@ -4,6 +4,9 @@
  *  - enter: confirmación con Enter / click
  *  - enterGame: lanzar juego
  *  - closeUI: Escape / cerrar vista
+ *  - achievement: logro desbloqueado
+ *  - controllerConnected: mando conectado
+ *  - controllerDisconnected: mando desconectado
  */
 
 import moveUrl from '../assets/sounds/move.mp3'
@@ -11,16 +14,20 @@ import enterUrl from '../assets/sounds/enter.mp3'
 import enterGameUrl from '../assets/sounds/enter_game.mp3'
 import closeUrl from '../assets/sounds/close_UI.mp3'
 
-// Fallback: si vite no resuelve los alias con espacio, usar URL directa
-// const moveFallback = new URL('../assets/sounds/move.mp3', import.meta.url).href
+const alertUrl = new URL('../assets/sounds/alerts.mp3', import.meta.url).href
+const connectedUrl = new URL('../assets/sounds/Bconected.mp3', import.meta.url).href
+const disconnectedUrl = new URL('../assets/sounds/Bdisconected.mp3', import.meta.url).href
 
-type SoundName = 'move' | 'enter' | 'enterGame' | 'close'
+type SoundName = 'move' | 'enter' | 'enterGame' | 'close' | 'achievement' | 'controllerConnected' | 'controllerDisconnected'
 
 const soundUrls: Record<SoundName, string> = {
   move: moveUrl,
   enter: enterUrl,
   enterGame: enterGameUrl,
-  close: closeUrl
+  close: closeUrl,
+  achievement: alertUrl,
+  controllerConnected: connectedUrl,
+  controllerDisconnected: disconnectedUrl
 }
 
 const audioCache = new Map<SoundName, HTMLAudioElement>()
@@ -35,9 +42,17 @@ function getAudio(name: SoundName): HTMLAudioElement | null {
   try {
     const audio = new Audio(url)
     audio.preload = 'auto'
-    audio.volume = name === 'move' ? 0.45 : name === 'enterGame' ? 0.65 : 0.55
+    audio.volume =
+      name === 'move'
+        ? 0.45
+        : name === 'enterGame'
+          ? 0.65
+          : name === 'achievement'
+            ? 0.75
+            : name === 'controllerConnected' || name === 'controllerDisconnected'
+              ? 0.8
+              : 0.55
     audioCache.set(name, audio)
-    // preload
     audio.load()
     return audio
   } catch {
@@ -45,11 +60,9 @@ function getAudio(name: SoundName): HTMLAudioElement | null {
   }
 }
 
-// Desbloquea AudioContext / HTMLAudio tras gesto del usuario (requerido por algunos navegadores)
 function unlockIfNeeded(): void {
   if (unlocked) return
   unlocked = true
-  // precargar todos
   ;(Object.keys(soundUrls) as SoundName[]).forEach((k) => getAudio(k))
 }
 
@@ -67,7 +80,6 @@ function play(name: SoundName): void {
     unlockIfNeeded()
     const audio = getAudio(name)
     if (!audio) return
-    // Para sonidos rápidos como move, clonar permite solapamiento si se presiona rápido
     if (name === 'move') {
       const clone = audio.cloneNode() as HTMLAudioElement
       clone.volume = audio.volume
@@ -93,6 +105,18 @@ export function playEnterGame(): void {
 
 export function playClose(): void {
   play('close')
+}
+
+export function playAchievementAlert(): void {
+  play('achievement')
+}
+
+export function playControllerConnected(): void {
+  play('controllerConnected')
+}
+
+export function playControllerDisconnected(): void {
+  play('controllerDisconnected')
 }
 
 export function preloadSounds(): void {

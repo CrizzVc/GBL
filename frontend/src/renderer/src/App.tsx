@@ -27,7 +27,15 @@ import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
 import defaultHomeBackground from './assets/images/background-defauld.png'
 import { useSystemMedia } from './hooks/useSystemMedia'
-import { playMove, playEnter, playEnterGame, playClose } from './services/soundService'
+import {
+  playMove,
+  playEnter,
+  playEnterGame,
+  playClose,
+  playAchievementAlert,
+  playControllerConnected,
+  playControllerDisconnected
+} from './services/soundService'
 import { useGamepadNavigation } from './hooks/useGamepadNavigation'
 
 /* ────────────────────────────────────────────
@@ -387,10 +395,17 @@ function App(): React.JSX.Element {
   } | null>(null)
   const [detailInfoLoading, setDetailInfoLoading] = useState(false)
   const [windowSize, setWindowSize] = useState({ width: window.outerWidth, height: window.outerHeight })
+  const [achievementToast, setAchievementToast] = useState<{
+    gameName: string
+    name: string
+    description?: string | null
+    icon?: string | null
+  } | null>(null)
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
   const libraryGridRef = useRef<HTMLDivElement>(null)
   const previousLibraryIndexRef = useRef<number | null>(null)
+  const achievementsRef = useRef<Record<string, Set<string>>>({})
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
@@ -556,20 +571,36 @@ function App(): React.JSX.Element {
   const { nowPlaying: friendsNowPlaying } = useSystemMedia(isGameRunning)
   const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
   const [isControllerConnected, setIsControllerConnected] = useState(false)
+  const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
   useEffect(() => {
+    const syncControllerStatus = (connected: boolean): void => {
+      if (controllerStateRef.current === connected) {
+        setIsControllerConnected(connected)
+        return
+      }
+      controllerStateRef.current = connected
+      setIsControllerConnected(connected)
+      if (connected) {
+        playControllerConnected()
+      } else {
+        playControllerDisconnected()
+      }
+    }
+
     const check = (): void => {
       if (isGameRunningRef.current) return
       try {
         const pads = navigator.getGamepads ? navigator.getGamepads() : []
         const connected = Array.from(pads || []).some((p) => !!p)
-        setIsControllerConnected(connected)
+        syncControllerStatus(connected)
       } catch {
-        setIsControllerConnected(false)
+        syncControllerStatus(false)
       }
     }
+
     check()
-    const onConnect = (): void => setIsControllerConnected(true)
+    const onConnect = (): void => syncControllerStatus(true)
     const onDisconnect = (): void => check()
     window.addEventListener('gamepadconnected', onConnect)
     window.addEventListener('gamepaddisconnected', onDisconnect)
@@ -813,8 +844,83 @@ function App(): React.JSX.Element {
       setSteamLibrary([])
       setSteamFriends([])
       setSelectedSteamAppId(null)
+      achievementsRef.current = {}
     }
   }, [steamAccount, loadSteamLibrary, loadSteamFriends])
+
+  useEffect(() => {
+    if (!steamAccount.linked || !steamAccount.apiKey || !steamAccount.steamId) return
+
+    const trackedGames = games.filter((game) => game.isSteam && !!game.steamAppId)
+    if (trackedGames.length === 0) return
+
+    let active = true
+
+    const checkAchievements = async (): Promise<void> => {
+      for (const game of trackedGames) {
+        const appid = String(game.steamAppId)
+        try {
+          const query = new URLSearchParams({
+            key: steamAccount.apiKey,
+            steamId: steamAccount.steamId,
+            appid
+          })
+          const res = await fetch(`${BACKEND_URL}/api/steam/achievements?${query.toString()}`)
+          if (!res.ok) continue
+          const payload = await res.json()
+          const achievements = Array.isArray(payload?.achievements) ? payload.achievements : []
+          const seen: Set<string> = new Set(
+            achievements
+              .filter((achievement) => Boolean(achievement?.achieved))
+              .map((achievement) => String(achievement.apiname || achievement.displayName || achievement.name || ''))
+              .filter((value): value is string => Boolean(value))
+          )
+
+          const previous = achievementsRef.current[appid]
+          if (previous) {
+            const newlyUnlocked = achievements.filter((achievement) => {
+              const key = String(achievement.apiname || achievement.displayName || achievement.name || '')
+              return Boolean(achievement?.achieved) && key && !previous.has(key)
+            })
+
+            if (newlyUnlocked.length > 0 && active) {
+              const latest = newlyUnlocked
+                .slice()
+                .sort((a, b) => Number(b.unlocktime || 0) - Number(a.unlocktime || 0))[0]
+
+              setAchievementToast({
+                gameName: game.name,
+                name: latest.displayName || latest.name || 'Logro desbloqueado',
+                description: latest.description || null,
+                icon: latest.icon || null
+              })
+              playAchievementAlert()
+            }
+          }
+
+          achievementsRef.current[appid] = seen
+        } catch (err) {
+          console.error('Error fetching Steam achievements:', err)
+        }
+      }
+    }
+
+    void checkAchievements()
+    const interval = window.setInterval(() => {
+      void checkAchievements()
+    }, 15000)
+
+    return () => {
+      active = false
+      window.clearInterval(interval)
+    }
+  }, [games, steamAccount])
+
+  useEffect(() => {
+    if (!achievementToast) return
+    const timeout = window.setTimeout(() => setAchievementToast(null), 5000)
+    return () => window.clearTimeout(timeout)
+  }, [achievementToast])
 
   // ── Store carousel auto-advance (paused on hover) ──
   useEffect(() => {
@@ -2260,6 +2366,57 @@ function App(): React.JSX.Element {
 
   return (
     <div className={`launcher ${showIdleMode ? 'idle' : ''} ${isWallpaperMode ? 'wallpaper-mode' : ''}`}>
+      {achievementToast && (
+        <div
+          style={{
+            position: 'fixed',
+            right: '28px',
+            top: '88px',
+            zIndex: 120,
+            width: 'min(360px, calc(100vw - 32px))',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            padding: '14px 18px',
+            borderRadius: '18px',
+            background: 'rgba(16, 20, 28, 0.86)',
+            border: '1px solid rgba(255,255,255,0.16)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 16px 45px rgba(0,0,0,0.38)',
+            color: '#fff',
+            pointerEvents: 'none'
+          }}
+        >
+          {achievementToast.icon ? (
+            <img
+              src={achievementToast.icon}
+              alt={achievementToast.name}
+              draggable={false}
+              style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '22px', flexShrink: 0 }}>
+              ★
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c4b5fd', fontWeight: 700 }}>
+              Logro desbloqueado
+            </span>
+            <span style={{ fontSize: '17px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {achievementToast.name}
+            </span>
+            <span style={{ fontSize: '12px', color: '#d1d5db', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {achievementToast.gameName}
+            </span>
+            {achievementToast.description && (
+              <span style={{ marginTop: '4px', fontSize: '11px', color: '#e5e7eb', lineHeight: 1.3, opacity: 0.9 }}>
+                {achievementToast.description}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
       {/* ── Sidebar ── */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
