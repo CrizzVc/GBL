@@ -674,8 +674,11 @@
 }
 
 .store-capsule.not-installed {
-  opacity: 0.55;
   cursor: not-allowed;
+}
+
+.store-capsule.active.not-installed {
+  opacity: 0.55;
 }
 
 .store-capsule-bg {
