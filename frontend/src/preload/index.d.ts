@@ -29,6 +29,7 @@ declare global {
       getGames: () => Promise<any[]>
       saveGames: (games: any[]) => Promise<{ success: boolean; error?: string }>
       onGameExited: (callback: (data: { gameId: string; durationMinutes: number }) => void) => () => void
+      onGameSessionStart: (callback: (data: { gameId: string }) => void) => () => void
       // Background image APIs
       selectBackgroundImage: () => Promise<string | null>
       getBackgroundImage: () => Promise<string | null>

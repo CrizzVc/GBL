@@ -16,6 +16,13 @@ const api = {
       ipcRenderer.removeListener('game-exited', subscription)
     }
   },
+  onGameSessionStart: (callback: (data: { gameId: string }) => void) => {
+    const subscription = (_event: any, data: { gameId: string }) => callback(data)
+    ipcRenderer.on('game-session-start', subscription)
+    return () => {
+      ipcRenderer.removeListener('game-session-start', subscription)
+    }
+  },
   // Fuerza a recalcular tamaños en el renderer tras un nudge de bounds del
   // main process (workaround del desfase de layout al entrar/salir de
   // fullscreen en monitores 4K con escalado != 100%)

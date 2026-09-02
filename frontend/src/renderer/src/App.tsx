@@ -297,6 +297,8 @@ function App(): React.JSX.Element {
   const [quickAppFocusIndex, setQuickAppFocusIndex] = useState<number>(0)
   const [bottomCardIndex, setBottomCardIndex] = useState<number>(0)
   const [runningGameId, setRunningGameId] = useState<string | null>(null)
+  const [isGameRunning, setIsGameRunning] = useState(false)
+  const isGameRunningRef = useRef(false)
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
   const [libraryView, setLibraryView] = useState(false)
@@ -551,12 +553,13 @@ function App(): React.JSX.Element {
   }, [modal, detailGameId, libraryView, isHomeCardFocused])
 
   // ── Friends card: música actual para botón Fecha + estado del control ──
-  const { nowPlaying: friendsNowPlaying } = useSystemMedia()
+  const { nowPlaying: friendsNowPlaying } = useSystemMedia(isGameRunning)
   const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
   const [isControllerConnected, setIsControllerConnected] = useState(false)
-  useGamepadNavigation(isControllerConnected && !runningGameId)
+  useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
   useEffect(() => {
     const check = (): void => {
+      if (isGameRunningRef.current) return
       try {
         const pads = navigator.getGamepads ? navigator.getGamepads() : []
         const connected = Array.from(pads || []).some((p) => !!p)
@@ -616,6 +619,7 @@ function App(): React.JSX.Element {
   // ── Clock ──
   useEffect(() => {
     const tick = (): void => {
+      if (isGameRunningRef.current) return
       const now = new Date()
       setClock(
         now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -816,6 +820,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (stores.length <= 1 || storeHover) return
     const interval = setInterval(() => {
+      if (isGameRunningRef.current) return
       setCurrentStoreIndex((prev) => (prev + 1) % stores.length)
     }, 4000)
     return () => clearInterval(interval)
@@ -825,6 +830,8 @@ function App(): React.JSX.Element {
   useEffect(() => {
     const unsubscribe = window.api.onGameExited((data) => {
       setRunningGameId(null)
+      setIsGameRunning(false)
+      isGameRunningRef.current = false
       setGames((prev) => {
         const updated = prev.map((g) =>
           g.id === data.gameId
@@ -838,6 +845,15 @@ function App(): React.JSX.Element {
         window.api.saveGames(updated)
         return updated
       })
+    })
+    return unsubscribe
+  }, [])
+
+  // ── Listen for game-session-start (launcher hides, suspend activities) ──
+  useEffect(() => {
+    const unsubscribe = window.api.onGameSessionStart(() => {
+      isGameRunningRef.current = true
+      setIsGameRunning(true)
     })
     return unsubscribe
   }, [])
@@ -2343,7 +2359,7 @@ function App(): React.JSX.Element {
 
       {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
       {(isHomeCardFocused || showIdleMode) && (
-        <MusicPlayer isVisible={isHomeCardFocused && !showIdleMode} isIdle={showIdleMode} />
+        <MusicPlayer isVisible={isHomeCardFocused && !showIdleMode} isIdle={showIdleMode} isGameRunning={isGameRunning} />
       )}
 
       {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ── */}

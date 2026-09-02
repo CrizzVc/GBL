@@ -6,12 +6,17 @@ import {
   SystemMediaSession
 } from '../services/systemMediaService'
 
-export function useSystemMedia(): { sessions: SystemMediaSession[]; nowPlaying: SystemMediaSession | null } {
+export function useSystemMedia(isGameRunning: boolean = false): { sessions: SystemMediaSession[]; nowPlaying: SystemMediaSession | null } {
   const [sessions, setSessions] = useState<SystemMediaSession[]>([])
   const [nowPlaying, setNowPlaying] = useState<SystemMediaSession | null>(null)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const basePositionRef = useRef(0)
   const lastSyncRef = useRef<number>(Date.now())
+  const isGameRunningRef = useRef(isGameRunning)
+
+  useEffect(() => {
+    isGameRunningRef.current = isGameRunning
+  }, [isGameRunning])
 
   useEffect(() => {
     let mounted = true
@@ -22,6 +27,7 @@ export function useSystemMedia(): { sessions: SystemMediaSession[]; nowPlaying: 
       if (mounted) setSessions(list)
     })
     const poll = setInterval(() => {
+      if (isGameRunningRef.current) return
       fetchMediaSessions().then((list) => {
         if (mounted) setSessions(list)
       })
@@ -51,6 +57,7 @@ export function useSystemMedia(): { sessions: SystemMediaSession[]; nowPlaying: 
     basePositionRef.current = nowPlaying.positionMs
     lastSyncRef.current = Date.now()
     tickRef.current = setInterval(() => {
+      if (isGameRunningRef.current) return
       const nextPos = basePositionRef.current + (Date.now() - lastSyncRef.current)
       setNowPlaying((prev) => {
         if (!prev || prev.playbackStatus !== 'playing') return prev

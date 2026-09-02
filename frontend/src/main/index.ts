@@ -34,6 +34,9 @@ let winMediaControlModulePromise: Promise<any> | null = null
 // ── Backend Express server (proceso hijo) ──
 let backendProcess: ChildProcess | null = null
 
+// ── Game session flag — suspende actividades durante gameplay ──
+let isGameRunning = false
+
 function startBackend(): void {
   if (is.dev) return // En dev se corre manualmente con "npm run dev" en backend/
 
@@ -160,6 +163,7 @@ async function fetchMediaSessionsForRenderer(): Promise<any[]> {
 }
 
 function broadcastMediaSessions(): void {
+  if (isGameRunning) return
   fetchMediaSessionsForRenderer()
     .then((sessions) => {
       if (mainWindowRef && !mainWindowRef.isDestroyed()) {
@@ -445,6 +449,15 @@ app.whenReady().then(() => {
         }, 6000)
         return { success: true, tracked: false, startTime }
       } else {
+        // Juego real (.exe) — ocultar launcher y suspender actividades
+        isGameRunning = true
+        if (win && !win.isDestroyed()) {
+          win.hide()
+        }
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('game-session-start', { gameId })
+        }
+
         const child = spawn(`"${exePath}"`, [], {
           detached: true,
           shell: true,
@@ -453,23 +466,15 @@ app.whenReady().then(() => {
 
         child.unref()
 
-        let exited = false
         child.on('exit', () => {
-          exited = true
+          isGameRunning = false
           if (win && !win.isDestroyed()) {
-            win.restore()
+            win.show()
             win.focus()
             const durationMinutes = Math.round((Date.now() - startTime) / 60000)
             win.webContents.send('game-exited', { gameId, durationMinutes: Math.max(1, durationMinutes) })
           }
         })
-
-        setTimeout(() => {
-          if (!exited && win && !win.isDestroyed()) {
-            win.restore()
-            win.focus()
-          }
-        }, 8000)
 
         return { success: true, tracked: true, startTime }
       }

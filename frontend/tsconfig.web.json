@@ -8,6 +8,7 @@
   ],
   "compilerOptions": {
     "composite": true,
+    "ignoreDeprecations": "5.0",
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {

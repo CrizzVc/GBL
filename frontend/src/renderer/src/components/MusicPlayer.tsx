@@ -94,10 +94,11 @@ const FALLBACK_COLORS = ['#1DB954', '#e40d60', '#6a5acd', '#e67e22', '#2980b9', 
 interface MusicPlayerProps {
   isVisible: boolean
   isIdle?: boolean
+  isGameRunning?: boolean
 }
 
-export default function MusicPlayer({ isVisible, isIdle = false }: MusicPlayerProps): React.JSX.Element {
-  const { nowPlaying } = useSystemMedia()
+export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning = false }: MusicPlayerProps): React.JSX.Element {
+  const { nowPlaying } = useSystemMedia(isGameRunning)
   const systemActive = Boolean(nowPlaying)
   const systemTarget = getMediaControlTarget(nowPlaying)
 

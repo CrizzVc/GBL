@@ -2311,10 +2311,6 @@
   font-weight: 500;
 }
 
-.detail-meta-value.link {
-  /* color: #66c0f4; */
-}
-
 .detail-meta-tags-block {
   display: flex;
   flex-direction: column;
@@ -2403,10 +2399,6 @@
 
   .games-row-container {
     padding: 0 40px 26px;
-  }
-
-  .game-card {
-    /* width: clamp(200px, 9vw, 300px); */  /*ESTO ES LO QUE HACE QUE EL ROW DEL JUEGO SALGA MEDIO MOCHO*/
   }
 
   .bottom-row {
