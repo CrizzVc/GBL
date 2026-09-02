@@ -2327,35 +2327,26 @@ function App(): React.JSX.Element {
       const ease = (t: number): number => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
       const startTime = performance.now()
       const originX = dir === 1 ? '0%' : '100%'
-      // Prev layer: starts fully visible (p=150), will shrink to hidden (p=-100)
-      setBgPrevStyle({ ...prev, zIndex: 1 })
-      // New layer: starts hidden (p=-100), will expand to fully visible (p=150)
-      setBgCurrStyle({ ...next, zIndex: 2 })
+      // Prev layer ON TOP: mask shrinks to reveal new layer underneath
+      setBgPrevStyle({ ...prev, zIndex: 2 })
+      // New layer UNDERNEATH: hidden by prev, revealed as prev mask shrinks
+      setBgCurrStyle({ ...next, zIndex: 1 })
       bgKeyRef.current = bgKey
       const animate = (now: number): void => {
         const elapsed = now - startTime
         const raw = Math.min(elapsed / duration, 1)
         const fade = ease(raw)
-        // Prev layer progress: 1→0 (visible→hidden)
+        // Prev layer progress: 1→0 (visible→hidden mask)
         const prevP = Math.round((1 - fade) * 250 - 100)
-        // New layer progress: 0→1 (hidden→visible)
-        const currP = Math.round(fade * 250 - 100)
         const prevMask = buildMask(originX, prevP)
-        const currMask = buildMask(originX, currP)
         setBgPrevStyle(s => s ? {
           ...s,
           WebkitMaskImage: prevMask,
           maskImage: prevMask,
         } : s)
-        setBgCurrStyle(s => ({
-          ...s,
-          WebkitMaskImage: currMask,
-          maskImage: currMask,
-        }))
         if (raw < 1) {
           wipeRafRef.current = requestAnimationFrame(animate)
         } else {
-          setBgCurrStyle(s => ({ ...s, WebkitMaskImage: 'none', maskImage: 'none' }))
           setBgPrevStyle(null)
         }
       }
