@@ -22,7 +22,13 @@ import gogLogo from './assets/tiendas/gogLogo.png'
 import steamBanner from './assets/tiendas/steamBanner.png'
 import epicBanner from './assets/tiendas/EpicBanner.png'
 import gogBanner from './assets/tiendas/gogBanner.png'
-import Teen from './assets/ratings/T.png'
+import RatingE from './assets/ratings/E.png'
+import RatingE10 from './assets/ratings/E10.png'
+import RatingT from './assets/ratings/T.png'
+import RatingM from './assets/ratings/M.png'
+import RatingAO from './assets/ratings/AO.png'
+import RatingRP from './assets/ratings/RP.png'
+import RatingRP17 from './assets/ratings/RP17.png'
 import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
 import defaultHomeBackground from './assets/images/background-defauld.png'
@@ -304,6 +310,30 @@ function MoreIcon({ size = 20 }: { size?: number }): React.JSX.Element {
       <circle cx="19" cy="12" r="2" />
     </svg>
   )
+}
+
+const RATING_IMAGES: Record<string, string> = {
+  E: RatingE,
+  E10: RatingE10,
+  T: RatingT,
+  M: RatingM,
+  AO: RatingAO,
+  RP: RatingRP,
+  RP17: RatingRP17,
+  EVERYONE: RatingE,
+  EVERYONE10: RatingE10,
+  TEEN: RatingT,
+  MATURE: RatingM,
+  ADULTSONLY: RatingAO,
+  RATINGPENDING: RatingRP
+}
+
+function getRatingImage(rating: string | null): string {
+  if (!rating) return RatingRP
+  const normalized = rating.replace('+', '').toUpperCase()
+  const img = RATING_IMAGES[normalized]
+  console.log('[ESRB] raw:', rating, 'normalized:', normalized, 'match:', !!img)
+  return img || RatingRP
 }
 
 /* ────────────────────────────────────────────
@@ -3265,7 +3295,7 @@ function App(): React.JSX.Element {
                       </span>
                       <span className="rating-widget-badge-board">{detailInfo.rating.board}</span>
                     </div> */}
-                    <img src={Teen} alt="" style={{ width: '80px' }} />
+                    <img src={getRatingImage(detailInfo.rating.rating)} alt="" style={{ width: '80px' }} />
                     <div className="rating-widget-body">
                       {detailInfo.rating.descriptors.length > 0 && (
                         <ul className="rating-widget-descriptors">
@@ -3288,7 +3318,7 @@ function App(): React.JSX.Element {
               {smallDetailLayout ? (
                 detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
                   <div className="rating-widget">
-                    <img src={Teen} alt="" style={{ width: '80px' }} />
+                    <img src={getRatingImage(detailInfo.rating.rating)} alt="" style={{ width: '80px' }} />
                     <div className="rating-widget-body">
                       {detailInfo.rating.descriptors.length > 0 && (
                         <ul className="rating-widget-descriptors">
