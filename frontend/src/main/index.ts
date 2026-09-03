@@ -1,10 +1,10 @@
 import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
-import { join, dirname, extname } from 'path'
+import { join, dirname, extname, basename } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
-import { spawn, fork, type ChildProcess } from 'child_process'
+import { spawn, fork, execSync, type ChildProcess } from 'child_process'
 import * as http from 'http'
 import { URL } from 'url'
 
@@ -528,6 +528,122 @@ app.whenReady().then(() => {
     }
   })
 
+  // ── Steam game process monitoring ──
+  const KNOWN_STEAM_PROCESSES = new Set([
+    'steam.exe', 'steamwebhelper.exe', 'gameoverlayui.exe', 'cef.helper.exe',
+    'crashhandler.exe', 'steamservice.exe'
+  ])
+
+  function getProcessNames(): Set<string> {
+    const names = new Set<string>()
+    try {
+      const out = execSync('tasklist /FO CSV /NH', { encoding: 'utf8', timeout: 5000 })
+      for (const line of out.split('\n')) {
+        const match = line.match(/"([^"]+)"/)
+        if (match) names.add(match[1].toLowerCase())
+      }
+    } catch { /* ignore */ }
+    return names
+  }
+
+  function findGameExeFromManifest(appId: string): string[] {
+    const exes: string[] = []
+    try {
+      const steamRoots = getSteamPaths()
+      for (const root of steamRoots) {
+        const manifestPath = join(root, 'steamapps', `appmanifest_${appId}.acf`)
+        if (!fs.existsSync(manifestPath)) continue
+        const content = fs.readFileSync(manifestPath, 'utf8')
+        const installdirMatch = content.match(/"installdir"\s+"([^"]+)"/)
+        if (!installdirMatch) continue
+        const gameDir = join(root, 'steamapps', 'common', installdirMatch[1])
+        if (!fs.existsSync(gameDir)) continue
+        const walk = (dir: string): void => {
+          try {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const fullPath = join(dir, entry.name)
+              if (entry.isDirectory()) walk(fullPath)
+              else if (entry.name.toLowerCase().endsWith('.exe')) exes.push(basename(fullPath).toLowerCase())
+            }
+          } catch { /* ignore */ }
+        }
+        walk(gameDir)
+        if (exes.length > 0) break
+      }
+    } catch { /* ignore */ }
+    return exes
+  }
+
+  function monitorSteamGameProcess(appId: string, win: BrowserWindow, gameId: string, startTime: number): void {
+    const beforeProcs = getProcessNames()
+    const knownSteam = new Set<string>(KNOWN_STEAM_PROCESSES)
+
+    // Try to find specific exe names from manifest
+    const manifestExes = findGameExeFromManifest(appId)
+    const specificExes = new Set(manifestExes)
+
+    let gameDetected = false
+    let stableCount = 0
+
+    const interval = setInterval(() => {
+      if (!isGameRunning) { clearInterval(interval); return }
+
+      const currentProcs = getProcessNames()
+
+      if (!gameDetected) {
+        // Look for new process that isn't Steam itself
+        for (const name of currentProcs) {
+          if (!beforeProcs.has(name) && !knownSteam.has(name)) {
+            // Either match specific exe from manifest, or any new .exe
+            if (specificExes.size === 0 || specificExes.has(name)) {
+              gameDetected = true
+              specificExes.add(name) // Lock to this specific process
+              break
+            }
+          }
+        }
+        // Fallback: if specific exe wasn't found, check for any new non-steam process
+        if (!gameDetected) {
+          for (const name of currentProcs) {
+            if (!beforeProcs.has(name) && !knownSteam.has(name) && name.endsWith('.exe')) {
+              gameDetected = true
+              specificExes.add(name)
+              break
+            }
+          }
+        }
+        return
+      }
+
+      // Game was detected — check if it's still running
+      let gameStillRunning = false
+      for (const name of specificExes) {
+        if (currentProcs.has(name)) { gameStillRunning = true; break }
+      }
+
+      if (!gameStillRunning) {
+        stableCount++
+        // Wait 2 consecutive checks (10s) to avoid false positives
+        if (stableCount >= 2) {
+          clearInterval(interval)
+          isGameRunning = false
+          resumeActivities()
+          if (win && !win.isDestroyed()) {
+            win.show()
+            win.focus()
+            const durationMinutes = Math.round((Date.now() - startTime) / 60000)
+            win.webContents.send('game-exited', { gameId, durationMinutes: Math.max(1, durationMinutes) })
+          }
+        }
+      } else {
+        stableCount = 0
+      }
+    }, 5000)
+
+    // Safety timeout: 4 hours
+    setTimeout(() => clearInterval(interval), 4 * 60 * 60 * 1000)
+  }
+
   ipcMain.handle('launch-game', async (event, gameId: string, exePath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender)
 
@@ -583,6 +699,8 @@ app.whenReady().then(() => {
         if (win && !win.isDestroyed()) {
           win.webContents.send('game-session-start', { gameId })
         }
+        const appIdMatch = exePath.match(/\/(\d+)/)
+        const steamAppId = appIdMatch ? appIdMatch[1] : ''
         await shell.openExternal(exePath)
         for (const delay of [0, 500, 1500, 3000]) {
           setTimeout(() => {
@@ -590,6 +708,9 @@ app.whenReady().then(() => {
               win.hide()
             }
           }, delay)
+        }
+        if (steamAppId && win && !win.isDestroyed()) {
+          monitorSteamGameProcess(steamAppId, win, gameId, startTime)
         }
         return { success: true, tracked: false, startTime, steamProtocol: true }
       }
