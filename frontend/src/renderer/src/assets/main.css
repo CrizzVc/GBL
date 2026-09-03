@@ -4042,6 +4042,18 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
+  animation: wallpaper-row-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes wallpaper-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
 .wallpaper-row {
@@ -4060,39 +4072,48 @@
   aspect-ratio: 16 / 9;
   border-radius: var(--gbl-radius-md);
   background: var(--gbl-bg-card);
-  border: 2px solid var(--gbl-border);
+  /* border: 2px solid var(--gbl-border); */
   overflow: hidden;
   cursor: pointer;
-  transition:
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
   position: relative;
-  will-change: transform, opacity;
   transform-origin: left center;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.wallpaper-card.animating {
+  will-change: transform, opacity;
 }
 
 /* Rectas (sin rotateZ/rotateY): la cercana al centro queda más a la
    izquierda que la lejana, y el centro sobresale más a la derecha que
    ambas. Las próximas usan las mismas posiciones que las anteriores. */
 .wallpaper-card.far {
-  transform: translateX(116px);
+  transform: translateX(-10px) scale(0.85);
   z-index: 1;
-  opacity: 0.75;
+  opacity: 0.6;
+  filter: brightness(0.7) blur(0.5px);
+  transition-delay: 0.04s;
 }
 
 .wallpaper-card.near {
-  transform: translateX(192px);
+  transform: translateX(20px) scale(0.95);
   z-index: 2;
-  opacity: 0.9;
+  opacity: 0.85;
+  filter: brightness(0.85);
+  transition-delay: 0.02s;
 }
 
 .wallpaper-card.center {
-  transform: translateX(270px) scale(1.2);
+  transform: translateX(55px) scale(1);
   z-index: 5;
   opacity: 1;
+  filter: none;
+  transition-delay: 0s;
 }
 
 /* Buffer invisible: sigue montada (no se desmonta de golpe) justo antes de
@@ -4100,21 +4121,26 @@
    progresión de las demás posiciones. Así la transición de entrada/salida
    se ve como un deslizamiento + fundido en vez de un pop instantáneo. */
 .wallpaper-card.hidden {
-  transform: translateX(40px);
+  transform: translateX(-220px) scale(0.75);
   z-index: 0;
   opacity: 0;
   pointer-events: none;
+  filter: brightness(0.5) blur(1px);
+  transition-delay: 0.06s;
 }
 
 .wallpaper-card:hover {
-  border-color: var(--gbl-border-hover);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
-  opacity: 1;
+  /* border-color: var(--gbl-border-hover); */
+  /* box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55); */
 }
 
-.wallpaper-card.selected {
-  border-color: var(--gbl-accent);
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65);
+.wallpaper-card.selected { 
+  transform: translateX(0) scale(1.02);
+}
+
+.wallpaper-card.center.selected {
+  transform: translateX(55px) scale(1);
+  border: none;
 }
 
 .wallpaper-card-img {
@@ -4123,6 +4149,19 @@
   object-fit: cover;
   display: block;
   pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wallpaper-card.center .wallpaper-card-img {
+  transform: scale(1.05);
+}
+
+.wallpaper-card:hover .wallpaper-card-img {
+  transform: scale(1.08);
+}
+
+.wallpaper-card.center:hover .wallpaper-card-img {
+  transform: scale(1.1);
 }
 
 /* Cuando wallpaper-mode está activo, esconder games row y bottom row */

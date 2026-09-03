@@ -481,6 +481,7 @@ function App(): React.JSX.Element {
   const [wallpaperImages, setWallpaperImages] = useState<Array<{ name: string; path: string; dataUrl: string; mtime: number }>>([])
   const [wallpaperMode, setWallpaperMode] = useState(false)
   const [wallpaperIndex, setWallpaperIndex] = useState(0)
+  const [isWallpaperAnimating, setIsWallpaperAnimating] = useState(false)
 
   // Solo la card de Home (biblioteca), no juegos, bottom row ni wallpapers.
   const isHomeCardFocused =
@@ -632,6 +633,14 @@ function App(): React.JSX.Element {
   const wallpaperRowRef = useRef<HTMLDivElement>(null)
   const isWallpaperMode = wallpaperMode && isHomeFocused && wallpaperImages.length > 0
   const selectedWallpaper = isWallpaperMode ? wallpaperImages[wallpaperIndex] ?? null : null
+
+  // Función para cambiar el índice con animación
+  const changeWallpaperIndex = useCallback((newIndex: number | ((prev: number) => number)) => {
+    setIsWallpaperAnimating(true)
+    setWallpaperIndex(newIndex)
+    // Remover la clase después de que termine la transición
+    setTimeout(() => setIsWallpaperAnimating(false), 550)
+  }, [])
 
   // El dataUrl de wallpaperImages es el thumbnail cacheado (360px, pensado para las
   // cards chicas); usarlo también como fondo a pantalla completa se ve pixelado.
@@ -1822,13 +1831,13 @@ function App(): React.JSX.Element {
       if (res?.folder && Array.isArray(res.images)) {
         setWallpaperFolder(res.folder)
         setWallpaperImages(res.images)
-        setWallpaperIndex(0)
+        changeWallpaperIndex(0)
         setWallpaperMode(true)
       } else if (res?.folder) {
         const imgs = await window.api.getWallpaperImages(res.folder)
         setWallpaperFolder(res.folder)
         setWallpaperImages(imgs)
-        setWallpaperIndex(0)
+        changeWallpaperIndex(0)
         if (imgs.length > 0) setWallpaperMode(true)
       }
     } catch (err) {
@@ -2034,14 +2043,14 @@ function App(): React.JSX.Element {
       } else if (isWallpaperMode) {
         if (e.key === 'ArrowDown') {
           e.preventDefault()
-          setWallpaperIndex((prev) => {
+          changeWallpaperIndex((prev) => {
             const next = Math.min(prev + 1, wallpaperImages.length - 1)
             if (next !== prev) playMove()
             return next
           })
         } else if (e.key === 'ArrowUp') {
           e.preventDefault()
-          setWallpaperIndex((prev) => {
+          changeWallpaperIndex((prev) => {
             const next = Math.max(prev - 1, 0)
             if (next !== prev) playMove()
             return next
@@ -2549,8 +2558,8 @@ function App(): React.JSX.Element {
                 <div
                   key={img.path}
                   id={`wallpaper-card-${idx}`}
-                  className={`wallpaper-card ${proximity} ${idx === wallpaperIndex ? 'selected' : ''}`}
-                  onClick={() => setWallpaperIndex(idx)}
+                  className={`wallpaper-card ${proximity} ${idx === wallpaperIndex ? 'selected' : ''} ${isWallpaperAnimating ? 'animating' : ''}`}
+                  onClick={() => changeWallpaperIndex(idx)}
                   onDoubleClick={() => handleChooseWallpaperAsHome(idx)}
                   title={`${img.name} — Enter o doble click para fijar como fondo de Home`}
                 >
