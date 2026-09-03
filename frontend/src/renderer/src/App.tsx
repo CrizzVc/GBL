@@ -413,6 +413,7 @@ function App(): React.JSX.Element {
   const libraryGridRef = useRef<HTMLDivElement>(null)
   const previousLibraryIndexRef = useRef<number | null>(null)
   const wipeDirectionRef = useRef<1 | -1>(1)
+  const previousHomeSelectedGameIdRef = useRef<string | null>(null)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
@@ -1483,9 +1484,10 @@ function App(): React.JSX.Element {
   const openLibraryView = useCallback(() => {
     playEnter()
     setDetailGameId(null)
+    previousHomeSelectedGameIdRef.current = selectedGameId
     setSelectedGameId(games[0]?.id ?? null)
     setLibraryView(true)
-  }, [games])
+  }, [games, selectedGameId])
 
   // ── Open edit game modal ──
   const openEditGameModal = useCallback(
@@ -1926,6 +1928,7 @@ function App(): React.JSX.Element {
         if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
+          setSelectedGameId(previousHomeSelectedGameIdRef.current)
           setLibraryView(false)
         }
         if (e.key === 'BrowserBack' || e.key === 'BrowserForward') {
@@ -3668,7 +3671,10 @@ function App(): React.JSX.Element {
                   style={libCurrUrl ? { backgroundImage: `linear-gradient(to top, rgba(12, 12, 12, 0.98) 0%, rgba(12, 12, 12, 0.7) 42%, rgba(12, 12, 12, 0.08) 100%), url(${libCurrUrl})` } : undefined}
                 />
                 <div className="library-hero-content">
-                  <button className="library-back-button" onClick={() => setLibraryView(false)}>
+                  <button className="library-back-button" onClick={() => {
+                    setSelectedGameId(previousHomeSelectedGameIdRef.current)
+                    setLibraryView(false)
+                  }}>
                     <ChevronLeftIcon size={20} /> Volver
                   </button>
                   <div className="library-title-row">
