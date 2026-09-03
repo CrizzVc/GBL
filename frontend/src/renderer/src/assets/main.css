@@ -77,6 +77,8 @@
   position: relative;
   z-index: 10;
   flex-shrink: 0;
+  animation: homeEntrance 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0ms;
 }
 
 .header-left {
@@ -162,6 +164,8 @@
   position: relative;
   z-index: 5;
   min-height: 0;
+  animation: homeEntrance 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
 }
 
 .hero-content {
@@ -252,6 +256,8 @@
   padding: 0 28px 16px 28px;
   position: relative;
   z-index: 10;
+  animation: homeEntrance 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 160ms;
 }
 
 .games-row {
@@ -486,6 +492,8 @@
   padding: 0 28px 20px 28px;
   position: relative;
   z-index: 10;
+  animation: homeEntrance 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 240ms;
 }
 
 .bottom-card-square {
@@ -757,6 +765,18 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes homeEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -4164,7 +4184,8 @@
   transform: scale(1.1);
 }
 
-/* Cuando wallpaper-mode está activo, esconder games row y bottom row */
+/* Cuando wallpaper-mode está activo, esconder hero, games row y bottom row */
+.launcher.wallpaper-mode .hero-section,
 .launcher.wallpaper-mode .games-row-container,
 .launcher.wallpaper-mode .bottom-row {
   max-height: 0;
