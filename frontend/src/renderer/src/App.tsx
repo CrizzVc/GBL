@@ -435,7 +435,7 @@ function App(): React.JSX.Element {
     [selectedSteamAppId, steamLibrary]
   )
   const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`, [])
-  const librarySelectedGame = games.find((g) => g.id === selectedGameId) || games[0] || null
+  const librarySelectedGame = games.find((g) => g.id === selectedGameId) || sortedLibraryGames[0] || null
   const detailGame = useMemo<Game | null>(() => {
     const localGame = games.find((g) => g.id === detailGameId) || null
     if (localGame) return localGame
@@ -1485,9 +1485,9 @@ function App(): React.JSX.Element {
     playEnter()
     setDetailGameId(null)
     previousHomeSelectedGameIdRef.current = selectedGameId
-    setSelectedGameId(games[0]?.id ?? null)
+    setSelectedGameId(sortedLibraryGames[0]?.id ?? null)
     setLibraryView(true)
-  }, [games, selectedGameId])
+  }, [sortedLibraryGames, selectedGameId])
 
   // ── Open edit game modal ──
   const openEditGameModal = useCallback(
@@ -1939,8 +1939,8 @@ function App(): React.JSX.Element {
             setLibrarySource(nextSource)
             if (nextSource === 'steam' && steamLibrary.length > 0) {
               setSelectedSteamAppId(String(steamLibrary[0].appid))
-            } else if (nextSource === 'local' && games.length > 0) {
-              setSelectedGameId(games[0]?.id ?? null)
+            } else if (nextSource === 'local' && sortedLibraryGames.length > 0) {
+              setSelectedGameId(sortedLibraryGames[0]?.id ?? null)
             }
           }
           return
