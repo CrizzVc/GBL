@@ -4063,9 +4063,13 @@
   border: 2px solid var(--gbl-border);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
   position: relative;
-  will-change: transform, border-color, opacity;
+  will-change: transform, opacity;
   transform-origin: left center;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
 }
@@ -4089,6 +4093,17 @@
   transform: translateX(270px) scale(1.2);
   z-index: 5;
   opacity: 1;
+}
+
+/* Buffer invisible: sigue montada (no se desmonta de golpe) justo antes de
+   entrar/después de salir de la ventana visible de 5, continuando la
+   progresión de las demás posiciones. Así la transición de entrada/salida
+   se ve como un deslizamiento + fundido en vez de un pop instantáneo. */
+.wallpaper-card.hidden {
+  transform: translateX(40px);
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .wallpaper-card:hover {

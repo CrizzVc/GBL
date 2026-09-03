@@ -38,6 +38,7 @@ declare global {
       selectWallpaperFolder: () => Promise<{ folder: string; images: Array<{ name: string; path: string; dataUrl: string; mtime: number }> } | null>
       getWallpaperFolder: () => Promise<string | null>
       getWallpaperImages: (folder?: string) => Promise<Array<{ name: string; path: string; dataUrl: string; mtime: number }>>
+      getWallpaperPreview: (path: string) => Promise<string | null>
       setWallpaperAsBackground: (sourcePath: string) => Promise<string | null>
       // Profile APIs
       getProfile: () => Promise<{ name: string; avatar: string | null }>

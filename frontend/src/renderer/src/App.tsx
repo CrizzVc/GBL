@@ -633,24 +633,38 @@ function App(): React.JSX.Element {
   const isWallpaperMode = wallpaperMode && isHomeFocused && wallpaperImages.length > 0
   const selectedWallpaper = isWallpaperMode ? wallpaperImages[wallpaperIndex] ?? null : null
 
-  // El dataUrl de wallpaperImages es una miniatura (pensada para las cards chicas);
-  // usarla también como fondo a pantalla completa se ve pixelado/de baja calidad.
-  // Acá intentamos cargar el archivo real desde disco (mejor resolución) y si falla
-  // (protocolo bloqueado, ruta inválida, etc.) caemos de vuelta al dataUrl de siempre.
+  // El dataUrl de wallpaperImages es el thumbnail cacheado (360px, pensado para las
+  // cards chicas); usarlo también como fondo a pantalla completa se ve pixelado.
+  // get-wallpaper-preview lee el archivo original en el proceso principal (sin
+  // copiarlo ni tocar el fondo guardado) y acá lo cacheamos en memoria por path
+  // para no releerlo del disco cada vez que se vuelve a pasar por esa wallpaper.
+  const wallpaperPreviewCacheRef = useRef<Map<string, string>>(new Map())
   const [wallpaperBgHiRes, setWallpaperBgHiRes] = useState<string | null>(null)
   useEffect(() => {
-    if (!selectedWallpaper?.path) {
+    const path = selectedWallpaper?.path
+    if (!path) {
       setWallpaperBgHiRes(null)
       return undefined
     }
+    const cached = wallpaperPreviewCacheRef.current.get(path)
+    if (cached) {
+      setWallpaperBgHiRes(cached)
+      return undefined
+    }
     let cancelled = false
-    const normalized = selectedWallpaper.path.replace(/\\/g, '/')
-    const fileUrl = `file://${normalized.startsWith('/') ? '' : '/'}${encodeURI(normalized)}`
-    const probe = new Image()
-    probe.onload = () => { if (!cancelled) setWallpaperBgHiRes(fileUrl) }
-    probe.onerror = () => { if (!cancelled) setWallpaperBgHiRes(null) }
-    probe.src = fileUrl
-    return () => { cancelled = true }
+    setWallpaperBgHiRes(null)
+    window.api.getWallpaperPreview(path)
+      .then((dataUrl: string | null) => {
+        if (cancelled) return
+        if (dataUrl) {
+          wallpaperPreviewCacheRef.current.set(path, dataUrl)
+          setWallpaperBgHiRes(dataUrl)
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('Error cargando preview HD del wallpaper:', err)
+      })
+    return (): void => { cancelled = true }
   }, [selectedWallpaper?.path])
 
   useEffect(() => {
@@ -2518,15 +2532,19 @@ function App(): React.JSX.Element {
       )}
 
       {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ──
-          Ventana fija de 5: 2 anteriores, la enfocada en el centro, 2 próximas. Sin scroll: solo
-          se renderizan las cards dentro de esa ventana, así el alto nunca corta nada. */}
+          Ventana visible de 5: 2 anteriores, la enfocada en el centro, 2 próximas. Además se
+          mantienen montadas (pero invisibles, clase "hidden") las cards en distancia 3, como
+          buffer: así cuando entran a la ventana de 5 lo hacen con una transición suave de
+          posición/opacidad en vez de aparecer de golpe (y al salir, se desvanecen en vez de
+          desmontarse instantáneamente). */}
       {isWallpaperMode && (
         <div className="wallpaper-row-container">
           <div className="wallpaper-row" ref={wallpaperRowRef}>
             {wallpaperImages.map((img, idx) => {
               const distance = idx - wallpaperIndex
-              if (Math.abs(distance) > 2) return null
-              const proximity = distance === 0 ? 'center' : Math.abs(distance) === 1 ? 'near' : 'far'
+              const absDistance = Math.abs(distance)
+              if (absDistance > 3) return null
+              const proximity = distance === 0 ? 'center' : absDistance === 1 ? 'near' : absDistance === 2 ? 'far' : 'hidden'
               return (
                 <div
                   key={img.path}

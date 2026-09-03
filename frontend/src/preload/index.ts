@@ -42,6 +42,7 @@ const api = {
   getWallpaperFolder: () => ipcRenderer.invoke('get-wallpaper-folder'),
   getWallpaperImages: (folder?: string) => ipcRenderer.invoke('get-wallpaper-images', folder),
   setWallpaperAsBackground: (sourcePath: string) => ipcRenderer.invoke('set-wallpaper-as-background', sourcePath),
+  getWallpaperPreview: (path: string) => ipcRenderer.invoke('get-wallpaper-preview', path),
   // Profile APIs
   getProfile: () => ipcRenderer.invoke('get-profile'),
   saveProfile: (profile: { name: string; avatar: string | null }) => ipcRenderer.invoke('save-profile', profile),

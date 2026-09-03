@@ -801,6 +801,23 @@ app.whenReady().then(() => {
     }
   })
 
+  // ── Preview en alta resolución para el fondo grande al navegar el wallpaper row ──
+  // Igual que set-wallpaper-as-background lee el archivo original (no el thumbnail
+  // cacheado de 360px), pero es de solo lectura: no copia nada ni toca el fondo
+  // guardado, así se puede llamar en cada cambio de selección sin efectos secundarios.
+  ipcMain.handle('get-wallpaper-preview', async (_event, sourcePath: string) => {
+    if (!sourcePath || !fs.existsSync(sourcePath)) return null
+    try {
+      const ext = extname(sourcePath).toLowerCase()
+      const data = fs.readFileSync(sourcePath)
+      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
+      return `data:${mime};base64,${data.toString('base64')}`
+    } catch (err) {
+      console.error('Error reading wallpaper preview:', err)
+      return null
+    }
+  })
+
   // ── User profile handlers ──
   const getProfilePath = (): string => {
     return join(app.getPath('userData'), 'profile.json')
