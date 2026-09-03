@@ -573,20 +573,29 @@ app.whenReady().then(() => {
         return { success: true, tracked: true, startTime }
       }
 
-      // No-tracked: minimize para los demás casos
-      if (win) {
-        win.minimize()
+      // No-tracked: hide for Steam, minimize for others
+      if (isSteamProtocol) {
+        isGameRunning = true
+        suspendActivities()
+        if (win && !win.isDestroyed()) {
+          win.hide()
+        }
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('game-session-start', { gameId })
+        }
+        await shell.openExternal(exePath)
+        for (const delay of [0, 500, 1500, 3000]) {
+          setTimeout(() => {
+            if (isGameRunning && win && !win.isDestroyed()) {
+              win.hide()
+            }
+          }, delay)
+        }
+        return { success: true, tracked: false, startTime, steamProtocol: true }
       }
 
-      if (isSteamProtocol) {
-        await shell.openExternal(exePath)
-        setTimeout(() => {
-          if (win && !win.isDestroyed()) {
-            win.restore()
-            win.focus()
-          }
-        }, 1500)
-        return { success: true, tracked: false, startTime, steamProtocol: true }
+      if (win) {
+        win.minimize()
       }
 
       if (!hasExecutable || !fileExists) {
