@@ -17,20 +17,20 @@ interface NotificationProps {
 export default function Notification({ notification, onDismiss }: NotificationProps): React.JSX.Element {
   const [isExiting, setIsExiting] = useState(false)
 
-  // const handleDismiss = useCallback(() => {
-  //   setIsExiting(true)
-  //   setTimeout(() => {
-  //     onDismiss(notification.id)
-  //   }, 300)
-  // }, [notification.id, onDismiss])
+  const handleDismiss = useCallback(() => {
+    setIsExiting(true)
+    setTimeout(() => {
+      onDismiss(notification.id)
+    }, 300)
+  }, [notification.id, onDismiss])
 
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     handleDismiss()
-  //   }, 5000)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleDismiss()
+    }, 5000)
 
-  //   return () => clearTimeout(timer)
-  // }, [handleDismiss])
+    return () => clearTimeout(timer)
+  }, [handleDismiss])
 
   return (
     <div className={`notification-card ${isExiting ? 'exiting' : ''}`}>
