@@ -1311,8 +1311,8 @@ app.whenReady().then(() => {
 
       try {
         const stat = fs.statSync(logPath)
-        // Only read last 256KB for performance
-        const readSize = Math.min(stat.size, 256 * 1024)
+        // Read last 512KB for better coverage
+        const readSize = Math.min(stat.size, 512 * 1024)
         const fd = fs.openSync(logPath, 'r')
         const buffer = Buffer.alloc(readSize)
         fs.readSync(fd, buffer, 0, readSize, stat.size - readSize)
@@ -1321,7 +1321,7 @@ app.whenReady().then(() => {
         const content = buffer.toString('utf8')
         const lines = content.split('\n')
 
-        // Parse download rate
+        // Parse download rate (use the last one)
         let lastSpeed = 0
         for (let i = lines.length - 1; i >= 0; i--) {
           const speedMatch = lines[i].match(/Current download rate:\s*([\d.]+)\s*Mbps/)
@@ -1331,34 +1331,64 @@ app.whenReady().then(() => {
           }
         }
 
-        // Parse per-app download progress
+        // Parse ALL update started lines, keep the LAST one per AppID
+        const appUpdates = new Map<string, { downloaded: number; total: number; timestamp: number }>()
         for (const line of lines) {
           const match = line.match(/AppID\s+(\d+)\s+update started\s*:\s*download\s+(\d+)\/(\d+)/)
           if (match) {
             const appId = match[1]
             const downloaded = parseInt(match[2], 10)
             const total = parseInt(match[3], 10)
-            downloadInfoCache.set(appId, {
-              downloaded,
-              total,
-              speed: lastSpeed,
-              updated: Date.now()
-            })
+            // Extract timestamp from line
+            const tsMatch = line.match(/^\[(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\]/)
+            let timestamp = Date.now()
+            if (tsMatch) {
+              timestamp = new Date(tsMatch[1]).getTime()
+            }
+            appUpdates.set(appId, { downloaded, total, timestamp })
           }
         }
 
-        // Also parse stage info for apps that are staging
-        for (const line of lines) {
-          const match = line.match(/AppID\s+(\d+)\s+update started\s*:\s*download\s+\d+\/\d+.*?stage\s+(\d+)\/(\d+)/)
-          if (match) {
-            const appId = match[1]
-            const staged = parseInt(match[2], 10)
-            const stageTotal = parseInt(match[3], 10)
-            const existing = downloadInfoCache.get(appId)
-            if (existing) {
-              existing.downloaded = staged
-              existing.total = stageTotal
-            }
+        // Update cache with latest info
+        const now = Date.now()
+        for (const [appId, info] of appUpdates) {
+          const existing = downloadInfoCache.get(appId)
+          // Only update if this is newer or if we don't have data
+          if (!existing || info.timestamp >= existing.updated) {
+            // Estimate current progress based on time elapsed and speed
+            const elapsedMs = now - info.timestamp
+            const elapsedSec = elapsedMs / 1000
+            const speedBytesPerSec = (lastSpeed * 1_000_000) / 8
+            const estimatedAdditional = speedBytesPerSec * elapsedSec
+            const estimatedDownloaded = Math.min(info.total, info.downloaded + estimatedAdditional)
+
+            downloadInfoCache.set(appId, {
+              downloaded: estimatedDownloaded,
+              total: info.total,
+              speed: lastSpeed,
+              updated: now
+            })
+          } else {
+            // Existing entry is newer, just update speed and estimate
+            const elapsedMs = now - existing.updated
+            const elapsedSec = elapsedMs / 1000
+            const speedBytesPerSec = (lastSpeed * 1_000_000) / 8
+            const estimatedAdditional = speedBytesPerSec * elapsedSec
+            existing.downloaded = Math.min(existing.total, existing.downloaded + estimatedAdditional)
+            existing.speed = lastSpeed
+            existing.updated = now
+          }
+        }
+
+        // If we have cached apps but no new log entries, still estimate progress
+        for (const [appId, info] of downloadInfoCache) {
+          if (!appUpdates.has(appId) && info.speed > 0 && info.downloaded < info.total) {
+            const elapsedMs = now - info.updated
+            const elapsedSec = elapsedMs / 1000
+            const speedBytesPerSec = (info.speed * 1_000_000) / 8
+            const estimatedAdditional = speedBytesPerSec * elapsedSec
+            info.downloaded = Math.min(info.total, info.downloaded + estimatedAdditional)
+            info.updated = now
           }
         }
       } catch {
@@ -1397,6 +1427,18 @@ app.whenReady().then(() => {
   }
 
   setupDownloadWatchers()
+
+  // Backup timer: re-parse content_log.txt every 2 seconds for smooth progress
+  const downloadParseInterval = setInterval(() => {
+    parseContentLogForDownloads()
+    if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+      mainWindowRef.webContents.send('steam-download-updated')
+    }
+  }, 2000)
+
+  app.on('before-quit', () => {
+    clearInterval(downloadParseInterval)
+  })
 
   ipcMain.handle('get-steam-download-progress', async () => {
     const steamRoots = getSteamPaths()
