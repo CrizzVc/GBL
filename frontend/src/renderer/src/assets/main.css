@@ -1869,8 +1869,8 @@
 }
 
 .settings-action-btn.active {
-  border-color: rgba(76, 217, 100, 0.4);
-  background: rgba(76, 217, 100, 0.06);
+  border-color: rgb(219 49 49 / 40%);
+  background: rgb(217 76 76 / 6%);
 }
 
 .settings-action-icon-wrap {
