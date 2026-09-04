@@ -1637,7 +1637,7 @@
 .settings-sidebar-header-bg {
   position: absolute;
   inset: 0;
-  background-image: url('./images/background-defauld.png');
+  background-image: url('./images/background-defauld.jpg');
   background-size: cover;
   background-position: center;
   filter: blur(2px) brightness(0.6);
