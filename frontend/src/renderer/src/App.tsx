@@ -996,7 +996,7 @@ function App(): React.JSX.Element {
     if (steamAccount.linked) {
       void loadSteamLibrary()
       void loadSteamFriends()
-      const friendsRefresh = window.setInterval(() => { void loadSteamFriends() }, 30000)
+      const friendsRefresh = window.setInterval(() => { void loadSteamFriends() }, 10000)
       return () => window.clearInterval(friendsRefresh)
     } else {
       setSteamLibrary([])
@@ -4130,7 +4130,7 @@ function App(): React.JSX.Element {
                         onChange={(e) => {
                           const val = e.target.value
                           setDefaultStore(val)
-                          try { localStorage.setItem(DEFAULT_STORE_STORAGE_KEY, val) } catch {}
+                          try { localStorage.setItem(DEFAULT_STORE_STORAGE_KEY, val) } catch { }
                         }}
                       >
                         <option value="steam">Steam</option>

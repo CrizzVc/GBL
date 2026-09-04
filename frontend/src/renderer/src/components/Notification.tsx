@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import steamLogo from '../assets/tiendas/steamLogo.png'
 
 export interface NotificationData {
   id: string
@@ -13,41 +14,32 @@ interface NotificationProps {
   onDismiss: (id: string) => void
 }
 
-function CloseIcon({ size = 16 }: { size?: number }): React.JSX.Element {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  )
-}
-
 export default function Notification({ notification, onDismiss }: NotificationProps): React.JSX.Element {
   const [isExiting, setIsExiting] = useState(false)
 
-  const handleDismiss = useCallback(() => {
-    setIsExiting(true)
-    setTimeout(() => {
-      onDismiss(notification.id)
-    }, 300)
-  }, [notification.id, onDismiss])
+  // const handleDismiss = useCallback(() => {
+  //   setIsExiting(true)
+  //   setTimeout(() => {
+  //     onDismiss(notification.id)
+  //   }, 300)
+  // }, [notification.id, onDismiss])
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleDismiss()
-    }, 5000)
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     handleDismiss()
+  //   }, 5000)
 
-    return () => clearTimeout(timer)
-  }, [handleDismiss])
+  //   return () => clearTimeout(timer)
+  // }, [handleDismiss])
 
   return (
     <div className={`notification-card ${isExiting ? 'exiting' : ''}`}>
-      <div className="notification-image">
+      <div className="notification-avatar">
         {notification.avatarUrl ? (
           <img
             src={notification.avatarUrl}
             alt={notification.friendName}
-            className="notification-avatar"
+            className="notification-avatar-img"
             draggable={false}
           />
         ) : (
@@ -57,13 +49,15 @@ export default function Notification({ notification, onDismiss }: NotificationPr
         )}
       </div>
       <div className="notification-content">
+        <div className="notification-steam-header">
+          <img src={steamLogo} alt="Steam" className="notification-steam-logo" draggable={false} />
+        </div>
+        <div className="notification-divider" />
         <div className="notification-title">
           {notification.friendName} está jugando a {notification.gameName}
         </div>
+        <div className="notification-subtitle">presiona Tab para ampliar</div>
       </div>
-      <button className="notification-close" onClick={handleDismiss}>
-        <CloseIcon size={14} />
-      </button>
     </div>
   )
 }
