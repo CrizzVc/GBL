@@ -16,13 +16,13 @@ import {
   UpdateIcon,
   CheckIcon,
   PaletteIcon,
-  HomeIcon,
-  SteamIcon
+  HomeIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
 
 import steamLogo from './assets/tiendas/steamLogo.png'
+import steamIcon from './assets/tiendas/steamIcon.png'
 import epicLogo from './assets/tiendas/EpicLogo.png'
 import gogLogo from './assets/tiendas/gogLogo.png'
 import steamBanner from './assets/tiendas/steamBanner.png'
@@ -4044,7 +4044,7 @@ function App(): React.JSX.Element {
                         onClick={handleSteamOpenIdLink}
                       >
                         <div className="settings-action-icon-wrap">
-                          <SteamIcon size={20} />
+                          <img src={steamIcon} alt="steam" style={{ width: '100%', height: '100%' }} />
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">
@@ -4096,96 +4096,91 @@ function App(): React.JSX.Element {
 
               {settingsTab === 'personalizacion' && (
                 <div className="settings-tab-panel">
-                  {/* Background section */}
-                  <div className="settings-section no-top-margin">
-                    <h3 className="settings-section-title">Fondo de pantalla</h3>
-
-                    {/* Current Background Preview - 100% width */}
-                    <div className="settings-wallpaper-hero-preview">
-                      <img
-                        src={backgroundImage || defaultHomeBackground}
-                        alt="Fondo actual"
-                        className="settings-wallpaper-hero-img"
-                      />
-                      <div className="settings-wallpaper-hero-overlay">
-                        <div className="settings-wallpaper-hero-info">
-                          <span className="settings-wallpaper-badge">
-                            {backgroundImage ? 'Fondo personalizado' : 'Fondo por defecto'}
-                          </span>
-                        </div>
-                        <div className="settings-wallpaper-hero-actions">
+                  {/* Current Background Preview - Flush to top & sides */}
+                  <div className="settings-wallpaper-hero-preview">
+                    <img
+                      src={backgroundImage || defaultHomeBackground}
+                      alt="Fondo actual"
+                      className="settings-wallpaper-hero-img"
+                    />
+                    <div className="settings-wallpaper-hero-overlay">
+                      <div className="settings-wallpaper-hero-info">
+                        <span className="settings-wallpaper-badge">
+                          {backgroundImage ? 'Fondo personalizado' : 'Fondo por defecto'}
+                        </span>
+                      </div>
+                      <div className="settings-wallpaper-hero-actions">
+                        <button
+                          type="button"
+                          className="btn-secondary settings-mini-btn"
+                          onClick={handleSelectBackground}
+                        >
+                          <ImageIcon size={14} /> Cambiar fondo
+                        </button>
+                        {backgroundImage && (
                           <button
                             type="button"
-                            className="btn-secondary settings-mini-btn"
-                            onClick={handleSelectBackground}
+                            className="btn-danger settings-mini-btn"
+                            onClick={handleClearBackground}
                           >
-                            <ImageIcon size={14} /> Cambiar fondo
+                            Restaurar
                           </button>
-                          {backgroundImage && (
-                            <button
-                              type="button"
-                              className="btn-danger settings-mini-btn"
-                              onClick={handleClearBackground}
-                            >
-                              Restaurar
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="btn-secondary settings-mini-btn"
-                            onClick={handleOpenWallpaperFolderPicker}
-                          >
-                            <FolderIcon size={14} /> Elegir carpeta
-                          </button>
-                        </div>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-secondary settings-mini-btn"
+                          onClick={handleOpenWallpaperFolderPicker}
+                        >
+                          <FolderIcon size={14} /> Elegir carpeta
+                        </button>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Small wallpaper cards with horizontal scroll */}
-                    <div className="settings-folder-wallpapers-section">
-                      <div className="settings-folder-wallpapers-header">
-                        <span className="settings-folder-wallpapers-title">Fondos de la carpeta</span>
-                        {wallpaperFolder && (
-                          <span className="settings-folder-path" title={wallpaperFolder}>
-                            {wallpaperFolder}
-                          </span>
-                        )}
-                      </div>
-
-                      {wallpaperImages && wallpaperImages.length > 0 ? (
-                        <div className="settings-wallpaper-cards-scroll">
-                          {wallpaperImages.map((item, idx) => {
-                            const isCurrent = backgroundImage === item.dataUrl || backgroundImage?.includes(item.name)
-                            return (
-                              <button
-                                key={item.path || idx}
-                                type="button"
-                                className={`settings-wallpaper-card-item ${isCurrent ? 'selected' : ''}`}
-                                onClick={() => handleSelectWallpaperFromFolder(item.path, item.dataUrl)}
-                                title={item.name}
-                              >
-                                <img
-                                  src={item.dataUrl}
-                                  alt={item.name}
-                                  className="settings-wallpaper-card-thumb"
-                                  loading="lazy"
-                                />
-                                {isCurrent && (
-                                  <div className="settings-wallpaper-card-active-badge">
-                                    <CheckIcon size={12} />
-                                  </div>
-                                )}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <div className="settings-wallpaper-empty-card" onClick={handleOpenWallpaperFolderPicker}>
-                          <FolderIcon size={20} />
-                          <span>Haz clic aquí para seleccionar una carpeta con fondos</span>
-                        </div>
+                  {/* Small wallpaper cards with horizontal scroll */}
+                  <div className="settings-folder-wallpapers-section">
+                    <div className="settings-folder-wallpapers-header">
+                      <span className="settings-folder-wallpapers-title">Fondos de la carpeta</span>
+                      {wallpaperFolder && (
+                        <span className="settings-folder-path" title={wallpaperFolder}>
+                          {wallpaperFolder}
+                        </span>
                       )}
                     </div>
+
+                    {wallpaperImages && wallpaperImages.length > 0 ? (
+                      <div className="settings-wallpaper-cards-scroll">
+                        {wallpaperImages.map((item, idx) => {
+                          const isCurrent = backgroundImage === item.dataUrl || backgroundImage?.includes(item.name)
+                          return (
+                            <button
+                              key={item.path || idx}
+                              type="button"
+                              className={`settings-wallpaper-card-item ${isCurrent ? 'selected' : ''}`}
+                              onClick={() => handleSelectWallpaperFromFolder(item.path, item.dataUrl)}
+                              title={item.name}
+                            >
+                              <img
+                                src={item.dataUrl}
+                                alt={item.name}
+                                className="settings-wallpaper-card-thumb"
+                                loading="lazy"
+                              />
+                              {isCurrent && (
+                                <div className="settings-wallpaper-card-active-badge">
+                                  <CheckIcon size={12} />
+                                </div>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="settings-wallpaper-empty-card" onClick={handleOpenWallpaperFolderPicker}>
+                        <FolderIcon size={20} />
+                        <span>Haz clic aquí para seleccionar una carpeta con fondos</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Profile section */}

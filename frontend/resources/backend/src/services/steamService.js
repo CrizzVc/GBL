@@ -142,6 +142,7 @@ async function fetchTags(appid) {
 function pickRating(ratings) {
   if (!ratings || typeof ratings !== 'object') return null;
 
+  console.log('[SteamService] ratings raw:', JSON.stringify(ratings));
   const preferredOrder = ['esrb', 'pegi', 'usk', 'dejus', 'oflc', 'cero', 'nzoflc'];
   const boardKey = preferredOrder.find((key) => ratings[key]) || Object.keys(ratings)[0];
   if (!boardKey) return null;
@@ -149,6 +150,7 @@ function pickRating(ratings) {
   const board = ratings[boardKey];
   if (!board) return null;
 
+  console.log('[SteamService] boardKey:', boardKey, 'board:', JSON.stringify(board));
   return {
     board: boardKey.toUpperCase(),
     rating: board.rating || null,
