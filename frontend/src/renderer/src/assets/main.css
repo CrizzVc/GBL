@@ -276,18 +276,17 @@
 }
 
 .btn-play.downloading {
-  background: linear-gradient(135deg, #1a6fbf, #1a9fff);
-  box-shadow: 0 4px 20px rgba(26, 159, 255, 0.35);
+  background: linear-gradient(135deg, #ff3f58, #ff3f58);
   pointer-events: none;
   animation: download-pulse 2s ease-in-out infinite;
 }
 
 .btn-play-progress-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 15px;
   width: 100%;
   padding: 0 8px;
 }
@@ -302,7 +301,7 @@
 
 .btn-play-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #fff, #66c0f4);
+  background: #ffffff;
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -1235,6 +1234,34 @@
 
 .library-back-button:hover {
   color: var(--gbl-text-primary);
+}
+
+.library-hero-content .library-search-bar {
+  position: absolute;
+  top: 34px;
+  right: 24px;
+}
+
+.library-search-input {
+  width: 200px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--gbl-transition-fast), background var(--gbl-transition-fast);
+}
+
+.library-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.library-search-input:focus {
+  border-color: rgba(102, 192, 244, 0.5);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .library-view-title {
@@ -3632,10 +3659,14 @@
 }
 
 .detail-meta-value {
-  color: var(--gbl-text-primary);
+  color: #fff;
   font-size: 13.5px;
   font-weight: 600;
   white-space: normal;
+}
+
+.detail-meta-value:hover {
+  color: #ffff;
 }
 
 .detail-meta-value.link {
@@ -5328,7 +5359,7 @@
 
 .steam-download-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1a9fff, #66c0f4);
+  background: linear-gradient(90deg, #f12540, #ff7285);
   border-radius: 3px;
   transition: width 0.5s ease;
 }
@@ -5340,7 +5371,7 @@
 .steam-download-percent {
   font-size: 12px;
   font-weight: 600;
-  color: #66c0f4;
+  color: #ff3f58;
   min-width: 45px;
   text-align: right;
 }

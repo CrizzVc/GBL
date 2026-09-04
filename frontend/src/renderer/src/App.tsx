@@ -377,6 +377,7 @@ function App(): React.JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarIndex, setSidebarIndex] = useState(0)
   const [librarySource, setLibrarySource] = useState<LibrarySource>('local')
+  const [librarySearch, setLibrarySearch] = useState('')
   const [selectedSteamAppId, setSelectedSteamAppId] = useState<string | null>(null)
   const [steamAccount, setSteamAccount] = useState<SteamAccount>({
     linked: false,
@@ -988,6 +989,19 @@ function App(): React.JSX.Element {
       setSteamLibraryLoading(false)
     }
   }, [librarySource, steamAccount])
+
+  // ── Refresh steam library when download completes ──
+  const prevCompletedRef = useRef<string>('')
+  useEffect(() => {
+    if (completedDownloads.length === 0) return
+    const key = completedDownloads.map((c) => c.appId).join(',')
+    if (key === prevCompletedRef.current) return
+    prevCompletedRef.current = key
+    // Re-fetch library to update installed status
+    if (steamAccount.linked && steamAccount.apiKey && steamAccount.steamId) {
+      void loadSteamLibrary()
+    }
+  }, [completedDownloads, steamAccount, loadSteamLibrary])
 
   const loadSteamFriends = useCallback(async (): Promise<void> => {
     if (!steamAccount.linked || !steamAccount.apiKey || !steamAccount.steamId) {
@@ -3918,9 +3932,19 @@ function App(): React.JSX.Element {
                   <button className="library-back-button" onClick={() => {
                     setSelectedGameId(previousHomeSelectedGameIdRef.current)
                     setLibraryView(false)
+                    setLibrarySearch('')
                   }}>
                     <ChevronLeftIcon size={20} /> Volver
                   </button>
+                  <div className="library-search-bar">
+                    <input
+                      type="text"
+                      className="library-search-input"
+                      placeholder="Buscar juego..."
+                      value={librarySearch}
+                      onChange={(e) => setLibrarySearch(e.target.value)}
+                    />
+                  </div>
                   <div className="library-title-row">
                     <button
                       type="button"
@@ -3966,7 +3990,9 @@ function App(): React.JSX.Element {
                         No se encontraron juegos en tu biblioteca de Steam.
                       </div>
                     ) : (
-                      steamLibrary.map((game) => (
+                      steamLibrary
+                        .filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
+                        .map((game) => (
                         <article
                           key={game.appid}
                           id={`library-game-${game.appid}`}
@@ -4016,7 +4042,9 @@ function App(): React.JSX.Element {
                       ))
                     )
                   ) : (
-                    sortedLibraryGames.map((game) => (
+                    sortedLibraryGames
+                      .filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
+                      .map((game) => (
                       <article
                         key={game.id}
                         id={`library-game-${game.id}`}
