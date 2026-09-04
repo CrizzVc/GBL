@@ -181,6 +181,7 @@ const GAME_COLORS = [
 const BACKEND_URL = 'http://localhost:3000'
 const RECENT_GAMES_LIMIT = 15
 const STEAM_ARTWORK_STORAGE_KEY = 'gbl-steam-artwork'
+const DEFAULT_STORE_STORAGE_KEY = 'gbl-default-store'
 
 function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridImageUrl' | 'heroImageUrl' | 'logoImageUrl' | 'iconDataUrl'>> {
   try {
@@ -409,6 +410,9 @@ function App(): React.JSX.Element {
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const [settingsWallpaperPage, setSettingsWallpaperPage] = useState(0)
+  const [defaultStore, setDefaultStore] = useState<string>(() => {
+    try { return localStorage.getItem(DEFAULT_STORE_STORAGE_KEY) || 'steam' } catch { return 'steam' }
+  })
 
   // Add / Edit game form state
   const [formName, setFormName] = useState('')
@@ -2163,7 +2167,7 @@ function App(): React.JSX.Element {
           e.preventDefault()
           playEnter()
           if (sidebarIndex === 0) openAddGameModal()
-          else if (sidebarIndex === 1) { /* Store action */ }
+          else if (sidebarIndex === 1) handleOpenStore(defaultStore)
           else if (sidebarIndex === 2) handleOpenSpecs()
           else if (sidebarIndex === 3) setModal('settings')
           else if (sidebarIndex === 4) window.close()
@@ -2602,7 +2606,7 @@ function App(): React.JSX.Element {
         <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><PlusIcon size={18} /></div> Agregar juego
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 1 ? 'focused' : ''}`} onClick={() => { setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 1 ? 'focused' : ''}`} onClick={() => { handleOpenStore(defaultStore); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><StoreIcon size={18} /></div> Tienda
         </button>
         <button className={`sidebar-item ${sidebarIndex === 2 ? 'focused' : ''}`} onClick={() => { handleOpenSpecs(); setSidebarOpen(false); }}>
@@ -4104,6 +4108,28 @@ function App(): React.JSX.Element {
                         </button>
                       </div>
                     )}
+                  </div>
+
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Otros</h3>
+                    <p className="settings-section-subtitle">Configuración general de la aplicación</p>
+
+                    <div className="settings-other-row">
+                      <span className="settings-other-label">Tienda por defecto</span>
+                      <select
+                        className="settings-other-select"
+                        value={defaultStore}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setDefaultStore(val)
+                          try { localStorage.setItem(DEFAULT_STORE_STORAGE_KEY, val) } catch {}
+                        }}
+                      >
+                        <option value="steam">Steam</option>
+                        <option value="epic">Epic Games</option>
+                        <option value="gog">GOG</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               )}

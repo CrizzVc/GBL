@@ -1734,14 +1734,14 @@
 }
 
 .settings-app-logo-wrap {
-  width: 68px;
-  height: 68px;
+  width: 128px;
+  height: 128px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */
   border-radius: 14px;
   padding: 8px;
 }
@@ -1946,6 +1946,49 @@
 
 .settings-btn-link.danger:hover {
   text-decoration: underline;
+}
+
+/* ── Otros settings row ── */
+.settings-other-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */
+  border-radius: 10px;
+}
+
+.settings-other-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.settings-other-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.settings-other-select:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.settings-other-select:focus {
+  border-color: rgb(219 49 49 / 60%);
+}
+
+.settings-other-select option {
+  background: #1a1a1e;
+  color: #fff;
 }
 
 /* ── Wallpaper 100% Width Preview (Flush to Top & Sides) ── */
