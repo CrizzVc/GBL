@@ -33,6 +33,7 @@ import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
 import defaultHomeBackground from './assets/images/background-defauld.png'
 import { useSystemMedia } from './hooks/useSystemMedia'
+import hashiLogo from '../src/assets/images/HASHI_LOGO_BLANCO.svg'
 import {
   playMove,
   playEnter,
@@ -2470,8 +2471,13 @@ function App(): React.JSX.Element {
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(false)}
       />
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-title">HASHI</div>
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{}}>
+        <div className="sidebar-title" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <img src={hashiLogo} alt="Hashi" className="app-icon" style={{ width: '64px', height: '64px' }} />
+          <h1 style={{ fontWeight: 'bold' }}>
+            HASHI
+          </h1>
+        </div>
         <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><PlusIcon size={18} /></div> Agregar juego
         </button>
