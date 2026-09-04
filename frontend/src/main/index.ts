@@ -1331,17 +1331,52 @@ app.whenReady().then(() => {
             const bytesStaged = parseInt(get('BytesStaged') || '0', 10) || 0
             const stateFlags = parseInt(get('StateFlags') || '0', 10) || 0
 
-            // StateFlags bitmask: 0x100000 = Downloading, 0x200000 = Validating, 0x400000 = Staging, 0x8 = Paused
+            // StateFlags bitmask
             const downloading = (stateFlags & 0x100000) !== 0
             const validating = (stateFlags & 0x200000) !== 0
             const paused = (stateFlags & 0x8) !== 0
+            const updateRequired = (stateFlags & 0x40) !== 0
 
-            const total = bytesToDownload > 0 ? bytesToDownload : bytesToStage
-            const downloaded = bytesToDownload > 0 ? bytesDownloaded : bytesStaged
+            // Also check if downloading folder exists (Steam writes progress there)
+            const downloadingFolder = join(steamappsDir, 'downloading', appId)
+            const hasDownloadingFolder = fs.existsSync(downloadingFolder)
+
+            // Calculate total and downloaded using best available fields
+            let total = bytesToDownload > 0 ? bytesToDownload : bytesToStage
+            let downloaded = bytesToDownload > 0 ? bytesDownloaded : bytesStaged
+
+            // If we have a downloading folder but no bytes info, try to estimate from folder size
+            if (hasDownloadingFolder && total === 0) {
+              try {
+                const getDirSize = (dir: string): number => {
+                  let size = 0
+                  const entries = fs.readdirSync(dir, { withFileTypes: true })
+                  for (const entry of entries) {
+                    const fullPath = join(dir, entry.name)
+                    if (entry.isDirectory()) {
+                      size += getDirSize(fullPath)
+                    } else {
+                      try { size += fs.statSync(fullPath).size } catch { /* ignore */ }
+                    }
+                  }
+                  return size
+                }
+                const stagingSize = getDirSize(downloadingFolder)
+                if (stagingSize > 0) {
+                  total = stagingSize
+                  downloaded = stagingSize
+                }
+              } catch { /* ignore */ }
+            }
+
             const percent = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0
 
-            // Only include games that are actively downloading, validating, staging, or paused with pending bytes
-            if (downloading || validating || paused || (bytesToDownload > 0 && bytesDownloaded < bytesToDownload)) {
+            // Include games that are actively downloading, validating, staging, updating, or have a downloading folder
+            const isActive = downloading || validating || paused || updateRequired || hasDownloadingFolder ||
+              (bytesToDownload > 0 && bytesDownloaded < bytesToDownload) ||
+              (bytesToStage > 0 && bytesStaged < bytesToStage)
+
+            if (isActive) {
               downloads.push({
                 appId,
                 name,
@@ -1350,7 +1385,7 @@ app.whenReady().then(() => {
                 bytesToStage,
                 bytesStaged,
                 stateFlags,
-                downloading,
+                downloading: downloading || hasDownloadingFolder,
                 validating,
                 paused,
                 percent

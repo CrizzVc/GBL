@@ -21,6 +21,7 @@ import {
 
 import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
+import DownloadCompleteNotification from './components/DownloadCompleteNotification'
 
 import { useFriendNotifications } from './hooks/useFriendNotifications'
 import { useSteamDownloads } from './hooks/useSteamDownloads'
@@ -659,7 +660,34 @@ function App(): React.JSX.Element {
   })
 
   // ── Steam download progress ──
-  const { downloads: steamDownloads } = useSteamDownloads(1000)
+  const { downloads: steamDownloads, completedDownloads, dismissCompletion } = useSteamDownloads(1000)
+
+  // ── Download completion notifications ──
+  const [downloadNotifications, setDownloadNotifications] = useState<Array<{ id: string; name: string; appId: string; iconUrl: string | null }>>([])
+
+  useEffect(() => {
+    if (completedDownloads.length === 0) return
+    for (const comp of completedDownloads) {
+      // Avoid duplicates
+      if (downloadNotifications.some((n) => n.appId === comp.appId)) {
+        dismissCompletion(comp.appId)
+        continue
+      }
+      const iconUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${comp.appId}/header.jpg`
+      // Try to get custom icon from steam library
+      const steamGame = steamLibrary.find((g) => String(g.appid) === comp.appId)
+      const finalIcon = steamGame?.iconDataUrl || iconUrl
+      setDownloadNotifications((prev) => [
+        ...prev,
+        { id: `dl-notif-${comp.appId}-${Date.now()}`, name: comp.name, appId: comp.appId, iconUrl: finalIcon }
+      ])
+      // Clear downloadingGameId for this game
+      if (downloadingGameId === `steam-${comp.appId}`) {
+        setDownloadingGameId(null)
+      }
+      dismissCompletion(comp.appId)
+    }
+  }, [completedDownloads, dismissCompletion, downloadingGameId, steamLibrary, downloadNotifications])
 
   const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
@@ -1574,12 +1602,6 @@ function App(): React.JSX.Element {
     }
     try {
       await window.api.launchGame(launchTarget.id, launchTarget.exePath)
-      // Si es install, limpiar downloadingGameId despues de un tiempo (Steam ya lo tiene)
-      if (isInstall) {
-        setTimeout(() => {
-          setDownloadingGameId(null)
-        }, 10000)
-      }
     } catch (err) {
       console.error('Error launching game:', err)
       setRunningGameId(null)
@@ -3579,13 +3601,53 @@ function App(): React.JSX.Element {
 
             {/* BOTON DE JUGAR!!!!! */}
             <div className="detail-play-actions">
-              <button
-                className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''} ${downloadingGameId === detailGame.id ? 'downloading' : ''}`}
-                onClick={() => handleLaunchGame(detailGame.id)}
-              >
-                <PlayIcon size={20} />
-                {runningGameId === detailGame.id ? 'Ejecutando...' : downloadingGameId === detailGame.id ? 'Descargando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
-              </button>
+              {(() => {
+                const isRunning = runningGameId === detailGame.id
+                const isDownloading = downloadingGameId === detailGame.id
+                const activeDownload = detailGame.steamAppId
+                  ? steamDownloads.find((d) => d.appId === detailGame.steamAppId)
+                  : null
+                const showProgress = isDownloading && activeDownload && activeDownload.percent > 0
+
+                return (
+                  <button
+                    className={`btn-play btn-play-detail ${isRunning ? 'running' : ''} ${isDownloading ? 'downloading' : ''}`}
+                    onClick={() => handleLaunchGame(detailGame.id)}
+                  >
+                    {isRunning ? (
+                      <>
+                        <PlayIcon size={20} />
+                        Ejecutando...
+                      </>
+                    ) : showProgress ? (
+                      <div className="btn-play-progress-content">
+                        <div className="btn-play-progress-bar">
+                          <div
+                            className="btn-play-progress-fill"
+                            style={{ width: `${activeDownload.percent}%` }}
+                          />
+                        </div>
+                        <span className="btn-play-progress-text">{activeDownload.percent.toFixed(1)}%</span>
+                      </div>
+                    ) : isDownloading ? (
+                      <>
+                        <PlayIcon size={20} />
+                        Descargando...
+                      </>
+                    ) : detailGame.isSteam && !steamDetailIsInstalled ? (
+                      <>
+                        <PlayIcon size={20} />
+                        Descargar
+                      </>
+                    ) : (
+                      <>
+                        <PlayIcon size={20} />
+                        Jugar
+                      </>
+                    )}
+                  </button>
+                )
+              })()}
               <button
                 className="detail-edit-button"
                 onClick={() => {
@@ -4519,6 +4581,21 @@ function App(): React.JSX.Element {
         notifications={notifications}
         onDismiss={dismissNotification}
       />
+
+      {/* ── Download Completion Notifications ── */}
+      {downloadNotifications.length > 0 && (
+        <div className="notification-container">
+          {downloadNotifications.map((notif) => (
+            <DownloadCompleteNotification
+              key={notif.id}
+              id={notif.id}
+              name={notif.name}
+              iconUrl={notif.iconUrl}
+              onDismiss={(id) => setDownloadNotifications((prev) => prev.filter((n) => n.id !== id))}
+            />
+          ))}
+        </div>
+      )}
 
     </div>
   )
