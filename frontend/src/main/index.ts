@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import steamLogoAsset from '../renderer/src/assets/tiendas/steamLogo.png?asset'
 import hashiLogoAsset from '../renderer/src/assets/images/HASHI_LOGO_BLANCO.svg?asset'
+import appIconAsset from '../renderer/src/assets/images/icono.png?asset'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
 import { spawn, fork, execSync, type ChildProcess } from 'child_process'
@@ -406,7 +407,7 @@ function createWindow(): void {
     minHeight: 768,
     show: false,
     autoHideMenuBar: true,
-    icon: hashiLogoAsset,
+    icon: appIconAsset,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
