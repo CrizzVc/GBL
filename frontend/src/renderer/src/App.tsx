@@ -2471,7 +2471,7 @@ function App(): React.JSX.Element {
         onClick={() => setSidebarOpen(false)}
       />
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-title">GBL Launcher</div>
+        <div className="sidebar-title">HASHI</div>
         <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><PlusIcon size={18} /></div> Agregar juego
         </button>
@@ -2512,7 +2512,7 @@ function App(): React.JSX.Element {
           </div>
           <div className="header-greeting">
             <span className="header-greeting-name">
-              {profileName.trim() ? profileName.trim() : 'GBL Launcher'}
+              {profileName.trim() ? profileName.trim() : 'HASHI'}
             </span>
             <span className="header-greeting-sub">
               {games.length} {games.length === 1 ? 'juego' : 'juegos'}
@@ -2554,7 +2554,7 @@ function App(): React.JSX.Element {
         )}
         {!selectedGame && games.length === 0 && (
           <div className="hero-content">
-            <h1 className="hero-title">Bienvenido a GBL</h1>
+            <h1 className="hero-title">Bienvenido a HASHI</h1>
             <div className="hero-meta">
               <span>Agrega tu primer juego para comenzar</span>
             </div>
@@ -3849,7 +3849,7 @@ function App(): React.JSX.Element {
             <div className="specs-grid">
               <div className="spec-item" style={{ gridColumn: '1 / -1' }}>
                 <div className="spec-label">Versión</div>
-                <div className="spec-value">GBL Launcher v1.0.0</div>
+                <div className="spec-value">HASHI v1.0.0</div>
               </div>
               <div className="spec-item">
                 <div className="spec-label">Juegos Agregados</div>

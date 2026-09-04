@@ -2,6 +2,8 @@ import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electro
 import { join, dirname, extname, basename } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import steamLogoAsset from '../renderer/src/assets/tiendas/steamLogo.png?asset'
+import hashiLogoAsset from '../renderer/src/assets/images/HASHI_LOGO_BLANCO.svg?asset'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
 import { spawn, fork, execSync, type ChildProcess } from 'child_process'
@@ -215,6 +217,14 @@ function resumeActivities(): void {
   startMediaSessionsBridge()
 }
 
+function assetToDataUri(assetPath: string): string {
+  const buf = fs.readFileSync(assetPath)
+  const ext = extname(assetPath).toLowerCase()
+  const mimeMap: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' }
+  const mime = mimeMap[ext] || 'application/octet-stream'
+  return `data:${mime};base64,${buf.toString('base64')}`
+}
+
 function ensureSteamOpenIdServer(): void {
   if (steamOpenIdServer) return
 
@@ -222,6 +232,9 @@ function ensureSteamOpenIdServer(): void {
     const requestUrl = new URL(req.url || '/', STEAM_OPENID_RETURN_URL)
     const mode = requestUrl.searchParams.get('openid.mode')
     const identity = requestUrl.searchParams.get('openid.identity') || requestUrl.searchParams.get('openid.claimed_id')
+
+    const hashiLogoDataUri = assetToDataUri(hashiLogoAsset)
+    const steamLogoDataUri = assetToDataUri(steamLogoAsset)
 
     if (requestUrl.pathname === '/steam-openid' && mode === 'id_res' && identity) {
       const steamIdMatch = identity.match(/\/id\/(\d+)/)
@@ -251,30 +264,32 @@ function ensureSteamOpenIdServer(): void {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="${hashiLogoDataUri}">
 <title>Steam conectado</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     height: 100vh; display: flex; align-items: center; justify-content: center;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: #fff; color: #202124;
+    background: #1E1E1E; color: #fff;
   }
   .container { text-align: center; max-width: 600px; padding: 40px; }
 
-  .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 32px; }
-  .logo svg { width: 36px; height: 36px; }
-  .logo-text { font-size: 28px; font-weight: 400; color: #202124; letter-spacing: -0.3px; }
+  .layout { display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: 32px; }
+  .hashi-logo img { width: 80px; height: 80px; object-fit: contain; }
+  .steam-logo img { width: 80px; height: 80px; object-fit: contain; }
+  .divider { font-size: 36px; font-weight: 700; color: #555; }
 
-  .title { font-size: 24px; font-weight: 400; color: #202124; margin-bottom: 16px; }
+  .title { font-size: 24px; font-weight: 400; color: #fff; margin-bottom: 16px; }
 
-  .subtitle { font-size: 14px; color: #5f6368; line-height: 1.6; }
-  .subtitle a { color: #1a73e8; text-decoration: none; font-weight: 500; }
+  .subtitle { font-size: 14px; color: #aaa; line-height: 1.6; }
+  .subtitle a { color: #66c0f4; text-decoration: none; font-weight: 500; }
   .subtitle a:hover { text-decoration: underline; }
 
   .links { margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
-  .links span { color: #dadce0; }
-  .links a { color: #5f6368; text-decoration: none; font-weight: 500; }
-  .links a:hover { color: #202124; }
+  .links span { color: #555; }
+  .links a { color: #888; text-decoration: none; font-weight: 500; }
+  .links a:hover { color: #fff; }
 
   .fade-in { opacity: 0; animation: fadeIn 0.5s ease forwards; }
   .fade-in-d1 { animation-delay: 0.1s; }
@@ -286,12 +301,14 @@ function ensureSteamOpenIdServer(): void {
 </head>
 <body>
   <div class="container">
-    <div class="logo fade-in">
-      <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="11" stroke="#1a73e8" stroke-width="1.5"/>
-        <path d="M7 12.5l3 3 7-7" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="logo-text">Steam</span>
+    <div class="layout fade-in">
+      <div class="hashi-logo">
+        <img src="${hashiLogoDataUri}" alt="Hashi">
+      </div>
+      <span class="divider">×</span>
+      <div class="steam-logo">
+        <img src="${steamLogoDataUri}" alt="Steam">
+      </div>
     </div>
     <h1 class="title fade-in fade-in-d1">Te has conectado correctamente.</h1>
     <p class="subtitle fade-in fade-in-d2">Puedes cerrar esta ventana o <a href="#" onclick="window.close()">cerrarla automaticamente</a>.</p>
@@ -319,30 +336,32 @@ function ensureSteamOpenIdServer(): void {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="${hashiLogoDataUri}">
 <title>Steam - Error</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     height: 100vh; display: flex; align-items: center; justify-content: center;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: #fff; color: #202124;
+    background: #1E1E1E; color: #fff;
   }
   .container { text-align: center; max-width: 600px; padding: 40px; }
 
-  .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 32px; }
-  .logo svg { width: 36px; height: 36px; }
-  .logo-text { font-size: 28px; font-weight: 400; color: #202124; letter-spacing: -0.3px; }
+  .layout { display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: 32px; }
+  .hashi-logo img { width: 80px; height: 80px; object-fit: contain; }
+  .steam-logo img { width: 80px; height: 80px; object-fit: contain; }
+  .divider { font-size: 36px; font-weight: 700; color: #555; }
 
-  .title { font-size: 24px; font-weight: 400; color: #202124; margin-bottom: 16px; }
+  .title { font-size: 24px; font-weight: 400; color: #fff; margin-bottom: 16px; }
 
-  .subtitle { font-size: 14px; color: #5f6368; line-height: 1.6; }
-  .subtitle a { color: #1a73e8; text-decoration: none; font-weight: 500; }
+  .subtitle { font-size: 14px; color: #aaa; line-height: 1.6; }
+  .subtitle a { color: #66c0f4; text-decoration: none; font-weight: 500; }
   .subtitle a:hover { text-decoration: underline; }
 
   .links { margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
-  .links span { color: #dadce0; }
-  .links a { color: #5f6368; text-decoration: none; font-weight: 500; }
-  .links a:hover { color: #202124; }
+  .links span { color: #555; }
+  .links a { color: #888; text-decoration: none; font-weight: 500; }
+  .links a:hover { color: #fff; }
 
   .fade-in { opacity: 0; animation: fadeIn 0.5s ease forwards; }
   .fade-in-d1 { animation-delay: 0.1s; }
@@ -354,12 +373,14 @@ function ensureSteamOpenIdServer(): void {
 </head>
 <body>
   <div class="container">
-    <div class="logo fade-in">
-      <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="11" stroke="#ea4335" stroke-width="1.5"/>
-        <path d="M8 8l8 8M16 8l-8 8" stroke="#ea4335" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="logo-text">Steam</span>
+    <div class="layout fade-in">
+      <div class="hashi-logo">
+        <img src="${hashiLogoDataUri}" alt="Hashi">
+      </div>
+      <span class="divider">×</span>
+      <div class="steam-logo">
+        <img src="${steamLogoDataUri}" alt="Steam">
+      </div>
     </div>
     <h1 class="title fade-in fade-in-d1">No se pudo conectar con Steam.</h1>
     <p class="subtitle fade-in fade-in-d2">La autenticación no se completó. <a href="#" onclick="window.close()">Intentar de nuevo</a>.</p>
@@ -385,7 +406,7 @@ function createWindow(): void {
     minHeight: 768,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon: hashiLogoAsset,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
