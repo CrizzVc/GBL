@@ -4250,7 +4250,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(360px, 88vw);
+  width: min(400px, 88vw);
   padding: 0 30px 34px;
   color: #fff;
   background: linear-gradient(160deg, rgba(38, 38, 43, 0.98), rgba(18, 18, 21, 0.99));
