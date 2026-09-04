@@ -167,7 +167,7 @@
 .header-download-name {
   font-size: 12px;
   font-weight: 500;
-  color: #66c0f4;
+  color: #eeeeee;
   max-width: 150px;
   white-space: nowrap;
   overflow: hidden;
@@ -177,7 +177,7 @@
 .header-download-percent {
   font-size: 12px;
   font-weight: 700;
-  color: #1a9fff;
+  color: #e0e0e0;
 }
 
 /* ══════════════════════════════════════════
