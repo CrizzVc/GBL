@@ -909,10 +909,12 @@ function App(): React.JSX.Element {
       }))
 
       const appIds = normalizedGames.map((game) => game.appid)
-      const installStatus = await window.api.getSteamInstallationStatus(appIds)
+      const installStatus = window.api?.getSteamInstallationStatus
+        ? await window.api.getSteamInstallationStatus(appIds)
+        : {}
       const finalGames = normalizedGames.map((game) => ({
         ...game,
-        installed: Boolean(installStatus[game.appid]) || Boolean(game.installed)
+        installed: Boolean(installStatus?.[game.appid]) || Boolean(game.installed)
       }))
 
       setSteamLibrary(finalGames)
