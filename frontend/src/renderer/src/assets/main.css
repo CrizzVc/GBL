@@ -5202,3 +5202,100 @@
     transform: translateX(100px);
   }
 }
+
+/* ── Steam Download Bar ── */
+.steam-download-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: download-bar-slide-up 0.3s ease-out;
+}
+
+@keyframes download-bar-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.steam-download-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.steam-download-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.steam-download-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.steam-download-status {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.steam-download-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.steam-download-progress-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.steam-download-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a9fff, #66c0f4);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.steam-download-progress-fill.paused {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.steam-download-percent {
+  font-size: 12px;
+  font-weight: 600;
+  color: #66c0f4;
+  min-width: 45px;
+  text-align: right;
+}
+
+.steam-download-bytes {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}

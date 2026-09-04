@@ -71,6 +71,19 @@ declare global {
         steamId64: string | null
       }>
       getSteamInstallationStatus: (appIds: string[]) => Promise<Record<string, boolean>>
+      getSteamDownloadProgress: () => Promise<Array<{
+        appId: string
+        name: string
+        bytesToDownload: number
+        bytesDownloaded: number
+        bytesToStage: number
+        bytesStaged: number
+        stateFlags: number
+        downloading: boolean
+        validating: boolean
+        paused: boolean
+        percent: number
+      }>>
       createStartupShortcut: () => Promise<{ success: boolean; error?: string }>
       getStartupStatus: () => Promise<{ enabled: boolean }>
       removeStartupShortcut: () => Promise<{ success: boolean; error?: string }>

@@ -712,6 +712,12 @@ app.whenReady().then(() => {
 
       // No-tracked: hide for Steam, minimize for others
       if (isSteamProtocol) {
+        const isInstall = /^steam:\/\/install\//i.test(exePath)
+        if (isInstall) {
+          // steam://install — solo abrir Steam, no ocultar el launcher
+          await shell.openExternal(exePath)
+          return { success: true, tracked: false, startTime, steamProtocol: true, installOnly: true }
+        }
         isGameRunning = true
         suspendActivities()
         if (win && !win.isDestroyed()) {
@@ -1276,6 +1282,90 @@ app.whenReady().then(() => {
     }
 
     return result
+  })
+
+  // ── Steam download progress ──
+  interface SteamDownloadProgress {
+    appId: string
+    name: string
+    bytesToDownload: number
+    bytesDownloaded: number
+    bytesToStage: number
+    bytesStaged: number
+    stateFlags: number
+    downloading: boolean
+    validating: boolean
+    paused: boolean
+    percent: number
+  }
+
+  ipcMain.handle('get-steam-download-progress', async () => {
+    const steamRoots = getSteamPaths()
+    const downloads: SteamDownloadProgress[] = []
+
+    for (const root of steamRoots) {
+      const steamappsDir = join(root, 'steamapps')
+      if (!fs.existsSync(steamappsDir)) continue
+
+      try {
+        const files = fs.readdirSync(steamappsDir)
+        for (const file of files) {
+          const match = file.match(/^appmanifest_(\d+)\.acf$/)
+          if (!match) continue
+
+          const appId = match[1]
+          const manifestPath = join(steamappsDir, file)
+
+          try {
+            const content = fs.readFileSync(manifestPath, 'utf8')
+
+            const get = (key: string): string => {
+              const m = content.match(new RegExp(`"${key}"\\s+"([^"]*)"`))
+              return m ? m[1] : ''
+            }
+
+            const name = get('name')
+            const bytesToDownload = parseInt(get('BytesToDownload') || '0', 10) || 0
+            const bytesDownloaded = parseInt(get('BytesDownloaded') || '0', 10) || 0
+            const bytesToStage = parseInt(get('BytesToStage') || '0', 10) || 0
+            const bytesStaged = parseInt(get('BytesStaged') || '0', 10) || 0
+            const stateFlags = parseInt(get('StateFlags') || '0', 10) || 0
+
+            // StateFlags bitmask: 0x100000 = Downloading, 0x200000 = Validating, 0x400000 = Staging, 0x8 = Paused
+            const downloading = (stateFlags & 0x100000) !== 0
+            const validating = (stateFlags & 0x200000) !== 0
+            const paused = (stateFlags & 0x8) !== 0
+
+            const total = bytesToDownload > 0 ? bytesToDownload : bytesToStage
+            const downloaded = bytesToDownload > 0 ? bytesDownloaded : bytesStaged
+            const percent = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0
+
+            // Only include games that are actively downloading, validating, staging, or paused with pending bytes
+            if (downloading || validating || paused || (bytesToDownload > 0 && bytesDownloaded < bytesToDownload)) {
+              downloads.push({
+                appId,
+                name,
+                bytesToDownload,
+                bytesDownloaded,
+                bytesToStage,
+                bytesStaged,
+                stateFlags,
+                downloading,
+                validating,
+                paused,
+                percent
+              })
+            }
+          } catch {
+            // ignore malformed manifest
+          }
+        }
+      } catch {
+        // ignore unreadable directory
+      }
+    }
+
+    return downloads
   })
 
   const getSteamAccountPath = (): string => {

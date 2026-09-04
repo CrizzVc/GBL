@@ -21,7 +21,9 @@ import {
 
 import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
+import SteamDownloadBar from './components/SteamDownloadBar'
 import { useFriendNotifications } from './hooks/useFriendNotifications'
+import { useSteamDownloads } from './hooks/useSteamDownloads'
 
 import steamLogo from './assets/tiendas/steamLogo.png'
 import steamIcon from './assets/tiendas/steamIcon.png'
@@ -653,6 +655,10 @@ function App(): React.JSX.Element {
     friends: steamFriends,
     enabled: steamAccount.linked
   })
+
+  // ── Steam download progress ──
+  const { downloads: steamDownloads } = useSteamDownloads(3000)
+
   const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
   useEffect(() => {
@@ -4445,6 +4451,9 @@ function App(): React.JSX.Element {
         notifications={notifications}
         onDismiss={dismissNotification}
       />
+
+      {/* ── Steam Download Bar ── */}
+      <SteamDownloadBar downloads={steamDownloads} />
     </div>
   )
 }
