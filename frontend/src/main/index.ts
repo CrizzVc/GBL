@@ -1284,7 +1284,7 @@ app.whenReady().then(() => {
     return result
   })
 
-  // ── Steam download progress ──
+  // ── Steam download progress (real-time via content_log.txt + fs.watch) ──
   interface SteamDownloadProgress {
     appId: string
     name: string
@@ -1297,11 +1297,113 @@ app.whenReady().then(() => {
     validating: boolean
     paused: boolean
     percent: number
+    downloadSpeed: number
   }
+
+  // Cache for real-time download info parsed from content_log.txt
+  const downloadInfoCache = new Map<string, { downloaded: number; total: number; speed: number; updated: number }>()
+
+  function parseContentLogForDownloads(): void {
+    const steamRoots = getSteamPaths()
+    for (const root of steamRoots) {
+      const logPath = join(root, 'logs', 'content_log.txt')
+      if (!fs.existsSync(logPath)) continue
+
+      try {
+        const stat = fs.statSync(logPath)
+        // Only read last 256KB for performance
+        const readSize = Math.min(stat.size, 256 * 1024)
+        const fd = fs.openSync(logPath, 'r')
+        const buffer = Buffer.alloc(readSize)
+        fs.readSync(fd, buffer, 0, readSize, stat.size - readSize)
+        fs.closeSync(fd)
+
+        const content = buffer.toString('utf8')
+        const lines = content.split('\n')
+
+        // Parse download rate
+        let lastSpeed = 0
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const speedMatch = lines[i].match(/Current download rate:\s*([\d.]+)\s*Mbps/)
+          if (speedMatch) {
+            lastSpeed = parseFloat(speedMatch[1])
+            break
+          }
+        }
+
+        // Parse per-app download progress
+        for (const line of lines) {
+          const match = line.match(/AppID\s+(\d+)\s+update started\s*:\s*download\s+(\d+)\/(\d+)/)
+          if (match) {
+            const appId = match[1]
+            const downloaded = parseInt(match[2], 10)
+            const total = parseInt(match[3], 10)
+            downloadInfoCache.set(appId, {
+              downloaded,
+              total,
+              speed: lastSpeed,
+              updated: Date.now()
+            })
+          }
+        }
+
+        // Also parse stage info for apps that are staging
+        for (const line of lines) {
+          const match = line.match(/AppID\s+(\d+)\s+update started\s*:\s*download\s+\d+\/\d+.*?stage\s+(\d+)\/(\d+)/)
+          if (match) {
+            const appId = match[1]
+            const staged = parseInt(match[2], 10)
+            const stageTotal = parseInt(match[3], 10)
+            const existing = downloadInfoCache.get(appId)
+            if (existing) {
+              existing.downloaded = staged
+              existing.total = stageTotal
+            }
+          }
+        }
+      } catch {
+        // ignore errors
+      }
+    }
+  }
+
+  // Watch steamapps directories for appmanifest changes
+  const watchedDirs = new Set<string>()
+  const downloadWatchers: fs.FSWatcher[] = []
+
+  function setupDownloadWatchers(): void {
+    const steamRoots = getSteamPaths()
+    for (const root of steamRoots) {
+      const steamappsDir = join(root, 'steamapps')
+      if (watchedDirs.has(steamappsDir) || !fs.existsSync(steamappsDir)) continue
+      watchedDirs.add(steamappsDir)
+
+      try {
+        const watcher = fs.watch(steamappsDir, { persistent: false }, (_eventType, filename) => {
+          if (filename && filename.startsWith('appmanifest_') && filename.endsWith('.acf')) {
+            // Trigger immediate re-read of content_log.txt
+            parseContentLogForDownloads()
+            // Notify renderer
+            if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+              mainWindowRef.webContents.send('steam-download-updated')
+            }
+          }
+        })
+        downloadWatchers.push(watcher)
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  setupDownloadWatchers()
 
   ipcMain.handle('get-steam-download-progress', async () => {
     const steamRoots = getSteamPaths()
     const downloads: SteamDownloadProgress[] = []
+
+    // Parse content_log.txt for real-time data
+    parseContentLogForDownloads()
 
     for (const root of steamRoots) {
       const steamappsDir = join(root, 'steamapps')
@@ -1331,48 +1433,41 @@ app.whenReady().then(() => {
             const bytesStaged = parseInt(get('BytesStaged') || '0', 10) || 0
             const stateFlags = parseInt(get('StateFlags') || '0', 10) || 0
 
-            // StateFlags bitmask
             const downloading = (stateFlags & 0x100000) !== 0
             const validating = (stateFlags & 0x200000) !== 0
             const paused = (stateFlags & 0x8) !== 0
             const updateRequired = (stateFlags & 0x40) !== 0
 
-            // Also check if downloading folder exists (Steam writes progress there)
             const downloadingFolder = join(steamappsDir, 'downloading', appId)
             const hasDownloadingFolder = fs.existsSync(downloadingFolder)
 
-            // Calculate total and downloaded using best available fields
-            let total = bytesToDownload > 0 ? bytesToDownload : bytesToStage
-            let downloaded = bytesToDownload > 0 ? bytesDownloaded : bytesStaged
+            // Get real-time info from content_log.txt cache
+            const realTimeInfo = downloadInfoCache.get(appId)
+            const isStaging = (stateFlags & 0x400000) !== 0
 
-            // If we have a downloading folder but no bytes info, try to estimate from folder size
-            if (hasDownloadingFolder && total === 0) {
-              try {
-                const getDirSize = (dir: string): number => {
-                  let size = 0
-                  const entries = fs.readdirSync(dir, { withFileTypes: true })
-                  for (const entry of entries) {
-                    const fullPath = join(dir, entry.name)
-                    if (entry.isDirectory()) {
-                      size += getDirSize(fullPath)
-                    } else {
-                      try { size += fs.statSync(fullPath).size } catch { /* ignore */ }
-                    }
-                  }
-                  return size
-                }
-                const stagingSize = getDirSize(downloadingFolder)
-                if (stagingSize > 0) {
-                  total = stagingSize
-                  downloaded = stagingSize
-                }
-              } catch { /* ignore */ }
+            let total: number
+            let downloaded: number
+
+            if (realTimeInfo && realTimeInfo.total > 0) {
+              // Use real-time data from content_log.txt
+              total = realTimeInfo.total
+              downloaded = realTimeInfo.downloaded
+            } else if (isStaging && bytesToStage > 0) {
+              // Use staging info from appmanifest
+              total = bytesToStage
+              downloaded = bytesStaged
+            } else if (bytesToDownload > 0) {
+              total = bytesToDownload
+              downloaded = bytesDownloaded
+            } else {
+              total = 0
+              downloaded = 0
             }
 
             const percent = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0
+            const downloadSpeed = realTimeInfo?.speed || 0
 
-            // Include games that are actively downloading, validating, staging, updating, or have a downloading folder
-            const isActive = downloading || validating || paused || updateRequired || hasDownloadingFolder ||
+            const isActive = downloading || validating || paused || updateRequired || hasDownloadingFolder || isStaging ||
               (bytesToDownload > 0 && bytesDownloaded < bytesToDownload) ||
               (bytesToStage > 0 && bytesStaged < bytesToStage)
 
@@ -1388,7 +1483,8 @@ app.whenReady().then(() => {
                 downloading: downloading || hasDownloadingFolder,
                 validating,
                 paused,
-                percent
+                percent,
+                downloadSpeed
               })
             }
           } catch {

@@ -4565,7 +4565,8 @@ function App(): React.JSX.Element {
                           const i = Math.floor(Math.log(b) / Math.log(1024))
                           return `${(b / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0)} ${u[i]}`
                         }
-                        return `${fmt(downloaded)} / ${fmt(total)}`
+                        const speed = dl.downloadSpeed > 0 ? ` — ${dl.downloadSpeed.toFixed(1)} Mbps` : ''
+                        return `${fmt(downloaded)} / ${fmt(total)}${speed}`
                       })()}
                     </div>
                   </div>

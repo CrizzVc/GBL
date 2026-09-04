@@ -83,6 +83,7 @@ declare global {
         validating: boolean
         paused: boolean
         percent: number
+        downloadSpeed: number
       }>>
       createStartupShortcut: () => Promise<{ success: boolean; error?: string }>
       getStartupStatus: () => Promise<{ enabled: boolean }>

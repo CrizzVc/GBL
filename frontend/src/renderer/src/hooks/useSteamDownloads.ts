@@ -12,6 +12,7 @@ export interface SteamDownloadItem {
   validating: boolean
   paused: boolean
   percent: number
+  downloadSpeed: number
 }
 
 export interface DownloadCompletion {
@@ -40,13 +41,12 @@ export function useSteamDownloads(pollIntervalMs: number = 1000): {
         const list = Array.isArray(result) ? result : []
         setDownloads(list)
 
-        // Detect completions: games that were downloading and now are gone or at 100%
+        // Detect completions
         const prevMap = prevDownloadsRef.current
         const completions: DownloadCompletion[] = []
 
         for (const [appId, prev] of prevMap) {
           const current = list.find((d) => d.appId === appId)
-          // Download was active, now it's gone or reached 100%
           if (!current || (current.percent >= 100 && !current.downloading && !current.validating)) {
             completions.push({ appId, name: prev.name })
           }
@@ -56,7 +56,6 @@ export function useSteamDownloads(pollIntervalMs: number = 1000): {
           setCompletedDownloads((prev) => [...prev, ...completions])
         }
 
-        // Update previous map
         const newMap = new Map<string, SteamDownloadItem>()
         for (const d of list) {
           newMap.set(d.appId, d)
@@ -81,12 +80,18 @@ export function useSteamDownloads(pollIntervalMs: number = 1000): {
       fetchDownloads()
     }, pollIntervalMs)
 
+    // Listen for real-time updates from main process (fs.watch on appmanifest)
+    const removeListener = window.electron?.ipcRenderer?.on?.('steam-download-updated', () => {
+      fetchDownloads()
+    })
+
     return () => {
       mountedRef.current = false
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
         intervalRef.current = null
       }
+      if (removeListener) removeListener()
     }
   }, [fetchDownloads, pollIntervalMs])
 
