@@ -11,7 +11,13 @@ import {
   PowerIcon,
   TrashIcon,
   EditIcon,
-  FolderIcon
+  FolderIcon,
+  DesktopIcon,
+  UpdateIcon,
+  CheckIcon,
+  PaletteIcon,
+  HomeIcon,
+  SteamIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
@@ -32,6 +38,7 @@ import RatingRP17 from './assets/ratings/RP17.png'
 import installIcon from './assets/images/install.png'
 import controllerImg from './assets/images/controller.png'
 import defaultHomeBackground from './assets/images/background-defauld.png'
+import appDefaultIcon from './assets/images/icono.png'
 import { useSystemMedia } from './hooks/useSystemMedia'
 import hashiLogo from '../src/assets/images/HASHI_LOGO_BLANCO.svg'
 import {
@@ -396,6 +403,12 @@ function App(): React.JSX.Element {
   const [profileName, setProfileName] = useState('')
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
 
+  // Settings modal state
+  const [settingsTab, setSettingsTab] = useState<'inicio' | 'personalizacion'>('inicio')
+  const [startupEnabled, setStartupEnabled] = useState(false)
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+
   // Add / Edit game form state
   const [formName, setFormName] = useState('')
   const [formExePath, setFormExePath] = useState('')
@@ -708,12 +721,12 @@ function App(): React.JSX.Element {
           wallpaperPreviewCacheRef.current.set(item.path, dataUrl)
           const img = new Image()
           img.src = dataUrl
-          if (img.decode) img.decode().catch(() => {})
+          if (img.decode) img.decode().catch(() => { })
           if (idx === wallpaperIndex) {
             setWallpaperBgHiRes(dataUrl)
           }
         }
-      }).catch(() => {})
+      }).catch(() => { })
     })
   }, [isWallpaperMode, wallpaperIndex, wallpaperImages])
 
@@ -1633,6 +1646,60 @@ function App(): React.JSX.Element {
     [profileAvatar]
   )
 
+  const handleToggleStartupShortcut = useCallback(async () => {
+    try {
+      if (startupEnabled) {
+        await window.api.removeStartupShortcut?.()
+        setStartupEnabled(false)
+      } else {
+        const res = await window.api.createStartupShortcut?.()
+        if (res?.success) {
+          setStartupEnabled(true)
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling startup shortcut:', err)
+    }
+  }, [startupEnabled])
+
+  const handleCheckForUpdates = useCallback(() => {
+    setIsCheckingUpdate(true)
+    setUpdateMessage(null)
+    setTimeout(() => {
+      setIsCheckingUpdate(false)
+      setUpdateMessage('HASHI v1.0.0 está actualizado')
+      setTimeout(() => setUpdateMessage(null), 4000)
+    }, 1200)
+  }, [])
+
+  const handleOpenWallpaperFolderPicker = useCallback(async () => {
+    try {
+      const res = await window.api.selectWallpaperFolder?.()
+      if (res?.folder && Array.isArray(res.images)) {
+        setWallpaperFolder(res.folder)
+        setWallpaperImages(res.images)
+        setWallpaperIndex(0)
+      } else if (res?.folder) {
+        const imgs = await window.api.getWallpaperImages?.(res.folder)
+        setWallpaperFolder(res.folder)
+        setWallpaperImages(imgs || [])
+        setWallpaperIndex(0)
+      }
+    } catch (err) {
+      console.error('Error selecting wallpaper folder:', err)
+    }
+  }, [])
+
+  const handleSelectWallpaperFromFolder = useCallback(async (imgPath: string, fallbackDataUrl: string) => {
+    try {
+      const dataUrl = await window.api.setWallpaperAsBackground?.(imgPath)
+      setBackgroundImage(dataUrl || fallbackDataUrl)
+    } catch (err) {
+      console.error('Error fijando fondo:', err)
+      setBackgroundImage(fallbackDataUrl)
+    }
+  }, [])
+
   // ── Store carousel handlers ──
   const handleOpenStore = useCallback(
     async (storeId: string) => {
@@ -2550,11 +2617,12 @@ function App(): React.JSX.Element {
       <header className="header-bar">
         <div className="header-left">
           <div className="user-avatar" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ cursor: 'pointer', overflow: 'hidden' }}>
-            {profileAvatar ? (
-              <img src={profileAvatar} alt="Foto de perfil" className="user-avatar-img" draggable={false} />
-            ) : (
-              (profileName.trim() ? profileName.trim().charAt(0).toUpperCase() : 'G')
-            )}
+            <img
+              src={profileAvatar || appDefaultIcon}
+              alt="Foto de perfil"
+              className="user-avatar-img"
+              draggable={false}
+            />
           </div>
           <div className="header-greeting">
             <span className="header-greeting-name">
@@ -3884,113 +3952,284 @@ function App(): React.JSX.Element {
 
       {/* ── Settings Modal ── */}
       {modal === 'settings' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Ajustes</h2>
-              <button className="modal-close" onClick={() => setModal(null)}>
-                <CloseIcon size={20} />
-              </button>
-            </div>
-            <div className="specs-grid">
-              <div className="spec-item" style={{ gridColumn: '1 / -1' }}>
-                <div className="spec-label">Versión</div>
-                <div className="spec-value">HASHI v1.0.0</div>
-              </div>
-              <div className="spec-item">
-                <div className="spec-label">Juegos Agregados</div>
-                <div className="spec-value">{games.length}</div>
-              </div>
-              <div className="spec-item">
-                <div className="spec-label">Tiempo Total Jugado</div>
-                <div className="spec-value">
-                  {formatPlaytime(games.reduce((sum, g) => sum + g.playtimeMinutes, 0))}
-                </div>
-              </div>
-            </div>
+        <div className="modal-overlay settings-modal-overlay" onClick={() => setModal(null)}>
+          <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="settings-modal-close" onClick={() => setModal(null)} aria-label="Cerrar">
+              <CloseIcon size={18} />
+            </button>
 
-            <div className="settings-section">
-              <h3 className="settings-section-title">Steam</h3>
-              <div className="settings-bg-actions" style={{ justifyContent: 'flex-start' }}>
-                <button className="btn-primary" onClick={handleSteamOpenIdLink}>
-                  {steamAccount.linked ? 'Volver a vincular con Steam' : 'Vincular con Steam'}
-                </button>
-                {steamAccount.linked && (
-                  <button className="btn-danger" onClick={handleSteamUnlink}>
-                    Desvincular
-                  </button>
-                )}
+            {/* Left Sidebar */}
+            <aside className="settings-sidebar">
+              <div className="settings-sidebar-header">
+                <div className="settings-sidebar-header-bg" />
+                <div className="settings-sidebar-header-overlay" />
+                <h2 className="settings-sidebar-title">Ajustes</h2>
               </div>
-              {steamAccount.linked && (
-                <p className="settings-profile-hint" style={{ marginTop: 12 }}>
-                  Cuenta conectada: {steamAccount.accountName || steamAccount.steamId}
-                </p>
-              )}
-            </div>
 
-            {/* Profile settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">Perfil</h3>
-              <div className="settings-profile-row">
-                <div
-                  className="settings-profile-avatar"
-                  onClick={handleSelectProfileImage}
+              <nav className="settings-sidebar-nav">
+                <button
+                  type="button"
+                  className={`settings-nav-item ${settingsTab === 'inicio' ? 'active' : ''}`}
+                  onClick={() => setSettingsTab('inicio')}
                 >
-                  {profileAvatar ? (
-                    <img src={profileAvatar} alt="Foto de perfil" className="user-avatar-img" draggable={false} />
-                  ) : (
-                    <span className="user-avatar-initial">
-                      {profileName.trim() ? profileName.trim().charAt(0).toUpperCase() : 'G'}
-                    </span>
-                  )}
-                  <div className="settings-profile-avatar-overlay">
-                    <ImageIcon size={18} />
-                  </div>
-                </div>
-                <div className="settings-profile-fields">
-                  <input
-                    className="form-input"
-                    placeholder="Nombre de usuario"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    onBlur={(e) => handleSaveProfileName(e.target.value.trim())}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        ; (e.target as HTMLInputElement).blur()
-                      }
-                    }}
-                  />
-                  <p className="settings-profile-hint">
-                    El nombre se guarda al salir del campo o pulsar Enter. Haz clic en la foto para cambiarla.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Background settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">Fondo de pantalla</h3>
-              <div className="settings-bg-preview">
-                {backgroundImage ? (
-                  <img src={backgroundImage} alt="Fondo actual" className="settings-bg-thumb" />
-                ) : (
-                  <div className="settings-bg-placeholder">
-                    <ImageIcon size={24} />
-                    <span>Sin fondo personalizado</span>
-                  </div>
-                )}
-              </div>
-              <div className="settings-bg-actions">
-                <button className="btn-secondary" onClick={handleSelectBackground}>
-                  <ImageIcon size={14} /> Cambiar fondo
+                  <HomeIcon size={18} className="settings-nav-icon" />
+                  <span>Inicio</span>
                 </button>
-                {backgroundImage && (
-                  <button className="btn-danger" onClick={handleClearBackground}>
-                    Restaurar
-                  </button>
-                )}
-              </div>
-            </div>
+                <button
+                  type="button"
+                  className={`settings-nav-item ${settingsTab === 'personalizacion' ? 'active' : ''}`}
+                  onClick={() => setSettingsTab('personalizacion')}
+                >
+                  <PaletteIcon size={18} className="settings-nav-icon" />
+                  <span>Personalización</span>
+                </button>
+              </nav>
+            </aside>
+
+            {/* Right Content Area */}
+            <main className="settings-content-area">
+              {settingsTab === 'inicio' && (
+                <div className="settings-tab-panel">
+                  {/* Top program info row */}
+                  <div className="settings-hero-card">
+                    <div className="settings-app-logo-wrap">
+                      <img src={hashiLogo} alt="HASHI Logo" className="settings-app-logo" draggable={false} />
+                    </div>
+                    <div className="settings-app-meta">
+                      <div className="settings-app-title-row">
+                        <span className="settings-app-name">HASHI</span>
+                        <span className="settings-version-badge">v1.0.0</span>
+                      </div>
+                      <div className="settings-app-stats-grid">
+                        <div className="settings-stat-box">
+                          <span className="settings-stat-label">Juegos agregados</span>
+                          <span className="settings-stat-val">{games.length}</span>
+                        </div>
+                        <div className="settings-stat-box">
+                          <span className="settings-stat-label">Tiempo jugado</span>
+                          <span className="settings-stat-val">
+                            {formatPlaytime(games.reduce((sum, g) => sum + g.playtimeMinutes, 0))}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action row (3 options) */}
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Accesos directos</h3>
+                    <p className="settings-section-subtitle">Opciones rápidas y configuración del sistema</p>
+
+                    <div className="settings-actions-row">
+                      {/* Option 1: Startup Shortcut */}
+                      <button
+                        type="button"
+                        className={`settings-action-btn ${startupEnabled ? 'active' : ''}`}
+                        onClick={handleToggleStartupShortcut}
+                      >
+                        <div className="settings-action-icon-wrap">
+                          <DesktopIcon size={22} />
+                        </div>
+                        <div className="settings-action-text-col">
+                          <span className="settings-action-title">
+                            {startupEnabled ? 'En inicio de Windows' : 'Crear atajo en Inicio'}
+                          </span>
+                          <span className="settings-action-desc">
+                            {startupEnabled ? 'Se iniciará con Windows' : 'Agregar acceso en Inicio'}
+                          </span>
+                        </div>
+                        {startupEnabled && <CheckIcon size={16} className="settings-action-check" />}
+                      </button>
+
+                      {/* Option 2: Steam Link */}
+                      <button
+                        type="button"
+                        className={`settings-action-btn ${steamAccount.linked ? 'active' : ''}`}
+                        onClick={handleSteamOpenIdLink}
+                      >
+                        <div className="settings-action-icon-wrap">
+                          <SteamIcon size={22} />
+                        </div>
+                        <div className="settings-action-text-col">
+                          <span className="settings-action-title">
+                            {steamAccount.linked ? (steamAccount.accountName || 'Steam vinculado') : 'Vincular Steam'}
+                          </span>
+                          <span className="settings-action-desc">
+                            {steamAccount.linked ? 'Cuenta conectada' : 'Crear atajo de Steam'}
+                          </span>
+                        </div>
+                        {steamAccount.linked && <CheckIcon size={16} className="settings-action-check" />}
+                      </button>
+
+                      {/* Option 3: Search Update */}
+                      <button
+                        type="button"
+                        className={`settings-action-btn ${isCheckingUpdate ? 'loading' : ''}`}
+                        onClick={handleCheckForUpdates}
+                        disabled={isCheckingUpdate}
+                      >
+                        <div className="settings-action-icon-wrap">
+                          <UpdateIcon size={22} className={isCheckingUpdate ? 'spin-icon' : ''} />
+                        </div>
+                        <div className="settings-action-text-col">
+                          <span className="settings-action-title">
+                            {isCheckingUpdate ? 'Buscando...' : 'Buscar actualización'}
+                          </span>
+                          <span className="settings-action-desc">
+                            {updateMessage ? updateMessage : 'Comprobar nuevas versiones'}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {steamAccount.linked && (
+                      <div className="settings-steam-account-bar">
+                        <span>Cuenta conectada: <strong>{steamAccount.accountName || steamAccount.steamId}</strong></span>
+                        <button type="button" className="settings-btn-link danger" onClick={handleSteamUnlink}>
+                          Desvincular
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {settingsTab === 'personalizacion' && (
+                <div className="settings-tab-panel">
+                  {/* Background section */}
+                  <div className="settings-section no-top-margin">
+                    <h3 className="settings-section-title">Fondo de pantalla</h3>
+
+                    {/* Current Background Preview - 100% width */}
+                    <div className="settings-wallpaper-hero-preview">
+                      <img
+                        src={backgroundImage || defaultHomeBackground}
+                        alt="Fondo actual"
+                        className="settings-wallpaper-hero-img"
+                      />
+                      <div className="settings-wallpaper-hero-overlay">
+                        <div className="settings-wallpaper-hero-info">
+                          <span className="settings-wallpaper-badge">
+                            {backgroundImage ? 'Fondo personalizado' : 'Fondo por defecto'}
+                          </span>
+                        </div>
+                        <div className="settings-wallpaper-hero-actions">
+                          <button
+                            type="button"
+                            className="btn-secondary settings-mini-btn"
+                            onClick={handleSelectBackground}
+                          >
+                            <ImageIcon size={14} /> Cambiar fondo
+                          </button>
+                          {backgroundImage && (
+                            <button
+                              type="button"
+                              className="btn-danger settings-mini-btn"
+                              onClick={handleClearBackground}
+                            >
+                              Restaurar
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="btn-secondary settings-mini-btn"
+                            onClick={handleOpenWallpaperFolderPicker}
+                          >
+                            <FolderIcon size={14} /> Elegir carpeta
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Small wallpaper cards with horizontal scroll */}
+                    <div className="settings-folder-wallpapers-section">
+                      <div className="settings-folder-wallpapers-header">
+                        <span className="settings-folder-wallpapers-title">Fondos de la carpeta</span>
+                        {wallpaperFolder && (
+                          <span className="settings-folder-path" title={wallpaperFolder}>
+                            {wallpaperFolder}
+                          </span>
+                        )}
+                      </div>
+
+                      {wallpaperImages && wallpaperImages.length > 0 ? (
+                        <div className="settings-wallpaper-cards-scroll">
+                          {wallpaperImages.map((item, idx) => {
+                            const isCurrent = backgroundImage === item.dataUrl || backgroundImage?.includes(item.name)
+                            return (
+                              <button
+                                key={item.path || idx}
+                                type="button"
+                                className={`settings-wallpaper-card-item ${isCurrent ? 'selected' : ''}`}
+                                onClick={() => handleSelectWallpaperFromFolder(item.path, item.dataUrl)}
+                                title={item.name}
+                              >
+                                <img
+                                  src={item.dataUrl}
+                                  alt={item.name}
+                                  className="settings-wallpaper-card-thumb"
+                                  loading="lazy"
+                                />
+                                {isCurrent && (
+                                  <div className="settings-wallpaper-card-active-badge">
+                                    <CheckIcon size={12} />
+                                  </div>
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="settings-wallpaper-empty-card" onClick={handleOpenWallpaperFolderPicker}>
+                          <FolderIcon size={20} />
+                          <span>Haz clic aquí para seleccionar una carpeta con fondos</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Profile section */}
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Perfil</h3>
+                    <div className="settings-profile-row">
+                      <div
+                        className="settings-profile-avatar"
+                        onClick={handleSelectProfileImage}
+                        title="Haz clic para cambiar tu foto"
+                      >
+                        <img
+                          src={profileAvatar || appDefaultIcon}
+                          alt="Foto de perfil"
+                          className="user-avatar-img"
+                          draggable={false}
+                        />
+                        <div className="settings-profile-avatar-overlay">
+                          <ImageIcon size={20} />
+                        </div>
+                      </div>
+                      <div className="settings-profile-fields">
+                        <label className="form-label">Nombre de usuario</label>
+                        <input
+                          className="form-input"
+                          placeholder="Nombre de usuario"
+                          value={profileName}
+                          onChange={(e) => setProfileName(e.target.value)}
+                          onBlur={(e) => handleSaveProfileName(e.target.value.trim())}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              ; (e.target as HTMLInputElement).blur()
+                            }
+                          }}
+                        />
+                        <p className="settings-profile-hint">
+                          El nombre se guarda al salir o pulsar Enter. Haz clic en la foto para cambiarla (icono.png por defecto).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </main>
           </div>
         </div>
       )}

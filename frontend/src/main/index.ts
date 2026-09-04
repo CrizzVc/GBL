@@ -1127,6 +1127,63 @@ app.whenReady().then(() => {
     }
   })
 
+  // ── Startup shortcut handlers ──
+  ipcMain.handle('create-startup-shortcut', async () => {
+    try {
+      if (process.platform === 'win32') {
+        const startupDir = join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+        const shortcutPath = join(startupDir, 'HASHI.lnk')
+        const target = process.execPath
+        shell.writeShortcutLink(shortcutPath, 'create', {
+          target,
+          description: 'HASHI Launcher',
+          cwd: dirname(target)
+        })
+        app.setLoginItemSettings({
+          openAtLogin: true,
+          path: target
+        })
+        return { success: true }
+      }
+      return { success: false, error: 'No soportado' }
+    } catch (err: any) {
+      console.error('Error creating startup shortcut:', err)
+      return { success: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('get-startup-status', async () => {
+    try {
+      if (process.platform === 'win32') {
+        const startupDir = join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+        const shortcutPath = join(startupDir, 'HASHI.lnk')
+        const exists = fs.existsSync(shortcutPath)
+        const loginSettings = app.getLoginItemSettings()
+        return { enabled: exists || loginSettings.openAtLogin }
+      }
+      return { enabled: false }
+    } catch {
+      return { enabled: false }
+    }
+  })
+
+  ipcMain.handle('remove-startup-shortcut', async () => {
+    try {
+      if (process.platform === 'win32') {
+        const startupDir = join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+        const shortcutPath = join(startupDir, 'HASHI.lnk')
+        if (fs.existsSync(shortcutPath)) {
+          fs.unlinkSync(shortcutPath)
+        }
+        app.setLoginItemSettings({ openAtLogin: false })
+        return { success: true }
+      }
+      return { success: false }
+    } catch (err: any) {
+      return { success: false, error: err.message }
+    }
+  })
+
   const getSteamPaths = (): string[] => {
     const candidates = new Set<string>()
 

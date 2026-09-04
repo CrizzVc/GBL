@@ -61,7 +61,10 @@ const api = {
     steamId64: string | null
   }) => ipcRenderer.invoke('save-steam-account', steamAccount),
   openSteamOpenId: () => ipcRenderer.invoke('open-steam-openid'),
-  getSteamInstallationStatus: (appIds: string[]) => ipcRenderer.invoke('get-steam-installation-status', appIds),
+  // Startup shortcut APIs
+  createStartupShortcut: () => ipcRenderer.invoke('create-startup-shortcut'),
+  getStartupStatus: () => ipcRenderer.invoke('get-startup-status'),
+  removeStartupShortcut: () => ipcRenderer.invoke('remove-startup-shortcut'),
   // System Media (API del PC) — puente nativo como WPS5
   getSystemMedia: () => ipcRenderer.invoke('get-system-media'),
   controlSystemMedia: (action: string, target?: any) => ipcRenderer.invoke('control-system-media', action, target),

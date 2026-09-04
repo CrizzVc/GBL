@@ -71,6 +71,9 @@ declare global {
         steamId64: string | null
       }>
       getSteamInstallationStatus: (appIds: string[]) => Promise<Record<string, boolean>>
+      createStartupShortcut: () => Promise<{ success: boolean; error?: string }>
+      getStartupStatus: () => Promise<{ enabled: boolean }>
+      removeStartupShortcut: () => Promise<{ success: boolean; error?: string }>
       getSystemMedia: () => Promise<{
         hasMedia: boolean
         title?: string
