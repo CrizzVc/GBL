@@ -4216,19 +4216,11 @@
   transform: scale(1.1);
 }
 
-/* Cuando wallpaper-mode está activo, esconder hero, games row y bottom row */
+/* Cuando wallpaper-mode está activo, esconder hero, games row y bottom row inmediatamente */
 .launcher.wallpaper-mode .hero-section,
 .launcher.wallpaper-mode .games-row-container,
 .launcher.wallpaper-mode .bottom-row {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
-  margin: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  transform: translateY(12px);
-  transition: max-height 320ms ease, opacity 260ms ease, transform 320ms ease, margin 320ms ease, padding 320ms ease;
+  display: none !important;
 }
 
 .friend-panel-layer {
