@@ -458,7 +458,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 10px;
-  border-radius: var(--gbl-radius-sm);
+  border-radius: 5px;
   color: var(--gbl-text-secondary);
   cursor: pointer;
   transition: all var(--gbl-transition-normal);
@@ -466,12 +466,16 @@
   border: none;
   width: 100%;
   text-align: left;
-  font-size: 14px;
+  font-size: 20px;
+  margin-top: 5px;
 }
 
-.sidebar-item:hover,
-.sidebar-item.focused {
+.sidebar-item:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-item.focused {
+  background: #f02640;
   color: var(--gbl-text-primary);
 }
 
