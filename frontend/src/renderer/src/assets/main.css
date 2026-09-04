@@ -2012,7 +2012,7 @@
 .settings-folder-wallpapers-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
@@ -2020,6 +2020,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-folder-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-folder-wallpapers-title {
@@ -2028,27 +2035,87 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+.settings-wallpaper-count-badge {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.settings-folder-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .settings-folder-path {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.35);
-  max-width: 250px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.settings-wallpaper-cards-scroll {
+.settings-wallpaper-pagination {
   display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.settings-wallpaper-page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.settings-wallpaper-page-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.settings-wallpaper-page-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.settings-wallpaper-page-indicator {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0 4px;
+  min-width: 28px;
+  text-align: center;
+  user-select: none;
+}
+
+.settings-wallpaper-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  overflow-x: auto;
-  padding: 4px 2px 10px 2px;
-  scrollbar-width: thin;
+  padding: 2px 0 6px 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-wallpaper-card-item {
   position: relative;
-  flex: 0 0 130px;
-  height: 74px;
+  width: 100%;
+  height: 76px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -2056,6 +2123,7 @@
   cursor: pointer;
   padding: 0;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .settings-wallpaper-card-item:hover {

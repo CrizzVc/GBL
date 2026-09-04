@@ -408,6 +408,7 @@ function App(): React.JSX.Element {
   const [startupEnabled, setStartupEnabled] = useState(false)
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+  const [settingsWallpaperPage, setSettingsWallpaperPage] = useState(0)
 
   // Add / Edit game form state
   const [formName, setFormName] = useState('')
@@ -773,6 +774,17 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (!isHomeFocused) setWallpaperMode(false)
   }, [isHomeFocused])
+
+  useEffect(() => {
+    if (modal === 'settings' && wallpaperImages.length > 0 && backgroundImage) {
+      const activeIdx = wallpaperImages.findIndex(
+        (item) => backgroundImage === item.dataUrl || backgroundImage?.includes(item.name)
+      )
+      if (activeIdx >= 0) {
+        setSettingsWallpaperPage(Math.floor(activeIdx / 4))
+      }
+    }
+  }, [modal, settingsTab, wallpaperImages, backgroundImage])
 
   // ── Clock ──
   useEffect(() => {
@@ -4139,51 +4151,97 @@ function App(): React.JSX.Element {
                     </div>
                   </div>
 
-                  {/* Small wallpaper cards with horizontal scroll */}
-                  <div className="settings-folder-wallpapers-section">
-                    <div className="settings-folder-wallpapers-header">
-                      <span className="settings-folder-wallpapers-title">Fondos de la carpeta</span>
-                      {wallpaperFolder && (
-                        <span className="settings-folder-path" title={wallpaperFolder}>
-                          {wallpaperFolder}
-                        </span>
-                      )}
-                    </div>
+                  {/* Small wallpaper cards paginated 4 by 4 */}
+                  {(() => {
+                    const totalWallpaperPages = Math.max(1, Math.ceil((wallpaperImages?.length || 0) / 4))
+                    const currentWallpaperPage = Math.min(settingsWallpaperPage, totalWallpaperPages - 1)
+                    const paginatedWallpapers = (wallpaperImages || []).slice(
+                      currentWallpaperPage * 4,
+                      currentWallpaperPage * 4 + 4
+                    )
 
-                    {wallpaperImages && wallpaperImages.length > 0 ? (
-                      <div className="settings-wallpaper-cards-scroll">
-                        {wallpaperImages.map((item, idx) => {
-                          const isCurrent = backgroundImage === item.dataUrl || backgroundImage?.includes(item.name)
-                          return (
-                            <button
-                              key={item.path || idx}
-                              type="button"
-                              className={`settings-wallpaper-card-item ${isCurrent ? 'selected' : ''}`}
-                              onClick={() => handleSelectWallpaperFromFolder(item.path, item.dataUrl)}
-                              title={item.name}
-                            >
-                              <img
-                                src={item.dataUrl}
-                                alt={item.name}
-                                className="settings-wallpaper-card-thumb"
-                                loading="lazy"
-                              />
-                              {isCurrent && (
-                                <div className="settings-wallpaper-card-active-badge">
-                                  <CheckIcon size={12} />
-                                </div>
-                              )}
-                            </button>
-                          )
-                        })}
+                    return (
+                      <div className="settings-folder-wallpapers-section">
+                        <div className="settings-folder-wallpapers-header">
+                          <div className="settings-folder-header-left">
+                            <span className="settings-folder-wallpapers-title">Fondos de la carpeta</span>
+                            {wallpaperImages && wallpaperImages.length > 0 && (
+                              <span className="settings-wallpaper-count-badge">
+                                {wallpaperImages.length} {wallpaperImages.length === 1 ? 'fondo' : 'fondos'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="settings-folder-header-right">
+                            {wallpaperFolder && (
+                              <span className="settings-folder-path" title={wallpaperFolder}>
+                                {wallpaperFolder}
+                              </span>
+                            )}
+                            {wallpaperImages && wallpaperImages.length > 4 && (
+                              <div className="settings-wallpaper-pagination">
+                                <button
+                                  type="button"
+                                  className="settings-wallpaper-page-btn"
+                                  onClick={() => setSettingsWallpaperPage((p) => Math.max(0, p - 1))}
+                                  disabled={currentWallpaperPage === 0}
+                                  title="Página anterior"
+                                >
+                                  <ChevronLeftIcon size={14} />
+                                </button>
+                                <span className="settings-wallpaper-page-indicator">
+                                  {currentWallpaperPage + 1} / {totalWallpaperPages}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="settings-wallpaper-page-btn"
+                                  onClick={() => setSettingsWallpaperPage((p) => Math.min(totalWallpaperPages - 1, p + 1))}
+                                  disabled={currentWallpaperPage >= totalWallpaperPages - 1}
+                                  title="Página siguiente"
+                                >
+                                  <ChevronRightIcon size={14} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {wallpaperImages && wallpaperImages.length > 0 ? (
+                          <div className="settings-wallpaper-cards-grid">
+                            {paginatedWallpapers.map((item, idx) => {
+                              const isCurrent = backgroundImage === item.dataUrl || backgroundImage?.includes(item.name)
+                              return (
+                                <button
+                                  key={item.path || idx}
+                                  type="button"
+                                  className={`settings-wallpaper-card-item ${isCurrent ? 'selected' : ''}`}
+                                  onClick={() => handleSelectWallpaperFromFolder(item.path, item.dataUrl)}
+                                  title={item.name}
+                                >
+                                  <img
+                                    src={item.dataUrl}
+                                    alt={item.name}
+                                    className="settings-wallpaper-card-thumb"
+                                    loading="lazy"
+                                  />
+                                  {isCurrent && (
+                                    <div className="settings-wallpaper-card-active-badge">
+                                      <CheckIcon size={12} />
+                                    </div>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <div className="settings-wallpaper-empty-card" onClick={handleOpenWallpaperFolderPicker}>
+                            <FolderIcon size={20} />
+                            <span>Haz clic aquí para seleccionar una carpeta con fondos</span>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="settings-wallpaper-empty-card" onClick={handleOpenWallpaperFolderPicker}>
-                        <FolderIcon size={20} />
-                        <span>Haz clic aquí para seleccionar una carpeta con fondos</span>
-                      </div>
-                    )}
-                  </div>
+                    )
+                  })()}
 
                   {/* Profile section */}
                   <div className="settings-section">
