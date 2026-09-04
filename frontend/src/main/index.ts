@@ -276,8 +276,8 @@ function ensureSteamOpenIdServer(): void {
   .container { text-align: center; max-width: 600px; padding: 40px; }
 
   .layout { display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: 32px; }
-  .hashi-logo img { width: 80px; height: 80px; object-fit: contain; }
-  .steam-logo img { width: 80px; height: 80px; object-fit: contain; }
+  .hashi-logo img { width: 130px; height: 130px; object-fit: contain; }
+  .steam-logo img { width: 130px; height: 130px; object-fit: contain; }
   .divider { font-size: 36px; font-weight: 700; color: #555; }
 
   .title { font-size: 24px; font-weight: 400; color: #fff; margin-bottom: 16px; }
