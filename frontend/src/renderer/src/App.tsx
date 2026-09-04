@@ -3954,10 +3954,6 @@ function App(): React.JSX.Element {
       {modal === 'settings' && (
         <div className="modal-overlay settings-modal-overlay" onClick={() => setModal(null)}>
           <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="settings-modal-close" onClick={() => setModal(null)} aria-label="Cerrar">
-              <CloseIcon size={18} />
-            </button>
-
             {/* Left Sidebar */}
             <aside className="settings-sidebar">
               <div className="settings-sidebar-header">
@@ -4028,7 +4024,7 @@ function App(): React.JSX.Element {
                         onClick={handleToggleStartupShortcut}
                       >
                         <div className="settings-action-icon-wrap">
-                          <DesktopIcon size={22} />
+                          <DesktopIcon size={20} />
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">
@@ -4048,11 +4044,15 @@ function App(): React.JSX.Element {
                         onClick={handleSteamOpenIdLink}
                       >
                         <div className="settings-action-icon-wrap">
-                          <SteamIcon size={22} />
+                          <SteamIcon size={20} />
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">
-                            {steamAccount.linked ? (steamAccount.accountName || 'Steam vinculado') : 'Vincular Steam'}
+                            {steamAccount.linked
+                              ? (steamAccount.accountName && !steamAccount.accountName.toLowerCase().startsWith('steam 76561') && !/^\d{17}$/.test(steamAccount.accountName)
+                                ? steamAccount.accountName
+                                : 'Steam')
+                              : 'Vincular Steam'}
                           </span>
                           <span className="settings-action-desc">
                             {steamAccount.linked ? 'Cuenta conectada' : 'Crear atajo de Steam'}
@@ -4069,7 +4069,7 @@ function App(): React.JSX.Element {
                         disabled={isCheckingUpdate}
                       >
                         <div className="settings-action-icon-wrap">
-                          <UpdateIcon size={22} className={isCheckingUpdate ? 'spin-icon' : ''} />
+                          <UpdateIcon size={20} className={isCheckingUpdate ? 'spin-icon' : ''} />
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">

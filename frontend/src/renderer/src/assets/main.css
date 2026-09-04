@@ -1597,10 +1597,10 @@
 .settings-modal {
   display: flex;
   flex-direction: row;
-  width: min(880px, 92vw);
-  height: min(580px, 86vh);
-  max-width: 900px;
-  max-height: 600px;
+  width: min(940px, 94vw);
+  height: min(600px, 88vh);
+  max-width: 980px;
+  max-height: 620px;
   background: #111113;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1612,27 +1612,7 @@
 }
 
 .settings-modal-close {
-  position: absolute;
-  top: 16px;
-  right: 18px;
-  z-index: 30;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  transition: all var(--gbl-transition-fast);
-}
-
-.settings-modal-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  transform: scale(1.05);
+  display: none;
 }
 
 /* ── Settings Sidebar ── */
@@ -1727,10 +1707,12 @@
 /* ── Settings Content Area ── */
 .settings-content-area {
   flex: 1;
-  padding: 28px 32px 32px 32px;
+  padding: 24px 28px 28px 28px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .settings-tab-panel {
@@ -1854,16 +1836,18 @@
 /* ── 3 Action Buttons Row ── */
 .settings-actions-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-action-btn {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1872,7 +1856,10 @@
   text-align: left;
   transition: all 0.2s ease;
   font-family: inherit;
-  min-height: 60px;
+  min-height: 56px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-action-btn:hover {
@@ -1887,8 +1874,8 @@
 }
 
 .settings-action-icon-wrap {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   display: flex;
@@ -1901,13 +1888,14 @@
 .settings-action-text-col {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .settings-action-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
@@ -1916,7 +1904,7 @@
 }
 
 .settings-action-desc {
-  font-size: 10.5px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.45);
   white-space: nowrap;
   overflow: hidden;
@@ -1964,28 +1952,55 @@
 .settings-wallpaper-hero-preview {
   position: relative;
   width: 100%;
-  height: 150px;
+  height: 180px;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 14px;
+  background: #09090b;
 }
 
 .settings-wallpaper-hero-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 
 .settings-wallpaper-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(to top, rgba(9, 9, 11, 0.95) 0%, rgba(9, 9, 11, 0.6) 35%, rgba(9, 9, 11, 0.05) 75%, transparent 100%);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 14px 18px;
+}
+
+.settings-wallpaper-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.settings-wallpaper-hero-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-mini-btn {
+  padding: 6px 12px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(6px);
 }
 
 .settings-wallpaper-badge {
