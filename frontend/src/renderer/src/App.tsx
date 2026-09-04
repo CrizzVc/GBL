@@ -143,7 +143,7 @@ interface SteamLibraryGame {
   logoImageUrl?: string | null
   iconDataUrl?: string | null
 }
- 
+
 interface SteamFriend {
   steamid: string
   personaname: string
@@ -154,7 +154,7 @@ interface SteamFriend {
   gameid?: string | null
   gameextrainfo?: string | null
 }
- 
+
 type SteamGridArtType = 'grids' | 'square_grids' | 'heroes' | 'logos' | 'icons'
 type LibrarySource = 'local' | 'steam'
 
@@ -450,6 +450,7 @@ function App(): React.JSX.Element {
   const previousLibraryIndexRef = useRef<number | null>(null)
   const wipeDirectionRef = useRef<1 | -1>(1)
   const previousHomeSelectedGameIdRef = useRef<string | null>(null)
+  const lastNavTimeRef = useRef(0)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
   const sortedLibraryGames = useMemo(() => sortGamesByNewestFirst(games), [games])
@@ -2182,17 +2183,21 @@ function App(): React.JSX.Element {
       } else {
         const gameIds = ['library', ...visibleGames.map(g => g.id)]
         const currentIndex = gameIds.indexOf(selectedGameId || 'library')
+        const now = performance.now()
+        const NAV_COOLDOWN = 150
 
         if (e.key === 'ArrowRight') {
           e.preventDefault()
-          if (currentIndex < gameIds.length - 1) {
+          if (currentIndex < gameIds.length - 1 && now - lastNavTimeRef.current > NAV_COOLDOWN) {
+            lastNavTimeRef.current = now
             playMove()
             wipeDirectionRef.current = 1
             setSelectedGameId(gameIds[currentIndex + 1])
           }
         } else if (e.key === 'ArrowLeft') {
           e.preventDefault()
-          if (currentIndex > 0) {
+          if (currentIndex > 0 && now - lastNavTimeRef.current > NAV_COOLDOWN) {
+            lastNavTimeRef.current = now
             playMove()
             wipeDirectionRef.current = -1
             setSelectedGameId(gameIds[currentIndex - 1])
@@ -3734,52 +3739,52 @@ function App(): React.JSX.Element {
                       </div>
                     ) : (
                       steamLibrary.map((game) => (
-                      <article
-                        key={game.appid}
-                        id={`library-game-${game.appid}`}
-                        className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
-                        onClick={() => {
-                          setSelectedSteamAppId(game.appid)
-                          setDetailGameId(`steam-${game.appid}`)
-                        }}
-                        onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
-                        onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
-                      >
-                        <div className="library-item-art steam-library-art">
-                          <img
-                            src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
-                            alt={game.name}
-                            className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
-                            draggable={false}
-                          />
-                          {!game.installed && (
+                        <article
+                          key={game.appid}
+                          id={`library-game-${game.appid}`}
+                          className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedSteamAppId(game.appid)
+                            setDetailGameId(`steam-${game.appid}`)
+                          }}
+                          onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
+                          onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
+                        >
+                          <div className="library-item-art steam-library-art">
                             <img
-                              src={installIcon}
-                              alt="Descargar"
-                              className="library-item-download-badge"
+                              src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
+                              alt={game.name}
+                              className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                               draggable={false}
                             />
-                          )}
-                        </div>
-                        <div className="library-item-info">
-                          <span className="library-item-name">{game.name}</span>
-                          <span className="library-item-playtime">
-                            {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
-                          </span>
-                        </div>
-                        <div className="library-item-actions">
-                          <button
-                            className="library-action-btn"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                              setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
-                            }}
-                          >
-                            <MoreIcon size={14} />
-                          </button>
-                        </div>
-                                            </article>
+                            {!game.installed && (
+                              <img
+                                src={installIcon}
+                                alt="Descargar"
+                                className="library-item-download-badge"
+                                draggable={false}
+                              />
+                            )}
+                          </div>
+                          <div className="library-item-info">
+                            <span className="library-item-name">{game.name}</span>
+                            <span className="library-item-playtime">
+                              {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
+                            </span>
+                          </div>
+                          <div className="library-item-actions">
+                            <button
+                              className="library-action-btn"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
+                              }}
+                            >
+                              <MoreIcon size={14} />
+                            </button>
+                          </div>
+                        </article>
                       ))
                     )
                   ) : (
