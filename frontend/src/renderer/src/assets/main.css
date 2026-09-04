@@ -4132,10 +4132,13 @@
   transform-origin: left center;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
   transition:
-    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
+    transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .wallpaper-card.animating {
@@ -4149,8 +4152,7 @@
   transform: translateX(-10px) scale(0.85);
   z-index: 1;
   opacity: 0.6;
-  filter: brightness(0.7) blur(0.5px);
-  transition-delay: 0.04s;
+  filter: brightness(0.7);
 }
 
 .wallpaper-card.near {
@@ -4158,7 +4160,6 @@
   z-index: 2;
   opacity: 0.85;
   filter: brightness(0.85);
-  transition-delay: 0.02s;
 }
 
 .wallpaper-card.center {
@@ -4166,7 +4167,6 @@
   z-index: 5;
   opacity: 1;
   filter: none;
-  transition-delay: 0s;
 }
 
 /* Buffer invisible: sigue montada (no se desmonta de golpe) justo antes de
@@ -4174,12 +4174,11 @@
    progresión de las demás posiciones. Así la transición de entrada/salida
    se ve como un deslizamiento + fundido en vez de un pop instantáneo. */
 .wallpaper-card.hidden {
-  transform: translateX(-220px) scale(0.75);
+  transform: translateX(-180px) scale(0.75);
   z-index: 0;
   opacity: 0;
   pointer-events: none;
-  filter: brightness(0.5) blur(1px);
-  transition-delay: 0.06s;
+  filter: brightness(0.5);
 }
 
 .wallpaper-card:hover {

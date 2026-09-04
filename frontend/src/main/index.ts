@@ -1,7 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
 import { join, dirname, extname, basename } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 import steamLogoAsset from '../renderer/src/assets/tiendas/steamLogo.png?asset'
 import hashiLogoAsset from '../renderer/src/assets/images/HASHI_LOGO_BLANCO.svg?asset'
 import appIconAsset from '../renderer/src/assets/images/icono.png?asset'
@@ -954,16 +953,39 @@ app.whenReady().then(() => {
   })
 
   // ── Preview en alta resolución para el fondo grande al navegar el wallpaper row ──
-  // Igual que set-wallpaper-as-background lee el archivo original (no el thumbnail
-  // cacheado de 360px), pero es de solo lectura: no copia nada ni toca el fondo
-  // guardado, así se puede llamar en cada cambio de selección sin efectos secundarios.
+  // Optimizado con preview HD redimensionada (1080p) y cacheada en disco con fs async
+  const WALLPAPER_PREVIEW_CACHE_DIR = join(app.getPath('userData'), 'wallpaper-preview-cache')
+  const WALLPAPER_PREVIEW_MAX_WIDTH = 1920
+  const WALLPAPER_PREVIEW_QUALITY = 82
+  const ensureWallpaperPreviewCache = (): void => {
+    if (!fs.existsSync(WALLPAPER_PREVIEW_CACHE_DIR)) fs.mkdirSync(WALLPAPER_PREVIEW_CACHE_DIR, { recursive: true })
+  }
+  const getWallpaperPreviewPath = (sourcePath: string, mtime: number): string => {
+    const hash = crypto.createHash('md5').update(`${sourcePath}|${mtime}|${WALLPAPER_PREVIEW_MAX_WIDTH}`).digest('hex')
+    return join(WALLPAPER_PREVIEW_CACHE_DIR, `${hash}.jpg`)
+  }
+
   ipcMain.handle('get-wallpaper-preview', async (_event, sourcePath: string) => {
     if (!sourcePath || !fs.existsSync(sourcePath)) return null
     try {
-      const ext = extname(sourcePath).toLowerCase()
-      const data = fs.readFileSync(sourcePath)
-      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : ext === '.bmp' ? 'image/bmp' : 'image/jpeg'
-      return `data:${mime};base64,${data.toString('base64')}`
+      ensureWallpaperPreviewCache()
+      const stat = await fs.promises.stat(sourcePath)
+      const cachePath = getWallpaperPreviewPath(sourcePath, stat.mtimeMs)
+      if (fs.existsSync(cachePath)) {
+        const data = await fs.promises.readFile(cachePath)
+        return `data:image/jpeg;base64,${data.toString('base64')}`
+      }
+      const img = nativeImage.createFromPath(sourcePath)
+      if (img.isEmpty()) return null
+      const { width, height } = img.getSize()
+      let preview = img
+      if (width > WALLPAPER_PREVIEW_MAX_WIDTH) {
+        const h = Math.max(1, Math.round(height * (WALLPAPER_PREVIEW_MAX_WIDTH / width)))
+        preview = img.resize({ width: WALLPAPER_PREVIEW_MAX_WIDTH, height: h, quality: 'best' })
+      }
+      const jpeg = preview.toJPEG(WALLPAPER_PREVIEW_QUALITY)
+      fs.promises.writeFile(cachePath, jpeg).catch(() => {})
+      return `data:image/jpeg;base64,${jpeg.toString('base64')}`
     } catch (err) {
       console.error('Error reading wallpaper preview:', err)
       return null
