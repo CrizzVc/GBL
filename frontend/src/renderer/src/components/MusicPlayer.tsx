@@ -346,7 +346,6 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
                 className="music-btn add"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                title="Agregar música"
               >
                 {isImporting ? '…' : '+'}
               </button>
@@ -387,17 +386,17 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
           </div>
 
           <div className="music-player-info-row">
-            <span className="music-player-title" title={displayTitle || ''}>{displayTitle || '—'}</span>
+            <span className="music-player-title">{displayTitle || '—'}</span>
             <span className="music-player-artist">{displayArtist || '—'}</span>
           </div>
 
-          <button className="music-btn more" onClick={togglePlay} disabled={!canControl} title={displayPlaying ? 'Pausar' : 'Reproducir'}>
+          <button className="music-btn more" onClick={togglePlay} disabled={!canControl}>
             <MoreDotsIcon size={16} />
           </button>
 
           {/* Controles reales, ocultos hasta hover para mantener el look minimal de la referencia */}
           <div className="music-player-hover-controls">
-            <button className="music-btn" onClick={skipPrev} disabled={!canControl} title="Anterior">
+            <button className="music-btn" onClick={skipPrev} disabled={!canControl}>
               <SkipBackIcon size={13} />
             </button>
             <button
@@ -405,15 +404,14 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
               onClick={togglePlay}
               disabled={!canControl}
               style={{ background: accentColor, borderColor: accentColor } as React.CSSProperties}
-              title={displayPlaying ? 'Pausar' : 'Reproducir'}
             >
               {displayPlaying ? <PauseIcon size={13} /> : <PlaySmallIcon size={13} />}
             </button>
-            <button className="music-btn" onClick={skipNext} disabled={!canControl} title="Siguiente">
+            <button className="music-btn" onClick={skipNext} disabled={!canControl}>
               <SkipForwardIcon size={13} />
             </button>
             {!systemActive && (
-              <button className="music-btn add" onClick={() => fileInputRef.current?.click()} title="Importar audio">
+              <button className="music-btn add" onClick={() => fileInputRef.current?.click()}>
                 <span style={{ fontSize: '13px', lineHeight: 1 }}>+</span>
               </button>
             )}
@@ -435,7 +433,7 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
 
         <div className="music-player-panel">
           <div className="music-player-info">
-            <span className="music-player-title" title={displayTitle || ''}>{displayTitle || '—'}</span>
+            <span className="music-player-title">{displayTitle || '—'}</span>
             <span className="music-player-artist">{displayArtist || '—'}{displayAlbum ? ` · ${displayAlbum}` : ''}</span>
           </div>
 
@@ -461,21 +459,20 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
           )}
 
           <div className="music-player-controls idle-controls">
-            <button className="music-btn" onClick={skipPrev} disabled={!canControl} title="Anterior">
+            <button className="music-btn" onClick={skipPrev} disabled={!canControl}>
               <SkipBackIcon size={15} />
             </button>
             <button
               className="music-btn play"
               onClick={togglePlay}
               disabled={!canControl}
-              title={displayPlaying ? 'Pausar' : 'Reproducir'}
             >
               {displayPlaying ? <PauseIcon size={16} /> : <PlaySmallIcon size={16} />}
             </button>
-            <button className="music-btn" onClick={skipNext} disabled={!canControl} title="Siguiente">
+            <button className="music-btn" onClick={skipNext} disabled={!canControl}>
               <SkipForwardIcon size={15} />
             </button>
-            <button className="music-btn cast" title="Salida de audio">
+            <button className="music-btn cast">
               <CastIcon size={15} />
             </button>
           </div>
@@ -486,7 +483,7 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
                 <span>{formatLocalTime(positionSec)} / {formatLocalTime(durationSec)}</span>
                 <input type="range" className="music-player-volume-range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volumen" />
               </div>
-              <button className="music-btn add" onClick={() => fileInputRef.current?.click()} title="Importar audio">
+              <button className="music-btn add" onClick={() => fileInputRef.current?.click()}>
                 <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
               </button>
               {importInput}

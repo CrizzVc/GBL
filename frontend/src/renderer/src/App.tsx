@@ -332,7 +332,6 @@ function getRatingImage(rating: string | null): string {
   if (!rating) return RatingRP
   const normalized = rating.replace('+', '').toUpperCase()
   const img = RATING_IMAGES[normalized]
-  console.log('[ESRB] raw:', rating, 'normalized:', normalized, 'match:', !!img)
   return img || RatingRP
 }
 
@@ -2584,7 +2583,7 @@ function App(): React.JSX.Element {
                   className={`wallpaper-card ${proximity} ${idx === wallpaperIndex ? 'selected' : ''} ${isWallpaperAnimating ? 'animating' : ''}`}
                   onClick={() => changeWallpaperIndex(idx)}
                   onDoubleClick={() => handleChooseWallpaperAsHome(idx)}
-                  title={`${img.name} — Enter o doble click para fijar como fondo de Home`}
+
                 >
                   <img src={img.dataUrl} alt={img.name} className="wallpaper-card-img" draggable={false} />
                 </div>
@@ -2606,7 +2605,7 @@ function App(): React.JSX.Element {
             }}
             onDoubleClick={openLibraryView}
             id="btn-library"
-            title="Biblioteca"
+
           >
             <div className="library-card-content">
               <div className="library-card-icon-wrapper">
@@ -2622,7 +2621,7 @@ function App(): React.JSX.Element {
               onClick={() => openDetailView(game.id)}
               onDoubleClick={() => handleLaunchGame(game.id)}
               onContextMenu={(e) => handleContextMenu(e, game.id)}
-              title={game.name}
+
               id={`game-card-${game.id}`}
             >
               {runningGameId === game.id && <div className="running-badge" />}
@@ -2716,7 +2715,7 @@ function App(): React.JSX.Element {
                       handleStoreSelect(index)
                     }
                   }}
-                  title={store.installed ? `Abrir ${store.name}` : `${store.name} no está instalado`}
+
                 >
                   {capsuleImg && (
                     <img
@@ -2778,7 +2777,6 @@ function App(): React.JSX.Element {
                       void handleAddQuickApp()
                     }}
                     aria-label="Agregar app rápida"
-                    title="Agregar app rápida"
                   >
                     <PlusIcon size={28} />
                   </button>
@@ -2802,7 +2800,6 @@ function App(): React.JSX.Element {
                     e.stopPropagation()
                     handleContextMenu(e, `quick-${app.id}`)
                   }}
-                  title={`${app.name} — clic derecho para más opciones`}
                 >
                   {app.artworkUrl ? (
                     <img src={app.artworkUrl} alt={app.name} draggable={false} />
@@ -2854,7 +2851,6 @@ function App(): React.JSX.Element {
                   key={friend ? friend.steamid : `friend-slot-${index}`}
                   className={`friend-avatar ${friend ? '' : 'empty'} ${friend && isFriendActive(friend) ? 'active' : ''}`}
                   style={{ zIndex: 5 - index }}
-                  title={friend ? friend.personaname : 'Vacío'}
                   onClick={friend ? () => { playEnter(); setSelectedFriend(friend) } : undefined}
                   onKeyDown={friend ? (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -2889,7 +2885,6 @@ function App(): React.JSX.Element {
                     <button
                       className="friends-btn fecha-btn"
                       onClick={(e) => e.stopPropagation()}
-                      title={friendsMusicTitle}
                     >
                       {friendsMusicTitle}
                     </button>
@@ -2898,12 +2893,11 @@ function App(): React.JSX.Element {
                     <button
                       className="friends-btn w-btn"
                       onClick={(e) => { e.stopPropagation(); handleWallpaperButton() }}
-                      title={isHomeFocused ? 'Elegir carpeta de wallpapers (una vez) / Mostrar wallpapers' : 'Editar artwork del juego'}
                       id="btn-wallpaper"
                     >
                       <ImageIcon size={16} />
                     </button>
-                    <button className="friends-btn salir-btn" onClick={() => window.close()} title="Salir">
+                    <button className="friends-btn salir-btn" onClick={() => window.close()}>
                       Salir
                     </button>
                   </div>
@@ -2914,24 +2908,22 @@ function App(): React.JSX.Element {
                     <button
                       className="friends-btn fecha-btn"
                       onClick={(e) => e.stopPropagation()}
-                      title={friendsMusicTitle}
                     >
                       {friendsMusicTitle}
                     </button>
                     <button
                       className="friends-btn w-btn"
                       onClick={(e) => { e.stopPropagation(); handleWallpaperButton() }}
-                      title={isHomeFocused ? 'Elegir carpeta de wallpapers (una vez) / Mostrar wallpapers' : 'Editar artwork del juego'}
                       id="btn-wallpaper"
                     >
                       <ImageIcon size={16} />
                     </button>
                   </div>
                   <div className="friends-row">
-                    <button className="friends-btn es-btn" onClick={(e) => e.stopPropagation()} title="ES (sin función)">
+                    <button className="friends-btn es-btn" onClick={(e) => e.stopPropagation()}>
                       ES
                     </button>
-                    <button className="friends-btn salir-btn" onClick={() => window.close()} title="Salir">
+                    <button className="friends-btn salir-btn" onClick={() => window.close()}>
                       Salir
                     </button>
                   </div>
@@ -2950,7 +2942,7 @@ function App(): React.JSX.Element {
             onClick={() => setSelectedFriend(null)}
           />
           <aside className="friend-panel" aria-label={`Perfil de ${selectedFriend.personaname}`}>
-            <button className="friend-panel-close" onClick={() => setSelectedFriend(null)} title="Cerrar">
+            <button className="friend-panel-close" onClick={() => setSelectedFriend(null)}>
               <CloseIcon size={18} />
             </button>
             <div className="friend-panel-cover">
@@ -3140,7 +3132,7 @@ function App(): React.JSX.Element {
             className="detail-bg fade-in-bg"
             style={detailBgStyle}
           />
-          <button className="detail-close" onClick={handleCloseDetail} title="Cerrar">
+          <button className="detail-close" onClick={handleCloseDetail}>
             <CloseIcon size={20} />
           </button>
 
@@ -3429,7 +3421,6 @@ function App(): React.JSX.Element {
                   openSteamGridModal(detailGame.id)
                 }}
                 aria-label="Editar Artwork"
-                title="Editar Artwork"
               >
                 <MoreIcon size={20} />
               </button>
@@ -3766,7 +3757,6 @@ function App(): React.JSX.Element {
                               src={installIcon}
                               alt="Descargar"
                               className="library-item-download-badge"
-                              title="Descargar"
                               draggable={false}
                             />
                           )}
@@ -3785,7 +3775,6 @@ function App(): React.JSX.Element {
                               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                               setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
                             }}
-                            title="Más opciones"
                           >
                             <MoreIcon size={14} />
                           </button>
@@ -3822,13 +3811,13 @@ function App(): React.JSX.Element {
                           <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
                         </div>
                         <div className="library-item-actions">
-                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }} title="Editar">
+                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }}>
                             <EditIcon size={14} />
                           </button>
-                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }} title="Buscar Artwork">
+                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }}>
                             <ImageIcon size={14} />
                           </button>
-                          <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }} title="Eliminar">
+                          <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }}>
                             <TrashIcon size={14} />
                           </button>
                         </div>
@@ -3895,7 +3884,6 @@ function App(): React.JSX.Element {
                 <div
                   className="settings-profile-avatar"
                   onClick={handleSelectProfileImage}
-                  title="Cambiar foto de perfil"
                 >
                   {profileAvatar ? (
                     <img src={profileAvatar} alt="Foto de perfil" className="user-avatar-img" draggable={false} />
@@ -4046,7 +4034,6 @@ function App(): React.JSX.Element {
                       key={img.id}
                       className={`sgdb-image-card ${sgdbSelections[sgdbArtType]?.id === img.id ? 'selected' : ''}`}
                       onClick={() => handleSgdbToggleImage(img)}
-                      title={sgdbSelections[sgdbArtType]?.id === img.id ? 'Clic para deseleccionar' : 'Clic para seleccionar'}
                     >
                       <img
                         src={img.thumb || img.url}
