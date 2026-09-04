@@ -411,6 +411,13 @@ function App(): React.JSX.Element {
   const [sgdbImages, setSgdbImages] = useState<SteamGridImage[]>([])
   const [sgdbImagesLoading, setSgdbImagesLoading] = useState(false)
   const [sgdbTargetGameId, setSgdbTargetGameId] = useState<string | null>(null)
+  const [sgdbSelections, setSgdbSelections] = useState<Record<SteamGridArtType, SteamGridImage | null>>({
+    square_grids: null,
+    grids: null,
+    heroes: null,
+    logos: null,
+    icons: null
+  })
 
   // Store carousel state
   const [stores, setStores] = useState<Store[]>([])
@@ -1704,101 +1711,84 @@ function App(): React.JSX.Element {
     }
   }, [sgdbSelectedGame])
 
-  const handleSgdbApplyImage = useCallback((image: SteamGridImage) => {
-    if (!sgdbTargetGameId || !sgdbSelectedGame) return
-    const artField = (sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? 'gridImageUrl'
-      : sgdbArtType === 'heroes' ? 'heroImageUrl'
-        : sgdbArtType === 'logos' ? 'logoImageUrl'
-          : 'iconDataUrl'
-
-    if (sgdbTargetGameId.startsWith('steam-')) {
-      const steamAppId = sgdbTargetGameId.replace(/^steam-/, '')
-      setSteamLibrary((previousGames) => previousGames.map((game) =>
-        String(game.appid) === steamAppId
-          ? { ...game, [artField]: image.url, ...(sgdbArtType === 'square_grids' ? { gridImageUrl: image.url } : {}) }
-          : game
-      ))
-      const artwork = getStoredSteamArtwork()
-      artwork[steamAppId] = {
-        ...(artwork[steamAppId] || {}),
-        [artField]: image.url,
-        ...(sgdbArtType === 'square_grids' ? { gridImageUrl: image.url } : {})
-      }
-      localStorage.setItem(STEAM_ARTWORK_STORAGE_KEY, JSON.stringify(artwork))
-      setModal(null)
-      setSgdbSearch('')
-      setSgdbResults([])
-      setSgdbSelectedGame(null)
-      setSgdbImages([])
-      setSgdbTargetGameId(null)
-      return
-    }
-
-    if (sgdbTargetGameId.startsWith('quick-')) {
-      const quickId = sgdbTargetGameId.replace(/^quick-/, '')
-
-      // Solo la portada/artwork principal debe afectar a la tarjeta rápida.
-      // Logo e icono son variantes auxiliares y no deben reemplazar la portada.
-      const quickCoverUpdate = artField === 'iconDataUrl'
-        ? { iconDataUrl: image.url }
-        : artField === 'logoImageUrl'
-          ? {}
-          : { artworkUrl: image.url }
-
-      const updatedApps = quickApps.map((app) =>
-        app.id === quickId
-          ? {
-            ...app,
-            ...quickCoverUpdate
-          }
-          : app
-      )
-      saveQuickApps(updatedApps)
-
-      // 2) Si ya se lanzó antes (existe como Game con id `quick-<id>`), sincroniza
-      //    también esa entrada para que el Hero/Detail view reflejen el mismo artwork.
-      if (games.some((g) => g.id === sgdbTargetGameId)) {
-        const syncedGames = games.map((g) =>
-          g.id === sgdbTargetGameId
-            ? {
-              ...g,
-              [artField]: image.url,
-              ...((sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? { gridImageUrl: image.url } : {})
-            }
-            : g
-        )
-        saveGames(syncedGames)
-      }
-
-      setModal(null)
-      setSgdbSearch('')
-      setSgdbResults([])
-      setSgdbSelectedGame(null)
-      setSgdbImages([])
-      setSgdbTargetGameId(null)
-      return
-    }
-
-    const newGames = games.map((g) =>
-      g.id === sgdbTargetGameId
-        ? {
-          ...g,
-          [artField]: image.url,
-          steamGridId: sgdbSelectedGame.id,
-          // Also set the grid as the card image if it's a grid or square_grid
-          ...((sgdbArtType === 'grids' || sgdbArtType === 'square_grids') ? { gridImageUrl: image.url } : {}),
-          ...(sgdbArtType === 'icons' ? { iconDataUrl: image.url } : {})
-        }
-        : g
-    )
-    saveGames(newGames)
-    setModal(null)
+  const resetSgdbState = useCallback(() => {
     setSgdbSearch('')
     setSgdbResults([])
     setSgdbSelectedGame(null)
     setSgdbImages([])
     setSgdbTargetGameId(null)
-  }, [sgdbTargetGameId, sgdbSelectedGame, sgdbArtType, games, saveGames, quickApps, saveQuickApps])
+    setSgdbSelections({ square_grids: null, grids: null, heroes: null, logos: null, icons: null })
+  }, [])
+
+  const handleSgdbToggleImage = useCallback((image: SteamGridImage) => {
+    setSgdbSelections((prev) => ({
+      ...prev,
+      [sgdbArtType]: prev[sgdbArtType]?.id === image.id ? null : image
+    }))
+  }, [sgdbArtType])
+
+  const handleSgdbSaveSelections = useCallback(() => {
+    if (!sgdbTargetGameId || !sgdbSelectedGame) return
+
+    const applyToGame = (artField: string, imageUrl: string) => {
+      if (sgdbTargetGameId.startsWith('steam-')) {
+        const steamAppId = sgdbTargetGameId.replace(/^steam-/, '')
+        setSteamLibrary((previousGames) => previousGames.map((game) =>
+          String(game.appid) === steamAppId
+            ? { ...game, [artField]: imageUrl }
+            : game
+        ))
+        const artwork = getStoredSteamArtwork()
+        artwork[steamAppId] = {
+          ...(artwork[steamAppId] || {}),
+          [artField]: imageUrl
+        }
+        localStorage.setItem(STEAM_ARTWORK_STORAGE_KEY, JSON.stringify(artwork))
+      } else if (sgdbTargetGameId.startsWith('quick-')) {
+        const quickId = sgdbTargetGameId.replace(/^quick-/, '')
+        const quickField = artField === 'iconDataUrl' ? 'iconDataUrl'
+          : artField === 'logoImageUrl' ? null
+            : 'artworkUrl'
+        if (quickField) {
+          const updatedApps = quickApps.map((app) =>
+            app.id === quickId ? { ...app, [quickField]: imageUrl } : app
+          )
+          saveQuickApps(updatedApps)
+        }
+        if (games.some((g) => g.id === sgdbTargetGameId)) {
+          const syncedGames = games.map((g) =>
+            g.id === sgdbTargetGameId ? { ...g, [artField]: imageUrl } : g
+          )
+          saveGames(syncedGames)
+        }
+      } else {
+        const newGames = games.map((g) =>
+          g.id === sgdbTargetGameId
+            ? { ...g, [artField]: imageUrl, steamGridId: sgdbSelectedGame.id }
+            : g
+        )
+        saveGames(newGames)
+      }
+    }
+
+    const fieldMap: [SteamGridArtType, string][] = [
+      ['square_grids', 'gridImageUrl'],
+      ['grids', 'gridImageUrl'],
+      ['heroes', 'heroImageUrl'],
+      ['logos', 'logoImageUrl'],
+      ['icons', 'iconDataUrl']
+    ]
+
+    for (const [artType, artField] of fieldMap) {
+      const selected = sgdbSelections[artType]
+      if (selected) {
+        applyToGame(artField, selected.url)
+      }
+    }
+
+    setModal(null)
+    resetSgdbState()
+  }, [sgdbTargetGameId, sgdbSelectedGame, sgdbSelections, games, saveGames, quickApps, saveQuickApps, resetSgdbState])
 
   const openSteamGridModal = useCallback((gameId: string) => {
     if (gameId.startsWith('steam-')) {
@@ -3968,11 +3958,11 @@ function App(): React.JSX.Element {
 
       {/* ── SteamGridDB Modal ── */}
       {modal === 'steamgrid' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
+        <div className="modal-overlay" onClick={() => { setModal(null); resetSgdbState() }}>
           <div className="modal sgdb-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Buscar Artwork en SteamGridDB</h2>
-              <button className="modal-close" onClick={() => setModal(null)}>
+              <button className="modal-close" onClick={() => { setModal(null); resetSgdbState() }}>
                 <CloseIcon size={20} />
               </button>
             </div>
@@ -4025,6 +4015,7 @@ function App(): React.JSX.Element {
                     onClick={() => {
                       setSgdbSelectedGame(null)
                       setSgdbImages([])
+                      setSgdbSelections({ square_grids: null, grids: null, heroes: null, logos: null, icons: null })
                     }}
                   >
                     ← Volver
@@ -4042,6 +4033,7 @@ function App(): React.JSX.Element {
                         type === 'square_grids' ? 'Grids 1:1' :
                           type === 'heroes' ? 'Banners' :
                             type === 'logos' ? 'Logos' : 'Iconos'}
+                      {sgdbSelections[type] && <span className="sgdb-tab-dot" />}
                     </button>
                   ))}
                 </div>
@@ -4052,9 +4044,9 @@ function App(): React.JSX.Element {
                   {sgdbImages.map((img) => (
                     <div
                       key={img.id}
-                      className="sgdb-image-card"
-                      onClick={() => handleSgdbApplyImage(img)}
-                      title="Clic para aplicar"
+                      className={`sgdb-image-card ${sgdbSelections[sgdbArtType]?.id === img.id ? 'selected' : ''}`}
+                      onClick={() => handleSgdbToggleImage(img)}
+                      title={sgdbSelections[sgdbArtType]?.id === img.id ? 'Clic para deseleccionar' : 'Clic para seleccionar'}
                     >
                       <img
                         src={img.thumb || img.url}
@@ -4068,6 +4060,14 @@ function App(): React.JSX.Element {
                     <div className="sgdb-no-images">No se encontraron imágenes</div>
                   )}
                 </div>
+
+                {Object.values(sgdbSelections).some((s) => s !== null) && (
+                  <div className="sgdb-save-row">
+                    <button className="btn-primary sgdb-save-btn" onClick={handleSgdbSaveSelections}>
+                      Guardar ({Object.values(sgdbSelections).filter((s) => s !== null).length})
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
