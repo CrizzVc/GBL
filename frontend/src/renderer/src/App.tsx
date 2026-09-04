@@ -21,7 +21,7 @@ import {
 
 import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
-import SteamDownloadBar from './components/SteamDownloadBar'
+
 import { useFriendNotifications } from './hooks/useFriendNotifications'
 import { useSteamDownloads } from './hooks/useSteamDownloads'
 
@@ -359,9 +359,11 @@ function App(): React.JSX.Element {
   const [bottomCardIndex, setBottomCardIndex] = useState<number>(0)
   const [runningGameId, setRunningGameId] = useState<string | null>(null)
   const [isGameRunning, setIsGameRunning] = useState(false)
+  const [downloadingGameId, setDownloadingGameId] = useState<string | null>(null)
   const isGameRunningRef = useRef(false)
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
+  const [showDownloadsModal, setShowDownloadsModal] = useState(false)
   const [libraryView, setLibraryView] = useState(false)
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -657,7 +659,7 @@ function App(): React.JSX.Element {
   })
 
   // ── Steam download progress ──
-  const { downloads: steamDownloads } = useSteamDownloads(3000)
+  const { downloads: steamDownloads } = useSteamDownloads(1000)
 
   const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
@@ -1564,12 +1566,24 @@ function App(): React.JSX.Element {
       })
     }
 
-    setRunningGameId(launchTarget.id)
+    const isInstall = /^steam:\/\/install\//i.test(launchTarget.exePath)
+    if (isInstall) {
+      setDownloadingGameId(launchTarget.id)
+    } else {
+      setRunningGameId(launchTarget.id)
+    }
     try {
       await window.api.launchGame(launchTarget.id, launchTarget.exePath)
+      // Si es install, limpiar downloadingGameId despues de un tiempo (Steam ya lo tiene)
+      if (isInstall) {
+        setTimeout(() => {
+          setDownloadingGameId(null)
+        }, 10000)
+      }
     } catch (err) {
       console.error('Error launching game:', err)
       setRunningGameId(null)
+      setDownloadingGameId(null)
     }
   }, [selectedGame, selectedSteamGame, steamLibrary, steamLibraryArtUrl, games, detailGame, libraryView, librarySource])
 
@@ -2666,6 +2680,12 @@ function App(): React.JSX.Element {
           </div>
         </div>
         <div className="header-right">
+          {steamDownloads.length > 0 && (
+            <div className="header-download-indicator" onClick={() => setShowDownloadsModal(true)} style={{ cursor: 'pointer' }}>
+              <span className="header-download-name">{steamDownloads[0].name}</span>
+              <span className="header-download-percent">{steamDownloads[0].percent.toFixed(1)}%</span>
+            </div>
+          )}
           <WifiIcon size={18} className="header-icon" />
           <BatteryIcon size={18} className="header-icon" />
           <span className="header-clock">{clock}</span>
@@ -3560,11 +3580,11 @@ function App(): React.JSX.Element {
             {/* BOTON DE JUGAR!!!!! */}
             <div className="detail-play-actions">
               <button
-                className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''}`}
+                className={`btn-play btn-play-detail ${runningGameId === detailGame.id ? 'running' : ''} ${downloadingGameId === detailGame.id ? 'downloading' : ''}`}
                 onClick={() => handleLaunchGame(detailGame.id)}
               >
                 <PlayIcon size={20} />
-                {runningGameId === detailGame.id ? 'Ejecutando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
+                {runningGameId === detailGame.id ? 'Ejecutando...' : downloadingGameId === detailGame.id ? 'Descargando...' : detailGame.isSteam && !steamDetailIsInstalled ? 'Descargar' : 'Jugar'}
               </button>
               <button
                 className="detail-edit-button"
@@ -4446,14 +4466,60 @@ function App(): React.JSX.Element {
         </div>
       )}
 
+      {/* ── Downloads Modal ── */}
+      {showDownloadsModal && (
+        <div className="modal-overlay downloads-modal-overlay" onClick={() => setShowDownloadsModal(false)}>
+          <div className="downloads-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="downloads-modal-header">
+              <h2 className="downloads-modal-title">Descargas</h2>
+              <button className="modal-close" onClick={() => setShowDownloadsModal(false)}>&times;</button>
+            </div>
+            <div className="downloads-modal-content">
+              {steamDownloads.length === 0 ? (
+                <div className="downloads-modal-empty">No hay descargas activas</div>
+              ) : (
+                steamDownloads.map((dl) => (
+                  <div key={dl.appId} className="steam-download-item">
+                    <div className="steam-download-info">
+                      <span className="steam-download-name">{dl.name}</span>
+                      <span className="steam-download-status">{dl.paused ? 'Pausado' : dl.validating ? 'Validando' : dl.downloading ? 'Descargando' : 'En cola'}</span>
+                    </div>
+                    <div className="steam-download-progress-row">
+                      <div className="steam-download-progress-track">
+                        <div
+                          className={`steam-download-progress-fill ${dl.paused ? 'paused' : ''}`}
+                          style={{ width: `${dl.percent}%` }}
+                        />
+                      </div>
+                      <span className="steam-download-percent">{dl.percent.toFixed(1)}%</span>
+                    </div>
+                    <div className="steam-download-bytes">
+                      {(() => {
+                        const downloaded = dl.bytesToDownload > 0 ? dl.bytesDownloaded : dl.bytesStaged
+                        const total = dl.bytesToDownload > 0 ? dl.bytesToDownload : dl.bytesToStage
+                        const fmt = (b: number): string => {
+                          if (b === 0) return '0 B'
+                          const u = ['B', 'KB', 'MB', 'GB']
+                          const i = Math.floor(Math.log(b) / Math.log(1024))
+                          return `${(b / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0)} ${u[i]}`
+                        }
+                        return `${fmt(downloaded)} / ${fmt(total)}`
+                      })()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Notification Container ── */}
       <NotificationContainer
         notifications={notifications}
         onDismiss={dismissNotification}
       />
 
-      {/* ── Steam Download Bar ── */}
-      <SteamDownloadBar downloads={steamDownloads} />
     </div>
   )
 }

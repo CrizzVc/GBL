@@ -153,6 +153,33 @@
   text-align: right;
 }
 
+.header-download-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  /* background: rgba(26, 159, 255, 0.15);
+  border: 1px solid rgba(26, 159, 255, 0.3); */
+  /* border-radius: 20px; */
+  animation: download-pulse 2s ease-in-out infinite;
+}
+
+.header-download-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #66c0f4;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-download-percent {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a9fff;
+}
+
 /* ══════════════════════════════════════════
    HERO SECTION (Selected game display)
    ══════════════════════════════════════════ */
@@ -246,6 +273,25 @@
   background: linear-gradient(135deg, #059669, #34d399);
   box-shadow: 0 4px 20px rgba(52, 211, 153, 0.35);
   pointer-events: none;
+}
+
+.btn-play.downloading {
+  background: linear-gradient(135deg, #1a6fbf, #1a9fff);
+  box-shadow: 0 4px 20px rgba(26, 159, 255, 0.35);
+  pointer-events: none;
+  animation: download-pulse 2s ease-in-out infinite;
+}
+
+@keyframes download-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -5203,34 +5249,7 @@
   }
 }
 
-/* ── Steam Download Bar ── */
-.steam-download-bar-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: rgba(20, 20, 20, 0.95);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 10px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: download-bar-slide-up 0.3s ease-out;
-}
-
-@keyframes download-bar-slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* ── Steam Download Items (used in modal) ── */
 
 .steam-download-item {
   display: flex;
@@ -5298,4 +5317,58 @@
 .steam-download-bytes {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Downloads Modal ── */
+.downloads-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.downloads-modal {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 420px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.downloads-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.downloads-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.downloads-modal-content {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.downloads-modal-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  padding: 24px 0;
 }
