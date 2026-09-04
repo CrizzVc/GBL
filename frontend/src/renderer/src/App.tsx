@@ -20,6 +20,8 @@ import {
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
+import NotificationContainer from './components/NotificationContainer'
+import { useFriendNotifications } from './hooks/useFriendNotifications'
 
 import steamLogo from './assets/tiendas/steamLogo.png'
 import steamIcon from './assets/tiendas/steamIcon.png'
@@ -645,6 +647,12 @@ function App(): React.JSX.Element {
   const { nowPlaying: friendsNowPlaying } = useSystemMedia(isGameRunning)
   const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
   const [isControllerConnected, setIsControllerConnected] = useState(false)
+
+  // ── Friend notifications: detect when friends start playing games ──
+  const { notifications, dismissNotification } = useFriendNotifications({
+    friends: steamFriends,
+    enabled: steamAccount.linked
+  })
   const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
   useEffect(() => {
@@ -4431,6 +4439,12 @@ function App(): React.JSX.Element {
           </div>
         </div>
       )}
+
+      {/* ── Notification Container ── */}
+      <NotificationContainer
+        notifications={notifications}
+        onDismiss={dismissNotification}
+      />
     </div>
   )
 }
