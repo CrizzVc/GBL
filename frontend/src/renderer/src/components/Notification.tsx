@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import steamLogo from '../assets/tiendas/steamLogo.png'
 
 export interface NotificationData {
@@ -16,13 +16,15 @@ interface NotificationProps {
 
 export default function Notification({ notification, onDismiss }: NotificationProps): React.JSX.Element {
   const [isExiting, setIsExiting] = useState(false)
+  const onDismissRef = useRef(onDismiss)
+  onDismissRef.current = onDismiss
 
   const handleDismiss = useCallback(() => {
     setIsExiting(true)
     setTimeout(() => {
-      onDismiss(notification.id)
+      onDismissRef.current(notification.id)
     }, 300)
-  }, [notification.id, onDismiss])
+  }, [notification.id])
 
   useEffect(() => {
     const timer = setTimeout(() => {

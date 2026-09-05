@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import steamLogo from '../assets/tiendas/steamLogo.png'
 import { playNotification } from '../services/soundService'
 
@@ -11,16 +11,23 @@ interface DownloadCompleteNotificationProps {
 
 export default function DownloadCompleteNotification({ id, name, iconUrl, onDismiss }: DownloadCompleteNotificationProps): React.JSX.Element {
   const [isExiting, setIsExiting] = useState(false)
+  const onDismissRef = useRef(onDismiss)
+  onDismissRef.current = onDismiss
 
   const handleDismiss = useCallback(() => {
     setIsExiting(true)
     setTimeout(() => {
-      onDismiss(id)
+      onDismissRef.current(id)
     }, 300)
-  }, [id, onDismiss])
+  }, [id])
 
+  // Play notification sound only once when notification is mounted
   useEffect(() => {
     playNotification()
+  }, [])
+
+  // Auto-dismiss after 5 seconds
+  useEffect(() => {
     const timer = setTimeout(() => {
       handleDismiss()
     }, 5000)

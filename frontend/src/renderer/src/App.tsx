@@ -719,6 +719,10 @@ function App(): React.JSX.Element {
     }
   }, [completedDownloads, dismissCompletion, downloadingGameId, steamLibrary, downloadNotifications])
 
+  const dismissDownloadNotification = useCallback((id: string) => {
+    setDownloadNotifications((prev) => prev.filter((n) => n.id !== id))
+  }, [])
+
   const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
   useEffect(() => {
@@ -4776,7 +4780,7 @@ function App(): React.JSX.Element {
               id={notif.id}
               name={notif.name}
               iconUrl={notif.iconUrl}
-              onDismiss={(id) => setDownloadNotifications((prev) => prev.filter((n) => n.id !== id))}
+              onDismiss={dismissDownloadNotification}
             />
           ))}
         </div>
