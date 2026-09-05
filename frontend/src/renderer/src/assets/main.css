@@ -5839,7 +5839,7 @@
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  width: 420px;
+  width: 650px;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
@@ -5853,6 +5853,7 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #ff4242;
 }
 
 .downloads-modal-title {
