@@ -201,6 +201,7 @@ const BACKEND_URL = 'http://localhost:3000'
 const RECENT_GAMES_LIMIT = 15
 const STEAM_ARTWORK_STORAGE_KEY = 'gbl-steam-artwork'
 const DEFAULT_STORE_STORAGE_KEY = 'gbl-default-store'
+const FORGOTTEN_DOWNLOADS_KEY = 'gbl-forgotten-downloads'
 
 function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridImageUrl' | 'heroImageUrl' | 'logoImageUrl' | 'iconDataUrl'>> {
   try {
@@ -681,6 +682,13 @@ function App(): React.JSX.Element {
 
   // ── Download completion notifications ──
   const [downloadNotifications, setDownloadNotifications] = useState<Array<{ id: string; name: string; appId: string; iconUrl: string | null }>>([])
+  const [downloadContextMenu, setDownloadContextMenu] = useState<{ visible: boolean; x: number; y: number; appId: string | null }>({ visible: false, x: 0, y: 0, appId: null })
+  const [forgottenDownloads, setForgottenDownloads] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(FORGOTTEN_DOWNLOADS_KEY)
+      return stored ? new Set(JSON.parse(stored)) : new Set()
+    } catch { return new Set() }
+  })
 
   useEffect(() => {
     if (completedDownloads.length === 0) return
@@ -2102,6 +2110,11 @@ function App(): React.JSX.Element {
         setContextMenu((prev) => ({ ...prev, visible: false }))
         return
       }
+      if (downloadContextMenu.visible && (e.key === 'ContextMenu' || e.key === 'Escape')) {
+        e.preventDefault()
+        setDownloadContextMenu({ visible: false, x: 0, y: 0, appId: null })
+        return
+      }
 
       if (selectedFriend) {
         const friendIndex = sortedSteamFriends.findIndex((friend) => friend.steamid === selectedFriend.steamid)
@@ -2746,12 +2759,15 @@ function App(): React.JSX.Element {
           </div>
         </div>
         <div className="header-right">
-          {steamDownloads.length > 0 && (
-            <div className="header-download-indicator" onClick={() => setShowDownloadsModal(true)} style={{ cursor: 'pointer' }}>
-              <span className="header-download-name">{steamDownloads[0].name}</span>
-              <span className="header-download-percent">{steamDownloads[0].percent.toFixed(1)}%</span>
-            </div>
-          )}
+          {steamDownloads.filter((dl) => !forgottenDownloads.has(dl.appId)).length > 0 && (() => {
+            const visibleDl = steamDownloads.filter((dl) => !forgottenDownloads.has(dl.appId))[0]
+            return (
+              <div className="header-download-indicator" onClick={() => setShowDownloadsModal(true)} style={{ cursor: 'pointer' }}>
+                <span className="header-download-name">{visibleDl.name}</span>
+                <span className="header-download-percent">{visibleDl.percent.toFixed(1)}%</span>
+              </div>
+            )
+          })()}
           <WifiIcon size={18} className="header-icon" />
           <BatteryIcon size={18} className="header-icon" />
           <span className="header-clock">{clock}</span>
@@ -4025,110 +4041,103 @@ function App(): React.JSX.Element {
                       steamLibrary
                         .filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
                         .map((game) => (
-                        <article
-                          key={game.appid}
-                          id={`library-game-${game.appid}`}
-                          className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
-                          onClick={() => {
-                            setSelectedSteamAppId(game.appid)
-                            setDetailGameId(`steam-${game.appid}`)
-                          }}
-                          onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
-                          onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
-                        >
-                          <div className="library-item-art steam-library-art">
-                            <img
-                              src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
-                              alt={game.name}
-                              className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
-                              draggable={false}
-                              onError={(e) => {
-                                const img = e.currentTarget
-                                if (img.src.includes('library_600x600')) {
-                                  img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
-                                }
-                              }}
-                            />
-                            <img
-                              src={game.logoImageUrl || steamLogoUrl(game.appid)}
-                              alt=""
-                              className="library-item-logo-overlay"
-                              draggable={false}
-                              onError={(e) => { e.currentTarget.style.display = 'none' }}
-                            />
-                            {!game.installed && (
+                          <article
+                            key={game.appid}
+                            id={`library-game-${game.appid}`}
+                            className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
+                            onClick={() => {
+                              setSelectedSteamAppId(game.appid)
+                              setDetailGameId(`steam-${game.appid}`)
+                            }}
+                            onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
+                            onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
+                          >
+                            <div className="library-item-art steam-library-art">
                               <img
-                                src={installIcon}
-                                alt="Descargar"
-                                className="library-item-download-badge"
+                                src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
+                                alt={game.name}
+                                className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                                 draggable={false}
+                                onError={(e) => {
+                                  const img = e.currentTarget
+                                  if (img.src.includes('library_600x600')) {
+                                    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
+                                  }
+                                }}
                               />
-                            )}
-                          </div>
-                          <div className="library-item-info">
-                            <span className="library-item-name">{game.name}</span>
-                            <span className="library-item-playtime">
-                              {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
-                            </span>
-                          </div>
-                          <div className="library-item-actions">
-                            <button
-                              className="library-action-btn"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
-                              }}
-                            >
-                              <MoreIcon size={14} />
-                            </button>
-                          </div>
-                        </article>
-                      ))
+                              {!game.installed && (
+                                <img
+                                  src={installIcon}
+                                  alt="Descargar"
+                                  className="library-item-download-badge"
+                                  draggable={false}
+                                />
+                              )}
+                            </div>
+                            <div className="library-item-info">
+                              <span className="library-item-name">{game.name}</span>
+                              <span className="library-item-playtime">
+                                {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
+                              </span>
+                            </div>
+                            <div className="library-item-actions">
+                              <button
+                                className="library-action-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                  setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
+                                }}
+                              >
+                                <MoreIcon size={14} />
+                              </button>
+                            </div>
+                          </article>
+                        ))
                     )
                   ) : (
                     sortedLibraryGames
                       .filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
                       .map((game) => (
-                      <article
-                        key={game.id}
-                        id={`library-game-${game.id}`}
-                        className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
-                        onClick={() => setSelectedGameId(game.id)}
-                        onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
-                      >
-                        <div className="library-item-art">
-                          {game.gridImageUrl ? (
-                            <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
-                          ) : game.iconDataUrl ? (
-                            <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
-                          ) : (
-                            <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
-                              {game.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <div className="library-item-info">
-                          {game.logoImageUrl ? (
-                            <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
-                          ) : (
-                            <span className="library-item-name">{game.name}</span>
-                          )}
-                          <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
-                        </div>
-                        <div className="library-item-actions">
-                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }}>
-                            <EditIcon size={14} />
-                          </button>
-                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }}>
-                            <ImageIcon size={14} />
-                          </button>
-                          <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }}>
-                            <TrashIcon size={14} />
-                          </button>
-                        </div>
-                      </article>
-                    ))
+                        <article
+                          key={game.id}
+                          id={`library-game-${game.id}`}
+                          className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedGameId(game.id)}
+                          onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
+                        >
+                          <div className="library-item-art">
+                            {game.gridImageUrl ? (
+                              <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
+                            ) : game.iconDataUrl ? (
+                              <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
+                            ) : (
+                              <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
+                                {game.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="library-item-info">
+                            {game.logoImageUrl ? (
+                              <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
+                            ) : (
+                              <span className="library-item-name">{game.name}</span>
+                            )}
+                            <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
+                          </div>
+                          <div className="library-item-actions">
+                            <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }}>
+                              <EditIcon size={14} />
+                            </button>
+                            <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }}>
+                              <ImageIcon size={14} />
+                            </button>
+                            <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }}>
+                              <TrashIcon size={14} />
+                            </button>
+                          </div>
+                        </article>
+                      ))
                   )}
                 </div>
               </div>
@@ -4610,42 +4619,77 @@ function App(): React.JSX.Element {
               <button className="modal-close" onClick={() => setShowDownloadsModal(false)}>&times;</button>
             </div>
             <div className="downloads-modal-content">
-              {steamDownloads.length === 0 ? (
-                <div className="downloads-modal-empty">No hay descargas activas</div>
-              ) : (
-                steamDownloads.map((dl) => (
-                  <div key={dl.appId} className="steam-download-item">
-                    <div className="steam-download-info">
-                      <span className="steam-download-name">{dl.name}</span>
-                      <span className="steam-download-status">{dl.paused ? 'Pausado' : dl.validating ? 'Validando' : dl.downloading ? 'Descargando' : 'En cola'}</span>
-                    </div>
-                    <div className="steam-download-progress-row">
-                      <div className="steam-download-progress-track">
-                        <div
-                          className={`steam-download-progress-fill ${dl.paused ? 'paused' : ''}`}
-                          style={{ width: `${dl.percent}%` }}
-                        />
+              {(() => {
+                const visibleDownloads = steamDownloads.filter((dl) => !forgottenDownloads.has(dl.appId))
+                return visibleDownloads.length === 0 ? (
+                  <div className="downloads-modal-empty">No hay descargas activas</div>
+                ) : (
+                  visibleDownloads.map((dl) => (
+                    <div
+                      key={dl.appId}
+                      className="steam-download-item"
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                        setDownloadContextMenu({ visible: true, x: e.clientX, y: e.clientY, appId: dl.appId })
+                      }}
+                    >
+                      <div className="steam-download-info">
+                        <span className="steam-download-name">{dl.name}</span>
+                        <span className="steam-download-status">{dl.paused ? 'Pausado' : dl.validating ? 'Validando' : dl.downloading ? 'Descargando' : 'En cola'}</span>
                       </div>
-                      <span className="steam-download-percent">{dl.percent.toFixed(1)}%</span>
+                      <div className="steam-download-progress-row">
+                        <div className="steam-download-progress-track">
+                          <div
+                            className={`steam-download-progress-fill ${dl.paused ? 'paused' : ''}`}
+                            style={{ width: `${dl.percent}%` }}
+                          />
+                        </div>
+                        <span className="steam-download-percent">{dl.percent.toFixed(1)}%</span>
+                      </div>
+                      <div className="steam-download-bytes">
+                        {(() => {
+                          const downloaded = dl.bytesToDownload > 0 ? dl.bytesDownloaded : dl.bytesStaged
+                          const total = dl.bytesToDownload > 0 ? dl.bytesToDownload : dl.bytesToStage
+                          const fmt = (b: number): string => {
+                            if (b === 0) return '0 B'
+                            const u = ['B', 'KB', 'MB', 'GB']
+                            const i = Math.floor(Math.log(b) / Math.log(1024))
+                            return `${(b / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0)} ${u[i]}`
+                          }
+                          const speed = dl.downloadSpeed > 0 ? ` — ${dl.downloadSpeed.toFixed(1)} Mbps` : ''
+                          return `${fmt(downloaded)} / ${fmt(total)}${speed}`
+                        })()}
+                      </div>
                     </div>
-                    <div className="steam-download-bytes">
-                      {(() => {
-                        const downloaded = dl.bytesToDownload > 0 ? dl.bytesDownloaded : dl.bytesStaged
-                        const total = dl.bytesToDownload > 0 ? dl.bytesToDownload : dl.bytesToStage
-                        const fmt = (b: number): string => {
-                          if (b === 0) return '0 B'
-                          const u = ['B', 'KB', 'MB', 'GB']
-                          const i = Math.floor(Math.log(b) / Math.log(1024))
-                          return `${(b / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0)} ${u[i]}`
-                        }
-                        const speed = dl.downloadSpeed > 0 ? ` — ${dl.downloadSpeed.toFixed(1)} Mbps` : ''
-                        return `${fmt(downloaded)} / ${fmt(total)}${speed}`
-                      })()}
-                    </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )
+              })()}
             </div>
+          </div>
+        </div>
+      )}
+
+      {downloadContextMenu.visible && downloadContextMenu.appId && (
+        <div
+          className="context-menu-backdrop"
+          onClick={() => setDownloadContextMenu({ visible: false, x: 0, y: 0, appId: null })}
+        >
+          <div
+            className="context-menu"
+            style={{ left: downloadContextMenu.x, top: downloadContextMenu.y }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="context-menu-item"
+              onClick={() => {
+                const newSet = new Set(forgottenDownloads).add(downloadContextMenu.appId!)
+                setForgottenDownloads(newSet)
+                localStorage.setItem(FORGOTTEN_DOWNLOADS_KEY, JSON.stringify([...newSet]))
+                setDownloadContextMenu({ visible: false, x: 0, y: 0, appId: null })
+              }}
+            >
+              Olvidar
+            </button>
           </div>
         </div>
       )}
