@@ -5823,57 +5823,291 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* ── Downloads Modal ── */
-.downloads-modal-overlay {
+/* ── Downloads Modal (PS5 Control Center Composition) ── */
+.ps-downloads-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
-  z-index: 200;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  z-index: 250;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: psFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.downloads-modal {
+@keyframes psFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes psSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ps-downloads-container {
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  width: 650px;
-  max-height: 70vh;
+  border-radius: 18px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: psSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ps-downloads-nav-rail {
+  width: 38px;
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-.downloads-modal-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: #ff4242;
+  align-items: center;
+  background: #151515;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  user-select: none;
+  flex-shrink: 0;
 }
 
-.downloads-modal-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0;
+.ps-nav-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
-.downloads-modal-content {
-  padding: 16px 20px;
+.ps-dots-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+
+.ps-dots-vertical span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.ps-arrow-icon {
+  width: 12px;
+  height: 12px;
+  opacity: 0.85;
+}
+
+.ps-downloads-main {
+  flex: 1;
+  padding: 22px 20px 24px 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-.downloads-modal-empty {
+.ps-downloads-main::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ps-downloads-main::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.ps-downloads-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ps-section-header {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.2px;
+  padding-left: 4px;
+}
+
+.ps-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ps-download-card {
+  display: flex;
+  flex-direction: column;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: 2px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.ps-download-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ps-download-card.focused,
+.ps-download-card.active {
+  border-color: #f12540;
+  background: rgba(241, 37, 64, 0.06);
+  box-shadow: 0 0 16px rgba(241, 37, 64, 0.2), inset 0 0 10px rgba(241, 37, 64, 0.04);
+}
+
+.ps-card-content {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+}
+
+.ps-card-thumb-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #242424;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.ps-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ps-card-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #333333, #1f1f1f);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ps-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ps-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.1px;
+}
+
+.ps-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ps-card-badge {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: rgba(241, 37, 64, 0.15);
+  color: #ff6b7e;
+  border: 1px solid rgba(241, 37, 64, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+}
+
+.ps-card-status {
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.ps-download-card.focused .ps-card-status,
+.ps-download-card.active .ps-card-status {
+  color: #ff7285;
+}
+
+.ps-card-progress-track {
+  margin-top: 8px;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ps-card-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f12540, #ff7285);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.ps-card-progress-fill.paused {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ps-download-empty-card {
+  padding: 18px 12px;
   text-align: center;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 13px;
-  padding: 24px 0;
+  font-size: 13.5px;
+}
+
+.ps-modal-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.ps-modal-close-btn:hover {
+  color: #ff4242;
+  background: rgba(255, 66, 66, 0.1);
 }

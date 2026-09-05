@@ -24,6 +24,7 @@ import {
 import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
 import DownloadCompleteNotification from './components/DownloadCompleteNotification'
+import { DownloadsModal } from './components/DownloadsModal'
 
 import { useFriendNotifications } from './hooks/useFriendNotifications'
 import { useSteamDownloads } from './hooks/useSteamDownloads'
@@ -436,7 +437,7 @@ function App(): React.JSX.Element {
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const [updateLink, setUpdateLink] = useState<string | null>(null)
   const [settingsWallpaperPage, setSettingsWallpaperPage] = useState(0)
-  const [logoClicks, setLogoClicks] = useState(0)
+  const [, setLogoClicks] = useState(0)
   const [logoIsRed, setLogoIsRed] = useState(false)
   const logoWrapRef = useRef<HTMLDivElement>(null)
   const [defaultStore, setDefaultStore] = useState<string>(() => {
@@ -555,7 +556,7 @@ function App(): React.JSX.Element {
       iconDataUrl: steamGame.iconDataUrl || null,
       gridImageUrl: steamGame.gridImageUrl || steamLibraryArtUrl(steamGame.appid),
       heroImageUrl: steamGame.heroImageUrl || steamLibraryArtUrl(steamGame.appid),
-      logoImageUrl: steamGame.logoImageUrl || null
+      logoImageUrl: steamGame.logoImageUrl || steamLogoUrl(steamGame.appid)
     }
   }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
   const currentLibraryItems = useMemo(
@@ -5002,89 +5003,25 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* ── Downloads Modal ── */}
-      {showDownloadsModal && (
-        <div className="modal-overlay downloads-modal-overlay" onClick={() => setShowDownloadsModal(false)}>
-          <div className="downloads-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="downloads-modal-header">
-              <h2 className="downloads-modal-title">Descargas</h2>
-              <button className="modal-close" onClick={() => setShowDownloadsModal(false)}>&times;</button>
-            </div>
-            <div className="downloads-modal-content">
-              {(() => {
-                const visibleDownloads = steamDownloads.filter((dl) => !forgottenDownloads.has(dl.appId))
-                return visibleDownloads.length === 0 ? (
-                  <div className="downloads-modal-empty">No hay descargas activas</div>
-                ) : (
-                  visibleDownloads.map((dl) => (
-                    <div
-                      key={dl.appId}
-                      className="steam-download-item"
-                      onContextMenu={(e) => {
-                        e.preventDefault()
-                        setDownloadContextMenu({ visible: true, x: e.clientX, y: e.clientY, appId: dl.appId })
-                      }}
-                    >
-                      <div className="steam-download-info">
-                        <span className="steam-download-name">{dl.name}</span>
-                        <span className="steam-download-status">{dl.paused ? 'Pausado' : dl.validating ? 'Validando' : dl.downloading ? 'Descargando' : 'En cola'}</span>
-                      </div>
-                      <div className="steam-download-progress-row">
-                        <div className="steam-download-progress-track">
-                          <div
-                            className={`steam-download-progress-fill ${dl.paused ? 'paused' : ''}`}
-                            style={{ width: `${dl.percent}%` }}
-                          />
-                        </div>
-                        <span className="steam-download-percent">{dl.percent.toFixed(1)}%</span>
-                      </div>
-                      <div className="steam-download-bytes">
-                        {(() => {
-                          const downloaded = dl.bytesToDownload > 0 ? dl.bytesDownloaded : dl.bytesStaged
-                          const total = dl.bytesToDownload > 0 ? dl.bytesToDownload : dl.bytesToStage
-                          const fmt = (b: number): string => {
-                            if (b === 0) return '0 B'
-                            const u = ['B', 'KB', 'MB', 'GB']
-                            const i = Math.floor(Math.log(b) / Math.log(1024))
-                            return `${(b / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0)} ${u[i]}`
-                          }
-                          const speed = dl.downloadSpeed > 0 ? ` — ${dl.downloadSpeed.toFixed(1)} Mbps` : ''
-                          return `${fmt(downloaded)} / ${fmt(total)}${speed}`
-                        })()}
-                      </div>
-                    </div>
-                  ))
-                )
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {downloadContextMenu.visible && downloadContextMenu.appId && (
-        <div
-          className="context-menu-backdrop"
-          onClick={() => setDownloadContextMenu({ visible: false, x: 0, y: 0, appId: null })}
-        >
-          <div
-            className="context-menu"
-            style={{ left: downloadContextMenu.x, top: downloadContextMenu.y }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="context-menu-item"
-              onClick={() => {
-                const newSet = new Set(forgottenDownloads).add(downloadContextMenu.appId!)
-                setForgottenDownloads(newSet)
-                localStorage.setItem(FORGOTTEN_DOWNLOADS_KEY, JSON.stringify([...newSet]))
-                setDownloadContextMenu({ visible: false, x: 0, y: 0, appId: null })
-              }}
-            >
-              Olvidar
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ── Downloads Modal (PS5 Composition) ── */}
+      <DownloadsModal
+        isOpen={showDownloadsModal}
+        onClose={() => setShowDownloadsModal(false)}
+        downloads={steamDownloads}
+        forgottenDownloads={forgottenDownloads}
+        onForgetDownload={(appId) => {
+          const newSet = new Set(forgottenDownloads).add(appId)
+          setForgottenDownloads(newSet)
+          localStorage.setItem(FORGOTTEN_DOWNLOADS_KEY, JSON.stringify([...newSet]))
+        }}
+        games={games}
+        steamLibrary={steamLibrary}
+        onSelectGame={(gameId) => {
+          setLibraryView(false)
+          setDetailGameId(gameId)
+          setShowDownloadsModal(false)
+        }}
+      />
 
       {/* ── Notification Container ── */}
       <NotificationContainer
