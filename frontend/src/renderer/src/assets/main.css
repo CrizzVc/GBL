@@ -1236,9 +1236,12 @@
   color: var(--gbl-text-primary);
 }
 
-.library-hero-content .library-search-bar {
+.library-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   position: absolute;
-  top: 34px;
+  bottom: 30px;
   right: 24px;
 }
 
@@ -1381,9 +1384,7 @@
 }
 
 .library-hero-content .library-add-button {
-  position: absolute;
-  bottom: 30px;
-  right: 24px;
+  margin: 0;
 }
 
 .library-hero-logo {

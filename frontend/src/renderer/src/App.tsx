@@ -3936,15 +3936,6 @@ function App(): React.JSX.Element {
                   }}>
                     <ChevronLeftIcon size={20} /> Volver
                   </button>
-                  <div className="library-search-bar">
-                    <input
-                      type="text"
-                      className="library-search-input"
-                      placeholder="Buscar juego..."
-                      value={librarySearch}
-                      onChange={(e) => setLibrarySearch(e.target.value)}
-                    />
-                  </div>
                   <div className="library-title-row">
                     <button
                       type="button"
@@ -3971,11 +3962,22 @@ function App(): React.JSX.Element {
                       ? 'Cargando juegos...'
                       : `${currentLibraryCount} ${currentLibraryCount === 1 ? 'juego' : 'juegos'}`}
                   </p>
-                  {librarySource === 'local' && (
-                    <button className="btn-primary library-add-button" onClick={openAddGameModal}>
-                      <PlusIcon size={16} /> Agregar juego
-                    </button>
-                  )}
+                  <div className="library-actions-row">
+                    <div className="library-search-bar">
+                      <input
+                        type="text"
+                        className="library-search-input"
+                        placeholder="Buscar juego..."
+                        value={librarySearch}
+                        onChange={(e) => setLibrarySearch(e.target.value)}
+                      />
+                    </div>
+                    {librarySource === 'local' && (
+                      <button className="btn-primary library-add-button" onClick={openAddGameModal}>
+                        <PlusIcon size={16} /> Agregar juego
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div key={librarySource} className="library-source-panel">
