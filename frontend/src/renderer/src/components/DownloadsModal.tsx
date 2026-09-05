@@ -193,16 +193,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
             </svg>
           </div>
 
-          <div className="ps-nav-indicator bottom">
-            <svg className="ps-arrow-icon" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 4l6 6H2l6-6z" />
-            </svg>
-            <div className="ps-dots-vertical">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
+
         </div>
 
         {/* Main Content Area */}
