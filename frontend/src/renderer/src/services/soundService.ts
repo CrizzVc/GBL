@@ -14,12 +14,13 @@ import enterUrl from '../assets/sounds/enter.mp3'
 import enterGameUrl from '../assets/sounds/enter_game.mp3'
 import closeUrl from '../assets/sounds/close_UI.mp3'
 import pagesUrl from '../assets/sounds/pages.mp3'
+import homeUrl from '../assets/sounds/home.mp3'
 
 const alertUrl = new URL('../assets/sounds/alerts.mp3', import.meta.url).href
 const connectedUrl = new URL('../assets/sounds/Bconected.mp3', import.meta.url).href
 const disconnectedUrl = new URL('../assets/sounds/Bdisconected.mp3', import.meta.url).href
 
-type SoundName = 'move' | 'enter' | 'enterGame' | 'close' | 'achievement' | 'controllerConnected' | 'controllerDisconnected' | 'pages'
+type SoundName = 'move' | 'enter' | 'enterGame' | 'close' | 'achievement' | 'controllerConnected' | 'controllerDisconnected' | 'pages' | 'home'
 
 const soundUrls: Record<SoundName, string> = {
   move: moveUrl,
@@ -29,7 +30,8 @@ const soundUrls: Record<SoundName, string> = {
   achievement: alertUrl,
   controllerConnected: connectedUrl,
   controllerDisconnected: disconnectedUrl,
-  pages: pagesUrl
+  pages: pagesUrl,
+  home: homeUrl
 }
 
 const audioCache = new Map<SoundName, HTMLAudioElement>()
@@ -49,13 +51,15 @@ function getAudio(name: SoundName): HTMLAudioElement | null {
         ? 0.45
         : name === 'pages'
           ? 0.55
-          : name === 'enterGame'
+          : name === 'home'
             ? 0.65
-            : name === 'achievement'
-              ? 0.75
-              : name === 'controllerConnected' || name === 'controllerDisconnected'
-                ? 0.8
-                : 0.55
+            : name === 'enterGame'
+              ? 0.65
+              : name === 'achievement'
+                ? 0.75
+                : name === 'controllerConnected' || name === 'controllerDisconnected'
+                  ? 0.8
+                  : 0.55
     audioCache.set(name, audio)
     audio.load()
     return audio
@@ -136,6 +140,10 @@ export function playControllerDisconnected(): void {
 
 export function playPages(): void {
   play('pages')
+}
+
+export function playHome(): void {
+  play('home')
 }
 
 export function preloadSounds(): void {

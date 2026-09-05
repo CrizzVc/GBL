@@ -70,7 +70,8 @@ import {
   playClose,
   playControllerConnected,
   playControllerDisconnected,
-  playPages
+  playPages,
+  playHome
 } from './services/soundService'
 import { useGamepadNavigation } from './hooks/useGamepadNavigation'
 
@@ -741,13 +742,23 @@ function App(): React.JSX.Element {
   const controllerStateRef = useRef<boolean | null>(null)
   useGamepadNavigation(isControllerConnected && !runningGameId && !isGameRunning)
   useEffect(() => {
+    // Reproduce sonido de inicio (home.mp3) al abrir la app
+    playHome()
+  }, [])
+
+  useEffect(() => {
     const syncControllerStatus = (connected: boolean): void => {
       if (controllerStateRef.current === connected) {
         setIsControllerConnected(connected)
         return
       }
+      const isInitial = controllerStateRef.current === null
       controllerStateRef.current = connected
       setIsControllerConnected(connected)
+      if (isInitial) {
+        if (connected) playControllerConnected()
+        return
+      }
       if (connected) {
         playControllerConnected()
       } else {
