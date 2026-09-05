@@ -16,7 +16,9 @@ import {
   UpdateIcon,
   CheckIcon,
   PaletteIcon,
-  HomeIcon
+  HomeIcon,
+  DownloadIcon,
+  MultimediaIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
@@ -2262,7 +2264,7 @@ function App(): React.JSX.Element {
         if (e.key === 'ArrowDown') {
           e.preventDefault()
           setSidebarIndex((prev) => {
-            const next = Math.min(prev + 1, 4)
+            const next = Math.min(prev + 1, 6)
             if (next !== prev) playMove()
             return next
           })
@@ -2279,8 +2281,10 @@ function App(): React.JSX.Element {
           if (sidebarIndex === 0) openAddGameModal()
           else if (sidebarIndex === 1) handleOpenStore(defaultStore)
           else if (sidebarIndex === 2) handleOpenSpecs()
-          else if (sidebarIndex === 3) setModal('settings')
-          else if (sidebarIndex === 4) window.close()
+          else if (sidebarIndex === 3) setShowDownloadsModal(true)
+          else if (sidebarIndex === 4) { /* TODO: abrir multimedia */ }
+          else if (sidebarIndex === 5) setModal('settings')
+          else if (sidebarIndex === 6) window.close()
           setSidebarOpen(false)
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
           e.preventDefault()
@@ -2722,11 +2726,17 @@ function App(): React.JSX.Element {
         <button className={`sidebar-item ${sidebarIndex === 2 ? 'focused' : ''}`} onClick={() => { handleOpenSpecs(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><SystemIcon size={18} /></div> Especificaciones
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setShowDownloadsModal(true); setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><DownloadIcon size={18} /></div> Descargas
+        </button>
+        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { /* TODO: abrir multimedia */ setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><MultimediaIcon size={18} /></div> Multimedia
+        </button>
+        <button className={`sidebar-item ${sidebarIndex === 5 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> Ajustes
         </button>
         <div style={{ marginTop: 'auto' }}>
-          <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => window.close()}>
+          <button className={`sidebar-item ${sidebarIndex === 6 ? 'focused' : ''}`} onClick={() => window.close()}>
             <div className="sidebar-item-icon"><PowerIcon size={18} /></div> Salir
           </button>
         </div>
