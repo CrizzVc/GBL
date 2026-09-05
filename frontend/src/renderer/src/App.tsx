@@ -18,7 +18,7 @@ import {
   PaletteIcon,
   HomeIcon,
   DownloadIcon,
-  MultimediaIcon
+  ExtensionIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
@@ -2310,7 +2310,7 @@ function App(): React.JSX.Element {
           else if (sidebarIndex === 1) handleOpenStore(defaultStore)
           else if (sidebarIndex === 2) handleOpenSpecs()
           else if (sidebarIndex === 3) setShowDownloadsModal(true)
-          else if (sidebarIndex === 4) { /* TODO: abrir multimedia */ }
+          else if (sidebarIndex === 4) { /* TODO: abrir extensiones */ }
           else if (sidebarIndex === 5) setModal('settings')
           else if (sidebarIndex === 6) window.close()
           setSidebarOpen(false)
@@ -2756,8 +2756,8 @@ function App(): React.JSX.Element {
         <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setShowDownloadsModal(true); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><DownloadIcon size={18} /></div> Descargas
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { /* TODO: abrir multimedia */ setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><MultimediaIcon size={18} /></div> Multimedia
+        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { /* TODO: abrir extensiones */ setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><ExtensionIcon size={18} /></div> Extensiones
         </button>
         <button className={`sidebar-item ${sidebarIndex === 5 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> Ajustes
