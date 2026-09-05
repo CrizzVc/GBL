@@ -449,7 +449,7 @@ function App(): React.JSX.Element {
   const [formIconUrl, setFormIconUrl] = useState<string | null>(null)
   const [formLaunchArgs, setFormLaunchArgs] = useState('')
   const [editingGameId, setEditingGameId] = useState<string | null>(null)
-  const [editGameTab, setEditGameTab] = useState<'inicio' | 'personalizacion' | 'descargas' | 'peligro'>('inicio')
+  const [editGameTab, setEditGameTab] = useState<'inicio' | 'personalizacion' | 'detalles' | 'eliminar'>('inicio')
 
   // SteamGridDB state
   const [sgdbSearch, setSgdbSearch] = useState('')
@@ -1027,7 +1027,7 @@ function App(): React.JSX.Element {
       let hidden: string[] = []
       try {
         hidden = JSON.parse(localStorage.getItem('gbl_hidden_steam_apps') || '[]')
-      } catch {}
+      } catch { }
       const visibleGames = finalGames.filter((g) => !hidden.includes(String(g.appid)))
 
       setSteamLibrary(visibleGames)
@@ -3824,9 +3824,10 @@ function App(): React.JSX.Element {
               <button
                 className="detail-edit-button"
                 onClick={() => {
-                  openSteamGridModal(detailGame.id)
+                  if (detailGame.id) openEditGameModal(detailGame.id)
+                  setContextMenu((p) => ({ ...p, visible: false }))
                 }}
-                aria-label="Editar Artwork"
+                aria-label="Editar"
               >
                 <MoreIcon size={20} />
               </button>
@@ -4015,17 +4016,17 @@ function App(): React.JSX.Element {
                   </button>
                   <button
                     type="button"
-                    className={`settings-nav-item ${editGameTab === 'descargas' ? 'active' : ''}`}
-                    onClick={() => setEditGameTab('descargas')}
+                    className={`settings-nav-item ${editGameTab === 'detalles' ? 'active' : ''}`}
+                    onClick={() => setEditGameTab('detalles')}
                   >
-                    <span>Descargas</span>
+                    <span>Instalación</span>
                   </button>
                   <button
                     type="button"
-                    className={`settings-nav-item danger-tab ${editGameTab === 'peligro' ? 'active' : ''}`}
-                    onClick={() => setEditGameTab('peligro')}
+                    className={`settings-nav-item danger-tab ${editGameTab === 'eliminar' ? 'active' : ''}`}
+                    onClick={() => setEditGameTab('eliminar')}
                   >
-                    <span>Zona de Peligro</span>
+                    <span>Eliminar</span>
                   </button>
                 </nav>
               </aside>
@@ -4094,7 +4095,7 @@ function App(): React.JSX.Element {
                         <button
                           type="button"
                           className="edit-game-shortcut-btn"
-                          onClick={() => {}}
+                          onClick={() => { }}
                         >
                           <DesktopIcon size={16} /> Crear atajo en el escritorio
                         </button>
@@ -4112,7 +4113,7 @@ function App(): React.JSX.Element {
                         <button
                           type="button"
                           className="edit-game-shortcut-btn"
-                          onClick={() => {}}
+                          onClick={() => { }}
                         >
                           Crear un atajo en el Menú de Inicio
                         </button>
@@ -4225,8 +4226,8 @@ function App(): React.JSX.Element {
                   </div>
                 )}
 
-                {/* Tab: Descargas */}
-                {editGameTab === 'descargas' && (
+                {/* Tab: Detalles */}
+                {editGameTab === 'detalles' && (
                   <div className="settings-tab-panel">
                     <div className="edit-game-field-block">
                       <label className="edit-game-field-title">Detalles de instalación</label>
@@ -4245,8 +4246,8 @@ function App(): React.JSX.Element {
                   </div>
                 )}
 
-                {/* Tab: Zona de Peligro */}
-                {editGameTab === 'peligro' && (
+                {/* Tab: Eliminar */}
+                {editGameTab === 'eliminar' && (
                   <div className="settings-tab-panel">
                     <div className="edit-game-field-block danger-block">
                       <label className="edit-game-field-title" style={{ color: '#ff5c5c' }}>Eliminar juego</label>
@@ -4418,48 +4419,48 @@ function App(): React.JSX.Element {
                           onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
                           onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
                         >
-                            <div className="library-item-art steam-library-art">
+                          <div className="library-item-art steam-library-art">
+                            <img
+                              src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
+                              alt={game.name}
+                              className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
+                              draggable={false}
+                              onError={(e) => {
+                                const img = e.currentTarget
+                                if (img.src.includes('library_600x600')) {
+                                  img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
+                                }
+                              }}
+                            />
+                            {!game.installed && (
                               <img
-                                src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
-                                alt={game.name}
-                                className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
+                                src={installIcon}
+                                alt="Descargar"
+                                className="library-item-download-badge"
                                 draggable={false}
-                                onError={(e) => {
-                                  const img = e.currentTarget
-                                  if (img.src.includes('library_600x600')) {
-                                    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
-                                  }
-                                }}
                               />
-                              {!game.installed && (
-                                <img
-                                  src={installIcon}
-                                  alt="Descargar"
-                                  className="library-item-download-badge"
-                                  draggable={false}
-                                />
-                              )}
-                            </div>
-                            <div className="library-item-info">
-                              <span className="library-item-name">{game.name}</span>
-                              <span className="library-item-playtime">
-                                {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
-                              </span>
-                            </div>
-                            <div className="library-item-actions">
-                              <button
-                                className="library-action-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                                  setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
-                                }}
-                              >
-                                <MoreIcon size={14} />
-                              </button>
-                            </div>
-                          </article>
-                        ))
+                            )}
+                          </div>
+                          <div className="library-item-info">
+                            <span className="library-item-name">{game.name}</span>
+                            <span className="library-item-playtime">
+                              {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
+                            </span>
+                          </div>
+                          <div className="library-item-actions">
+                            <button
+                              className="library-action-btn"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                setContextMenu({ visible: true, x: rect.left, y: rect.bottom + 6, gameId: `steam-${game.appid}` })
+                              }}
+                            >
+                              <MoreIcon size={14} />
+                            </button>
+                          </div>
+                        </article>
+                      ))
                     )
                   ) : filteredLocalGames.length === 0 ? (
                     <div className="library-empty library-view-empty">
@@ -4467,49 +4468,49 @@ function App(): React.JSX.Element {
                     </div>
                   ) : (
                     filteredLocalGames.map((game) => (
-                        <article
-                          key={game.id}
-                          id={`library-game-${game.id}`}
-                          tabIndex={0}
-                          className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedGameId(game.id)}
-                          onFocus={() => {
-                            setSelectedGameId(game.id)
-                          }}
-                          onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
-                        >
-                          <div className="library-item-art">
-                            {game.gridImageUrl ? (
-                              <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
-                            ) : game.iconDataUrl ? (
-                              <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
-                            ) : (
-                              <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
-                                {game.name.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="library-item-info">
-                            {game.logoImageUrl ? (
-                              <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
-                            ) : (
-                              <span className="library-item-name">{game.name}</span>
-                            )}
-                            <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
-                          </div>
-                          <div className="library-item-actions">
-                            <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }}>
-                              <EditIcon size={14} />
-                            </button>
-                            <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }}>
-                              <ImageIcon size={14} />
-                            </button>
-                            <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }}>
-                              <TrashIcon size={14} />
-                            </button>
-                          </div>
-                        </article>
-                      ))
+                      <article
+                        key={game.id}
+                        id={`library-game-${game.id}`}
+                        tabIndex={0}
+                        className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedGameId(game.id)}
+                        onFocus={() => {
+                          setSelectedGameId(game.id)
+                        }}
+                        onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
+                      >
+                        <div className="library-item-art">
+                          {game.gridImageUrl ? (
+                            <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
+                          ) : game.iconDataUrl ? (
+                            <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
+                          ) : (
+                            <div className="game-card-placeholder" style={{ background: `linear-gradient(135deg, ${game.color}30, ${game.color}15)` }}>
+                              {game.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="library-item-info">
+                          {game.logoImageUrl ? (
+                            <img src={game.logoImageUrl} alt={game.name} className="library-item-logo" draggable={false} />
+                          ) : (
+                            <span className="library-item-name">{game.name}</span>
+                          )}
+                          <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
+                        </div>
+                        <div className="library-item-actions">
+                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }}>
+                            <EditIcon size={14} />
+                          </button>
+                          <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openSteamGridModal(game.id) }}>
+                            <ImageIcon size={14} />
+                          </button>
+                          <button className="library-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id) }}>
+                            <TrashIcon size={14} />
+                          </button>
+                        </div>
+                      </article>
+                    ))
                   )}
                 </div>
               </div>
