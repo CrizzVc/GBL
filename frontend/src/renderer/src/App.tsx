@@ -503,6 +503,7 @@ function App(): React.JSX.Element {
   const previousLibraryIndexRef = useRef<number | null>(null)
   const wipeDirectionRef = useRef<1 | -1>(1)
   const previousHomeSelectedGameIdRef = useRef<string | null>(null)
+  const detailFromLibraryRef = useRef(false)
   const lastNavTimeRef = useRef(0)
 
   const visibleGames = useMemo(() => getRecentGames(games), [games])
@@ -1301,7 +1302,13 @@ function App(): React.JSX.Element {
     const handleEsc = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         playClose()
-        setDetailGameId(null)
+        if (detailFromLibraryRef.current) {
+          detailFromLibraryRef.current = false
+          setDetailGameId(null)
+          setLibraryView(true)
+        } else {
+          setDetailGameId(null)
+        }
       }
     }
     window.addEventListener('keydown', handleEsc)
@@ -2231,6 +2238,7 @@ function App(): React.JSX.Element {
 
       if (e.key === 'Start') {
         e.preventDefault()
+        playEnter()
         setSidebarOpen(true)
         return
       }
@@ -2298,6 +2306,7 @@ function App(): React.JSX.Element {
             const steamGame = steamLibrary.find((game) => String(game.appid) === selectedSteamAppId)
             if (steamGame) {
               playEnter()
+              detailFromLibraryRef.current = true
               setLibraryView(false)
               setDetailGameId(`steam-${steamGame.appid}`)
             }
@@ -2305,6 +2314,7 @@ function App(): React.JSX.Element {
           }
           if (librarySelectedGame) {
             playEnter()
+            detailFromLibraryRef.current = true
             setLibraryView(false)
             setDetailGameId(librarySelectedGame.id)
           }
@@ -2527,7 +2537,13 @@ function App(): React.JSX.Element {
         } else if (e.key === 'Escape' && detailGameId) {
           e.preventDefault()
           playClose()
-          setDetailGameId(null)
+          if (detailFromLibraryRef.current) {
+            detailFromLibraryRef.current = false
+            setDetailGameId(null)
+            setLibraryView(true)
+          } else {
+            setDetailGameId(null)
+          }
         }
       }
     }
@@ -2539,7 +2555,13 @@ function App(): React.JSX.Element {
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
     playClose()
-    setDetailGameId(null)
+    if (detailFromLibraryRef.current) {
+      detailFromLibraryRef.current = false
+      setDetailGameId(null)
+      setLibraryView(true)
+    } else {
+      setDetailGameId(null)
+    }
   }, [])
 
   const openDetailView = useCallback((gameId: string) => {
@@ -2834,7 +2856,7 @@ function App(): React.JSX.Element {
       {/* ── Header ── */}
       <header className="header-bar">
         <div className="header-left">
-          <div className="user-avatar" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ cursor: 'pointer', overflow: 'hidden' }}>
+          <div className="user-avatar" onClick={() => { if (!sidebarOpen) { playEnter(); setSidebarOpen(true) } else { playClose(); setSidebarOpen(false) } }} style={{ cursor: 'pointer', overflow: 'hidden' }}>
             <img
               src={profileAvatar || appDefaultIcon}
               alt="Foto de perfil"
@@ -4330,6 +4352,7 @@ function App(): React.JSX.Element {
                 />
                 <div className="library-hero-content">
                   <button className="library-back-button" onClick={() => {
+                    playClose()
                     setSelectedGameId(previousHomeSelectedGameIdRef.current)
                     setLibraryView(false)
                     setLibrarySearch('')
@@ -4498,7 +4521,7 @@ function App(): React.JSX.Element {
                         onFocus={() => {
                           setSelectedGameId(game.id)
                         }}
-                        onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
+                        onDoubleClick={() => { detailFromLibraryRef.current = true; setLibraryView(false); openDetailView(game.id) }}
                       >
                         <div className="library-item-art">
                           {game.gridImageUrl ? (
