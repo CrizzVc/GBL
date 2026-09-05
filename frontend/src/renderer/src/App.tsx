@@ -498,7 +498,7 @@ function App(): React.JSX.Element {
     () => steamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? null,
     [selectedSteamAppId, steamLibrary]
   )
-  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`, [])
+  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x600.jpg`, [])
   const librarySelectedGame = games.find((g) => g.id === selectedGameId) || sortedLibraryGames[0] || null
   const detailGame = useMemo<Game | null>(() => {
     const localGame = games.find((g) => g.id === detailGameId) || null
@@ -4012,7 +4012,21 @@ function App(): React.JSX.Element {
                               alt={game.name}
                               className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                               draggable={false}
+                              onError={(e) => {
+                                const img = e.currentTarget
+                                if (img.src.includes('library_600x600')) {
+                                  img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
+                                }
+                              }}
                             />
+                            {game.logoImageUrl && (
+                              <img
+                                src={game.logoImageUrl}
+                                alt=""
+                                className="library-item-logo-overlay"
+                                draggable={false}
+                              />
+                            )}
                             {!game.installed && (
                               <img
                                 src={installIcon}
