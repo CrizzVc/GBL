@@ -13,12 +13,13 @@ import moveUrl from '../assets/sounds/move.mp3'
 import enterUrl from '../assets/sounds/enter.mp3'
 import enterGameUrl from '../assets/sounds/enter_game.mp3'
 import closeUrl from '../assets/sounds/close_UI.mp3'
+import pagesUrl from '../assets/sounds/pages.mp3'
 
 const alertUrl = new URL('../assets/sounds/alerts.mp3', import.meta.url).href
 const connectedUrl = new URL('../assets/sounds/Bconected.mp3', import.meta.url).href
 const disconnectedUrl = new URL('../assets/sounds/Bdisconected.mp3', import.meta.url).href
 
-type SoundName = 'move' | 'enter' | 'enterGame' | 'close' | 'achievement' | 'controllerConnected' | 'controllerDisconnected'
+type SoundName = 'move' | 'enter' | 'enterGame' | 'close' | 'achievement' | 'controllerConnected' | 'controllerDisconnected' | 'pages'
 
 const soundUrls: Record<SoundName, string> = {
   move: moveUrl,
@@ -27,7 +28,8 @@ const soundUrls: Record<SoundName, string> = {
   close: closeUrl,
   achievement: alertUrl,
   controllerConnected: connectedUrl,
-  controllerDisconnected: disconnectedUrl
+  controllerDisconnected: disconnectedUrl,
+  pages: pagesUrl
 }
 
 const audioCache = new Map<SoundName, HTMLAudioElement>()
@@ -45,13 +47,15 @@ function getAudio(name: SoundName): HTMLAudioElement | null {
     audio.volume =
       name === 'move'
         ? 0.45
-        : name === 'enterGame'
-          ? 0.65
-          : name === 'achievement'
-            ? 0.75
-            : name === 'controllerConnected' || name === 'controllerDisconnected'
-              ? 0.8
-              : 0.55
+        : name === 'pages'
+          ? 0.55
+          : name === 'enterGame'
+            ? 0.65
+            : name === 'achievement'
+              ? 0.75
+              : name === 'controllerConnected' || name === 'controllerDisconnected'
+                ? 0.8
+                : 0.55
     audioCache.set(name, audio)
     audio.load()
     return audio
@@ -128,6 +132,10 @@ export function playControllerConnected(): void {
 
 export function playControllerDisconnected(): void {
   play('controllerDisconnected')
+}
+
+export function playPages(): void {
+  play('pages')
 }
 
 export function preloadSounds(): void {

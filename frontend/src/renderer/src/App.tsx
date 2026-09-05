@@ -69,7 +69,8 @@ import {
   playEnterGame,
   playClose,
   playControllerConnected,
-  playControllerDisconnected
+  playControllerDisconnected,
+  playPages
 } from './services/soundService'
 import { useGamepadNavigation } from './hooks/useGamepadNavigation'
 
@@ -2244,7 +2245,7 @@ function App(): React.JSX.Element {
           e.preventDefault()
           const nextSource: LibrarySource = e.key === 'BrowserBack' ? 'local' : 'steam'
           if (nextSource !== librarySource) {
-            playMove()
+            playPages()
             setLibrarySource(nextSource)
             if (nextSource === 'steam' && steamLibrary.length > 0) {
               setSelectedSteamAppId(String(steamLibrary[0].appid))
@@ -4328,8 +4329,12 @@ function App(): React.JSX.Element {
                     <button
                       type="button"
                       className={`library-view-platform ${librarySource === 'local' ? 'active' : 'muted'}`}
-                      onClick={() => setLibrarySource('local')}
-
+                      onClick={() => {
+                        if (librarySource !== 'local') {
+                          playPages()
+                          setLibrarySource('local')
+                        }
+                      }}
                     >
                       Biblioteca
                     </button>
@@ -4338,8 +4343,14 @@ function App(): React.JSX.Element {
                       type="button"
                       className={`library-view-platform ${librarySource === 'steam' ? 'active' : 'muted'}`}
                       onClick={() => {
-                        if (steamAccount.linked) setLibrarySource('steam')
-                        else setModal('settings')
+                        if (steamAccount.linked) {
+                          if (librarySource !== 'steam') {
+                            playPages()
+                            setLibrarySource('steam')
+                          }
+                        } else {
+                          setModal('settings')
+                        }
                       }}
                     >
                       Steam
