@@ -515,13 +515,21 @@ function App(): React.JSX.Element {
     [selectedFriend, sortedSteamFriends]
   )
   const selectedGame = games.find((g) => g.id === selectedGameId) || null
+  const filteredSteamLibrary = useMemo(
+    () => steamLibrary.filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase())),
+    [steamLibrary, librarySearch]
+  )
+  const filteredLocalGames = useMemo(
+    () => sortedLibraryGames.filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase())),
+    [sortedLibraryGames, librarySearch]
+  )
   const selectedSteamGame = useMemo(
-    () => steamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? null,
-    [selectedSteamAppId, steamLibrary]
+    () => filteredSteamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? filteredSteamLibrary[0] ?? null,
+    [selectedSteamAppId, filteredSteamLibrary]
   )
   const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x600.jpg`, [])
   const steamLogoUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/logo.png`, [])
-  const librarySelectedGame = games.find((g) => g.id === selectedGameId) || sortedLibraryGames[0] || null
+  const librarySelectedGame = filteredLocalGames.find((g) => g.id === selectedGameId) || filteredLocalGames[0] || null
   const detailGame = useMemo<Game | null>(() => {
     const localGame = games.find((g) => g.id === detailGameId) || null
     if (localGame) return localGame
@@ -548,8 +556,11 @@ function App(): React.JSX.Element {
       logoImageUrl: steamGame.logoImageUrl || null
     }
   }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
-  const currentLibraryItems = librarySource === 'steam' ? steamLibrary : sortedLibraryGames
-  const currentLibraryCount = librarySource === 'steam' ? steamLibrary.length : games.length
+  const currentLibraryItems = useMemo(
+    () => (librarySource === 'steam' ? filteredSteamLibrary : filteredLocalGames),
+    [librarySource, filteredSteamLibrary, filteredLocalGames]
+  )
+  const currentLibraryCount = currentLibraryItems.length
   const compactDetailReviewLayout = windowSize.width < 1740 || windowSize.height < 910
   const smallDetailLayout = windowSize.width < 1366 || windowSize.height < 768
   const quickAppSlots = useMemo(() => Array.from({ length: 4 }, (_, index) => quickApps[index] ?? null), [quickApps])
@@ -2125,6 +2136,13 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if (e.key === 'Escape') {
+          (e.target as HTMLElement).blur()
+        }
+        return
+      }
+
       if (selectedFriend) {
         const friendIndex = sortedSteamFriends.findIndex((friend) => friend.steamid === selectedFriend.steamid)
         if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -2208,10 +2226,17 @@ function App(): React.JSX.Element {
           if (nextIndex !== currentIndex) playMove()
           if (librarySource === 'steam') {
             const nextGame = currentLibraryItems[nextIndex] as SteamLibraryGame
-            setSelectedSteamAppId(String(nextGame.appid))
+            const nextAppId = String(nextGame.appid)
+            setSelectedSteamAppId(nextAppId)
+            const target = document.getElementById(`library-game-${nextAppId}`)
+            target?.focus()
           } else {
             const nextGame = currentLibraryItems[nextIndex] as Game
-            if (nextGame?.id) setSelectedGameId(nextGame.id)
+            if (nextGame?.id) {
+              setSelectedGameId(nextGame.id)
+              const target = document.getElementById(`library-game-${nextGame.id}`)
+              target?.focus()
+            }
           }
         }
         if (e.key === 'Enter') {
@@ -2241,7 +2266,6 @@ function App(): React.JSX.Element {
         }
         return
       }
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
       if (e.key === 'ContextMenu') {
         e.preventDefault()
@@ -2512,10 +2536,9 @@ function App(): React.JSX.Element {
     const selectedId = librarySource === 'steam' ? selectedSteamAppId : selectedGameId
     if (!selectedId) return
 
-    const items = librarySource === 'steam' ? steamLibrary : games
     const currentIndex = librarySource === 'steam'
-      ? steamLibrary.findIndex((game) => game.appid === selectedId)
-      : games.findIndex((game) => game.id === selectedId)
+      ? currentLibraryItems.findIndex((game) => String((game as SteamLibraryGame).appid) === selectedId)
+      : currentLibraryItems.findIndex((game) => 'id' in game && game.id === selectedId)
     if (currentIndex < 0) return
 
     const target = document.getElementById(`library-game-${selectedId}`)
@@ -2526,9 +2549,9 @@ function App(): React.JSX.Element {
     const columnCount = getComputedStyle(grid).gridTemplateColumns.split(' ').length
     if (previousIndex === null || Math.floor(previousIndex / columnCount) === Math.floor(currentIndex / columnCount)) return
 
-    const previousItem = items[previousIndex]
+    const previousItem = currentLibraryItems[previousIndex]
     const previousId = librarySource === 'steam'
-      ? (previousItem as SteamLibraryGame)?.appid
+      ? String((previousItem as SteamLibraryGame)?.appid)
       : (previousItem as Game)?.id
     const previousTarget = previousId
       ? document.getElementById(`library-game-${previousId}`)
@@ -2536,7 +2559,7 @@ function App(): React.JSX.Element {
     const rowDistance = previousTarget ? target.offsetTop - previousTarget.offsetTop : target.offsetHeight
     const nextScrollTop = Math.max(0, grid.scrollTop + rowDistance)
     grid.scrollTo({ top: nextScrollTop, behavior: 'smooth' })
-  }, [games, librarySource, libraryView, selectedGameId, selectedSteamAppId, steamLibrary])
+  }, [currentLibraryItems, librarySource, libraryView, selectedGameId, selectedSteamAppId])
 
   const handlePrevShot = useCallback(() => {
     setDetailShotIndex((prev) =>
@@ -4059,10 +4082,23 @@ function App(): React.JSX.Element {
                         onChange={(e) => setLibrarySearch(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
+                            e.preventDefault()
+                            const filtered = librarySource === 'steam'
+                              ? steamLibrary.filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
+                              : sortedLibraryGames.filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
+                            if (filtered.length > 0) {
+                              const first = filtered[0]
+                              if (librarySource === 'steam') {
+                                setSelectedSteamAppId(String((first as SteamLibraryGame).appid))
+                              } else {
+                                setSelectedGameId((first as Game).id)
+                              }
+                            }
                             const firstArticle = libraryGridRef.current?.querySelector('.library-item') as HTMLElement | null
                             if (firstArticle) {
                               firstArticle.tabIndex = 0
                               firstArticle.focus()
+                              firstArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
                             }
                           }
                         }}
@@ -4083,25 +4119,27 @@ function App(): React.JSX.Element {
                       Array.from({ length: 15 }).map((_, i) => (
                         <div key={`steam-skeleton-${i}`} className="library-item-skeleton" />
                       ))
-                    ) : steamLibrary.length === 0 ? (
+                    ) : filteredSteamLibrary.length === 0 ? (
                       <div className="library-empty library-view-empty">
                         No se encontraron juegos en tu biblioteca de Steam.
                       </div>
                     ) : (
-                      steamLibrary
-                        .filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
-                        .map((game) => (
-                          <article
-                            key={game.appid}
-                            id={`library-game-${game.appid}`}
-                            className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
-                            onClick={() => {
-                              setSelectedSteamAppId(game.appid)
-                              setDetailGameId(`steam-${game.appid}`)
-                            }}
-                            onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
-                            onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
-                          >
+                      filteredSteamLibrary.map((game) => (
+                        <article
+                          key={game.appid}
+                          id={`library-game-${game.appid}`}
+                          tabIndex={0}
+                          className={`library-item steam-library-item ${selectedSteamAppId === game.appid ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedSteamAppId(game.appid)
+                            setDetailGameId(`steam-${game.appid}`)
+                          }}
+                          onFocus={() => {
+                            setSelectedSteamAppId(game.appid)
+                          }}
+                          onDoubleClick={() => handleLaunchGame(`steam-${game.appid}`)}
+                          onContextMenu={(e) => handleContextMenu(e, `steam-${game.appid}`)}
+                        >
                             <div className="library-item-art steam-library-art">
                               <img
                                 src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
@@ -4145,15 +4183,21 @@ function App(): React.JSX.Element {
                           </article>
                         ))
                     )
+                  ) : filteredLocalGames.length === 0 ? (
+                    <div className="library-empty library-view-empty">
+                      No se encontraron juegos en tu biblioteca.
+                    </div>
                   ) : (
-                    sortedLibraryGames
-                      .filter((game) => !librarySearch || game.name.toLowerCase().includes(librarySearch.toLowerCase()))
-                      .map((game) => (
+                    filteredLocalGames.map((game) => (
                         <article
                           key={game.id}
                           id={`library-game-${game.id}`}
+                          tabIndex={0}
                           className={`library-item ${librarySelectedGame?.id === game.id ? 'selected' : ''}`}
                           onClick={() => setSelectedGameId(game.id)}
+                          onFocus={() => {
+                            setSelectedGameId(game.id)
+                          }}
                           onDoubleClick={() => { setLibraryView(false); openDetailView(game.id) }}
                         >
                           <div className="library-item-art">
