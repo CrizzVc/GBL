@@ -112,7 +112,14 @@ export function playAchievementAlert(): void {
 }
 
 export function playNotification(): void {
-  play('achievement')
+  try {
+    unlockIfNeeded()
+    const audio = getAudio('achievement')
+    if (!audio) return
+    const clone = audio.cloneNode() as HTMLAudioElement
+    clone.volume = audio.volume
+    clone.play().catch(() => {})
+  } catch {}
 }
 
 export function playControllerConnected(): void {

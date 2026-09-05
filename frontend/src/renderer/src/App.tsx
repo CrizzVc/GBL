@@ -3651,10 +3651,15 @@ function App(): React.JSX.Element {
 
                   {detailInfo?.tags && detailInfo.tags.length > 0 && (
                     <div className="detail-meta-section">
-                      <div className="detail-meta-tags">
-                        {detailInfo.tags.map((tag) => (
-                          <span key={tag} className="detail-tag-pill">{tag}</span>
-                        ))}
+                      <div className="detail-meta-tags-track">
+                        <div className="detail-meta-tags detail-meta-tags-scroll">
+                          {detailInfo.tags.map((tag) => (
+                            <span key={`a-${tag}`} className="detail-tag-pill">{tag}</span>
+                          ))}
+                          {detailInfo.tags.map((tag) => (
+                            <span key={`b-${tag}`} className="detail-tag-pill">{tag}</span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
