@@ -2960,12 +2960,17 @@
 
 /* ── Shimmer Skeleton ── */
 @keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
 }
 
 .shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.6s ease-in-out infinite;
   border-radius: var(--gbl-radius-sm);
@@ -5355,7 +5360,7 @@
 
 .notification-avatar {
   flex-shrink: 0;
-  width: 80px;
+  width: 100px;
   overflow: hidden;
 }
 
