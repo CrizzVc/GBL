@@ -1220,20 +1220,27 @@
 .library-back-button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 0;
+  gap: 6px;
+  padding: 8px 16px;
   margin-bottom: 18px;
-  background: none;
-  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
   color: var(--gbl-text-secondary);
   font: inherit;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: color var(--gbl-transition-fast);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: color var(--gbl-transition-fast), background var(--gbl-transition-fast), border-color var(--gbl-transition-fast), transform var(--gbl-transition-fast);
 }
 
 .library-back-button:hover {
-  color: var(--gbl-text-primary);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateX(-2px);
 }
 
 .library-actions-row {
@@ -1623,15 +1630,22 @@
 }
 
 /* ── Context Menu ── */
+.context-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+}
+
 .context-menu {
-  position: absolute;
+  position: fixed;
   background: var(--gbl-bg-secondary);
   border: 1px solid var(--gbl-border-hover);
   border-radius: var(--gbl-radius-sm);
   padding: 6px;
   min-width: 160px;
   box-shadow: var(--gbl-shadow-lg);
-  z-index: 200;
+  z-index: 1001;
   animation: slideUp 150ms forwards;
 }
 
@@ -1845,6 +1859,264 @@
   gap: 20px;
   animation: fadeIn 0.25s ease both;
 }
+
+/* ── Edit Game Modal Styling (Matching Settings Modal Style) ── */
+.edit-game-settings-modal {
+  position: relative;
+  width: 920px;
+  max-width: 92vw;
+  height: 600px;
+  max-height: 88vh;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #111114;
+  display: flex;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.edit-game-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--gbl-text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.edit-game-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.edit-game-content-area {
+  position: relative;
+  flex: 1;
+  padding: 28px 32px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-game-field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+.edit-game-field-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.edit-game-field-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+
+.edit-game-input {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: #ffffff !important;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-game-input:focus {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.edit-game-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-browse-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-browse-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-clear-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-clear-action:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.edit-game-shortcuts-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.edit-game-shortcut-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-game-shortcut-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.edit-game-sgdb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.edit-artwork-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.edit-artwork-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-artwork-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.edit-artwork-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.edit-artwork-img-box {
+  background: #0d0d10;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.edit-artwork-img-box.grid {
+  height: 140px;
+}
+
+.edit-artwork-img-box.hero {
+  height: 100px;
+}
+
+.edit-artwork-img-box.logo {
+  height: 70px;
+}
+
+.edit-artwork-img-box.icon {
+  height: 60px;
+  width: 60px;
+}
+
+.edit-artwork-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.edit-artwork-img-box.logo img,
+.edit-artwork-img-box.icon img {
+  object-fit: contain;
+  padding: 6px;
+}
+
+.edit-artwork-empty {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.edit-artwork-btn {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.edit-game-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.settings-nav-item.danger-tab:hover,
+.settings-nav-item.danger-tab.active {
+  color: #ff5c5c;
+}
+
 
 /* ── Hero Info Card ── */
 .settings-hero-card {

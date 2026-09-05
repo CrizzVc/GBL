@@ -447,7 +447,9 @@ function App(): React.JSX.Element {
   const [formName, setFormName] = useState('')
   const [formExePath, setFormExePath] = useState('')
   const [formIconUrl, setFormIconUrl] = useState<string | null>(null)
+  const [formLaunchArgs, setFormLaunchArgs] = useState('')
   const [editingGameId, setEditingGameId] = useState<string | null>(null)
+  const [editGameTab, setEditGameTab] = useState<'inicio' | 'personalizacion' | 'descargas' | 'peligro'>('inicio')
 
   // SteamGridDB state
   const [sgdbSearch, setSgdbSearch] = useState('')
@@ -1293,15 +1295,6 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleEsc)
   }, [detailGameId])
 
-  // ── Close context menu on click anywhere ──
-  useEffect(() => {
-    const handleClick = (): void => {
-      setContextMenu((prev) => ({ ...prev, visible: false }))
-    }
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [])
-
   // ── Persist games ──
   const saveGames = useCallback(
     (newGames: Game[]) => {
@@ -1725,6 +1718,7 @@ function App(): React.JSX.Element {
   // ── Open edit game modal ──
   const openEditGameModal = useCallback(
     (gameId: string) => {
+      setEditGameTab('inicio')
       const game = games.find((g) => g.id === gameId)
       if (!game) {
         if (gameId.startsWith('steam-')) {
@@ -1735,6 +1729,7 @@ function App(): React.JSX.Element {
             setFormName(steamGame.name)
             setFormExePath(steamGame.installed ? `steam://rungameid/${steamGame.appid}` : `steam://install/${steamGame.appid}`)
             setFormIconUrl(steamGame.iconDataUrl || null)
+            setFormLaunchArgs('')
             setModal('editGame')
             return
           }
@@ -1745,6 +1740,7 @@ function App(): React.JSX.Element {
       setFormName(game.name)
       setFormExePath(game.exePath)
       setFormIconUrl(game.iconDataUrl)
+      setFormLaunchArgs('')
       setModal('editGame')
     },
     [games, steamLibrary]
@@ -1754,7 +1750,9 @@ function App(): React.JSX.Element {
     setFormName('')
     setFormExePath('')
     setFormIconUrl(null)
+    setFormLaunchArgs('')
     setEditingGameId(null)
+    setEditGameTab('inicio')
   }
 
   // ── Context menu handler ──
@@ -3381,76 +3379,86 @@ function App(): React.JSX.Element {
         const quickAppTarget = quickAppId ? quickApps.find((a) => a.id === quickAppId) : null
         return (
           <div
-            className="context-menu"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            className="context-menu-backdrop"
+            onClick={() => setContextMenu((p) => ({ ...p, visible: false }))}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setContextMenu((p) => ({ ...p, visible: false }))
+            }}
           >
-            <button
-              className="context-menu-item"
-              onClick={() => {
-                const id = contextMenu.gameId!
-                setContextMenu((p) => ({ ...p, visible: false }))
-                if (quickAppTarget) {
-                  void handleLaunchQuickApp(quickAppTarget)
-                  return
-                }
-                // Actualiza selección visual según tipo
-                if (isSteam && steamAppId) setSelectedSteamAppId(String(steamAppId))
-                else setSelectedGameId(id)
-                handleLaunchGame(id)
-              }}
+            <div
+              className="context-menu"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <PlayIcon size={16} />{' '}
-              {isSteam && !steamInstalled
-                ? 'Descargar'
-                : quickAppTarget?.kind === 'program'
-                  ? 'Abrir'
-                  : 'Jugar'}
-            </button>
-            {!isQuickApp && !quickAppTarget && (
               <button
                 className="context-menu-item"
                 onClick={() => {
-                  if (contextMenu.gameId) openEditGameModal(contextMenu.gameId)
+                  const id = contextMenu.gameId!
                   setContextMenu((p) => ({ ...p, visible: false }))
+                  if (quickAppTarget) {
+                    void handleLaunchQuickApp(quickAppTarget)
+                    return
+                  }
+                  // Actualiza selección visual según tipo
+                  if (isSteam && steamAppId) setSelectedSteamAppId(String(steamAppId))
+                  else setSelectedGameId(id)
+                  handleLaunchGame(id)
                 }}
               >
-                <EditIcon size={16} /> Editar
+                <PlayIcon size={16} />{' '}
+                {isSteam && !steamInstalled
+                  ? 'Descargar'
+                  : quickAppTarget?.kind === 'program'
+                    ? 'Abrir'
+                    : 'Jugar'}
               </button>
-            )}
-            {quickAppTarget && (
+              {!isQuickApp && !quickAppTarget && (
+                <button
+                  className="context-menu-item"
+                  onClick={() => {
+                    if (contextMenu.gameId) openEditGameModal(contextMenu.gameId)
+                    setContextMenu((p) => ({ ...p, visible: false }))
+                  }}
+                >
+                  <EditIcon size={16} /> Editar
+                </button>
+              )}
+              {quickAppTarget && (
+                <button
+                  className="context-menu-item"
+                  onClick={() => {
+                    if (quickAppId) void handleEditQuickApp(quickAppId)
+                    setContextMenu((p) => ({ ...p, visible: false }))
+                  }}
+                >
+                  <EditIcon size={16} /> Cambiar archivo
+                </button>
+              )}
               <button
                 className="context-menu-item"
                 onClick={() => {
-                  if (quickAppId) void handleEditQuickApp(quickAppId)
+                  if (contextMenu.gameId) openSteamGridModal(contextMenu.gameId)
                   setContextMenu((p) => ({ ...p, visible: false }))
                 }}
               >
-                <EditIcon size={16} /> Cambiar archivo
+                <ImageIcon size={16} /> Buscar Artwork
               </button>
-            )}
-            <button
-              className="context-menu-item"
-              onClick={() => {
-                if (contextMenu.gameId) openSteamGridModal(contextMenu.gameId)
-                setContextMenu((p) => ({ ...p, visible: false }))
-              }}
-            >
-              <ImageIcon size={16} /> Buscar Artwork
-            </button>
-            <div className="context-menu-separator" />
-            <button
-              className="context-menu-item danger"
-              onClick={() => {
-                if (quickAppId && quickAppTarget) {
-                  saveQuickApps(quickApps.filter((a) => a.id !== quickAppId))
-                } else if (contextMenu.gameId) {
-                  handleDeleteGame(contextMenu.gameId)
-                }
-                setContextMenu((p) => ({ ...p, visible: false }))
-              }}
-            >
-              <TrashIcon size={16} /> Eliminar
-            </button>
+              <div className="context-menu-separator" />
+              <button
+                className="context-menu-item danger"
+                onClick={() => {
+                  if (quickAppId && quickAppTarget) {
+                    saveQuickApps(quickApps.filter((a) => a.id !== quickAppId))
+                  } else if (contextMenu.gameId) {
+                    handleDeleteGame(contextMenu.gameId)
+                  }
+                  setContextMenu((p) => ({ ...p, visible: false }))
+                }}
+              >
+                <TrashIcon size={16} /> Eliminar
+              </button>
+            </div>
           </div>
         )
       })()}
@@ -3815,17 +3823,10 @@ function App(): React.JSX.Element {
               })()}
               <button
                 className="detail-edit-button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  setContextMenu({
-                    visible: true,
-                    x: rect.left,
-                    y: rect.bottom + 6,
-                    gameId: detailGame.id
-                  })
+                onClick={() => {
+                  openSteamGridModal(detailGame.id)
                 }}
-                aria-label="Más opciones"
+                aria-label="Editar Artwork"
               >
                 <MoreIcon size={20} />
               </button>
@@ -3978,83 +3979,315 @@ function App(): React.JSX.Element {
       {/* ── Edit Game Modal ── */}
       {modal === 'editGame' && (() => {
         const isSteamEdit = editingGameId?.startsWith('steam-')
+        const currentTargetGame = games.find((g) => g.id === editingGameId) || (
+          isSteamEdit ? steamLibrary.find((g) => `steam-${g.appid}` === editingGameId) : null
+        )
+        const gameCoverBg = (currentTargetGame as any)?.heroImageUrl || (currentTargetGame as any)?.gridImageUrl || null
+
         return (
-          <div className="modal-overlay" onClick={() => setModal(null)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2 className="modal-title">{isSteamEdit ? 'Detalles del Juego (Steam)' : 'Editar Juego'}</h2>
-                <button className="modal-close" onClick={() => setModal(null)}>
-                  <CloseIcon size={20} />
-                </button>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Nombre del juego</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Nombre del juego"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  readOnly={isSteamEdit}
-                  autoFocus
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Archivo ejecutable</label>
-                <div className="form-file-row">
-                  <input
-                    className="form-input"
-                    type="text"
-                    placeholder="Ruta al .exe o acceso directo"
-                    value={formExePath}
-                    onChange={(e) => setFormExePath(e.target.value)}
-                    readOnly={isSteamEdit}
+          <div className="modal-overlay settings-modal-overlay" onClick={() => setModal(null)}>
+            <div className="settings-modal edit-game-settings-modal" onClick={(e) => e.stopPropagation()}>
+              {/* Left Sidebar */}
+              <aside className="settings-sidebar">
+                <div className="settings-sidebar-header">
+                  <div
+                    className="settings-sidebar-header-bg"
+                    style={gameCoverBg ? { backgroundImage: `url(${gameCoverBg})` } : undefined}
                   />
+                  <div className="settings-sidebar-header-overlay" />
+                  <h2 className="settings-sidebar-title">Ajustes</h2>
+                </div>
+
+                <nav className="settings-sidebar-nav">
+                  <button
+                    type="button"
+                    className={`settings-nav-item ${editGameTab === 'inicio' ? 'active' : ''}`}
+                    onClick={() => setEditGameTab('inicio')}
+                  >
+                    <span>Inicio</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`settings-nav-item ${editGameTab === 'personalizacion' ? 'active' : ''}`}
+                    onClick={() => setEditGameTab('personalizacion')}
+                  >
+                    <span>Personalización</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`settings-nav-item ${editGameTab === 'descargas' ? 'active' : ''}`}
+                    onClick={() => setEditGameTab('descargas')}
+                  >
+                    <span>Descargas</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`settings-nav-item danger-tab ${editGameTab === 'peligro' ? 'active' : ''}`}
+                    onClick={() => setEditGameTab('peligro')}
+                  >
+                    <span>Zona de Peligro</span>
+                  </button>
+                </nav>
+              </aside>
+
+              {/* Right Content Area */}
+              <main className="settings-content-area edit-game-content-area">
+                <button className="edit-game-close-btn" onClick={() => setModal(null)}>
+                  <CloseIcon size={18} />
+                </button>
+
+                {/* Tab: Inicio */}
+                {editGameTab === 'inicio' && (
+                  <div className="settings-tab-panel">
+                    <div className="edit-game-field-block">
+                      <label className="edit-game-field-title">Nombre del juego</label>
+                      <input
+                        className="form-input edit-game-input"
+                        type="text"
+                        placeholder="Nombre del juego"
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        readOnly={isSteamEdit}
+                      />
+                    </div>
+
+                    <div className="edit-game-field-block">
+                      <label className="edit-game-field-title">Ejecutable</label>
+                      <span className="edit-game-field-subtitle">Ruta del archivo que se ejecutará cuando presiones "Jugar"</span>
+                      <div className="edit-game-input-row">
+                        <input
+                          className="form-input edit-game-input"
+                          style={{ flex: 1 }}
+                          type="text"
+                          placeholder="Ruta al .exe o acceso directo"
+                          value={formExePath}
+                          onChange={(e) => setFormExePath(e.target.value)}
+                          readOnly={isSteamEdit}
+                        />
+                        {!isSteamEdit && (
+                          <button
+                            type="button"
+                            className="btn-browse-action"
+                            onClick={handleBrowse}
+                            title="Examinar archivo"
+                          >
+                            <FolderIcon size={16} />
+                          </button>
+                        )}
+                        {formExePath && !isSteamEdit && (
+                          <button
+                            type="button"
+                            className="btn-clear-action"
+                            onClick={() => setFormExePath('')}
+                            title="Borrar ruta"
+                          >
+                            <TrashIcon size={14} /> Borrar ruta
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="edit-game-field-block">
+                      <label className="edit-game-field-title">Accesos directos</label>
+                      <span className="edit-game-field-subtitle">Crea accesos directos para ejecutar el juego rápidamente</span>
+                      <div className="edit-game-shortcuts-row">
+                        <button
+                          type="button"
+                          className="edit-game-shortcut-btn"
+                          onClick={() => {}}
+                        >
+                          <DesktopIcon size={16} /> Crear atajo en el escritorio
+                        </button>
+                        <button
+                          type="button"
+                          className="edit-game-shortcut-btn"
+                          onClick={() => {
+                            if (isSteamEdit && currentTargetGame) {
+                              window.api?.openExternal?.(`steam://rungameid/${(currentTargetGame as any).appid || (currentTargetGame as any).steamAppId}`)
+                            }
+                          }}
+                        >
+                          <StoreIcon size={16} /> Crear atajo de Steam
+                        </button>
+                        <button
+                          type="button"
+                          className="edit-game-shortcut-btn"
+                          onClick={() => {}}
+                        >
+                          Crear un atajo en el Menú de Inicio
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="edit-game-field-block">
+                      <label className="edit-game-field-title">Opciones para iniciar</label>
+                      <span className="edit-game-field-subtitle">Los usuarios avanzados pueden ingresar sus modificaciones para el inicio de sus juegos (característica experimental)</span>
+                      <div className="edit-game-input-row">
+                        <input
+                          className="form-input edit-game-input"
+                          style={{ flex: 1 }}
+                          type="text"
+                          placeholder="Sin parámetro especificado"
+                          value={formLaunchArgs}
+                          onChange={(e) => setFormLaunchArgs(e.target.value)}
+                        />
+                        {formLaunchArgs && (
+                          <button
+                            type="button"
+                            className="btn-clear-action"
+                            onClick={() => setFormLaunchArgs('')}
+                            title="Borrar argumentos"
+                          >
+                            <TrashIcon size={14} /> Borrar argumentos
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab: Personalización */}
+                {editGameTab === 'personalizacion' && (
+                  <div className="settings-tab-panel">
+                    <div className="edit-game-field-block">
+                      <label className="edit-game-field-title">Personalización de Artwork</label>
+                      <span className="edit-game-field-subtitle">Elige carátulas, banners, logos e iconos de alta definición para este juego</span>
+                      <div style={{ marginTop: '10px', marginBottom: '14px' }}>
+                        <button
+                          type="button"
+                          className="btn-primary edit-game-sgdb-btn"
+                          onClick={() => {
+                            if (editingGameId) openSteamGridModal(editingGameId)
+                          }}
+                        >
+                          <ImageIcon size={18} /> Buscar Artwork en SteamGridDB
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="edit-artwork-preview-grid">
+                      <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
+                        <span className="edit-artwork-label">Portada (Grid 600x900)</span>
+                        <div className="edit-artwork-img-box grid">
+                          {(currentTargetGame as any)?.gridImageUrl ? (
+                            <img src={(currentTargetGame as any).gridImageUrl} alt="Grid" draggable={false} />
+                          ) : (
+                            <div className="edit-artwork-empty">Sin portada</div>
+                          )}
+                        </div>
+                        <button type="button" className="btn-secondary edit-artwork-btn">
+                          <EditIcon size={14} /> Cambiar portada
+                        </button>
+                      </div>
+
+                      <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
+                        <span className="edit-artwork-label">Banner (Hero 1920x620)</span>
+                        <div className="edit-artwork-img-box hero">
+                          {(currentTargetGame as any)?.heroImageUrl ? (
+                            <img src={(currentTargetGame as any).heroImageUrl} alt="Hero" draggable={false} />
+                          ) : (
+                            <div className="edit-artwork-empty">Sin banner</div>
+                          )}
+                        </div>
+                        <button type="button" className="btn-secondary edit-artwork-btn">
+                          <EditIcon size={14} /> Cambiar banner
+                        </button>
+                      </div>
+
+                      <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
+                        <span className="edit-artwork-label">Logo (Transparente)</span>
+                        <div className="edit-artwork-img-box logo">
+                          {(currentTargetGame as any)?.logoImageUrl ? (
+                            <img src={(currentTargetGame as any).logoImageUrl} alt="Logo" draggable={false} />
+                          ) : (
+                            <div className="edit-artwork-empty">Sin logo</div>
+                          )}
+                        </div>
+                        <button type="button" className="btn-secondary edit-artwork-btn">
+                          <EditIcon size={14} /> Cambiar logo
+                        </button>
+                      </div>
+
+                      <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
+                        <span className="edit-artwork-label">Icono</span>
+                        <div className="edit-artwork-img-box icon">
+                          {formIconUrl || (currentTargetGame as any)?.iconDataUrl ? (
+                            <img src={formIconUrl || (currentTargetGame as any).iconDataUrl} alt="Icon" draggable={false} />
+                          ) : (
+                            <div className="edit-artwork-empty">Sin icono</div>
+                          )}
+                        </div>
+                        <button type="button" className="btn-secondary edit-artwork-btn">
+                          <EditIcon size={14} /> Cambiar icono
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab: Descargas */}
+                {editGameTab === 'descargas' && (
+                  <div className="settings-tab-panel">
+                    <div className="edit-game-field-block">
+                      <label className="edit-game-field-title">Detalles de instalación</label>
+                      <span className="edit-game-field-subtitle">Información del archivo ejecutable y estado de almacenamiento</span>
+                      <div className="settings-app-stats-grid" style={{ marginTop: '16px' }}>
+                        <div className="settings-stat-box">
+                          <span className="settings-stat-label">Tipo de plataforma</span>
+                          <span className="settings-stat-val">{isSteamEdit ? 'Steam' : 'Local / Manual'}</span>
+                        </div>
+                        <div className="settings-stat-box">
+                          <span className="settings-stat-label">Tiempo jugado</span>
+                          <span className="settings-stat-val">{formatPlaytime((currentTargetGame as any)?.playtimeMinutes || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab: Zona de Peligro */}
+                {editGameTab === 'peligro' && (
+                  <div className="settings-tab-panel">
+                    <div className="edit-game-field-block danger-block">
+                      <label className="edit-game-field-title" style={{ color: '#ff5c5c' }}>Eliminar juego</label>
+                      <span className="edit-game-field-subtitle">
+                        Esta acción quitará el juego "{formName}" de tu biblioteca de HASHI. Tus archivos del juego en el disco no serán eliminados.
+                      </span>
+                      <div style={{ marginTop: '20px' }}>
+                        <button
+                          type="button"
+                          className="btn-danger"
+                          style={{ padding: '10px 24px', fontSize: '14px' }}
+                          onClick={() => {
+                            if (editingGameId) handleDeleteGame(editingGameId)
+                            setModal(null)
+                            resetForm()
+                          }}
+                        >
+                          <TrashIcon size={16} /> Eliminar juego de la biblioteca
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer buttons */}
+                <div className="edit-game-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setModal(null)}>
+                    Cancelar
+                  </button>
                   {!isSteamEdit && (
-                    <button className="btn-browse" onClick={handleBrowse}>
-                      <FolderIcon size={16} />
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={handleEditGame}
+                      disabled={!formName.trim()}
+                    >
+                      Guardar cambios
                     </button>
                   )}
                 </div>
-              </div>
-              {formIconUrl && (
-                <div className="icon-preview">
-                  <img src={formIconUrl} alt="Icono del juego" />
-                  <span className="icon-preview-text">Icono del juego</span>
-                </div>
-              )}
-              <div className="modal-actions">
-                <button
-                  className="btn-danger"
-                  onClick={() => {
-                    if (editingGameId) handleDeleteGame(editingGameId)
-                    setModal(null)
-                    resetForm()
-                  }}
-                >
-                  Eliminar
-                </button>
-                <button
-                  className="btn-secondary"
-                  onClick={() => {
-                    if (editingGameId) openSteamGridModal(editingGameId)
-                  }}
-                >
-                  <ImageIcon size={14} /> Artwork
-                </button>
-                <button className="btn-secondary" onClick={() => setModal(null)}>
-                  {isSteamEdit ? 'Cerrar' : 'Cancelar'}
-                </button>
-                {!isSteamEdit && (
-                  <button
-                    className="btn-primary"
-                    onClick={handleEditGame}
-                    disabled={!formName.trim()}
-                  >
-                    Guardar
-                  </button>
-                )}
-              </div>
+              </main>
             </div>
           </div>
         )
