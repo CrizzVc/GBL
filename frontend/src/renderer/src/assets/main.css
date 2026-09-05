@@ -1447,6 +1447,11 @@
   box-shadow: none;
 }
 
+.library-view-grid .library-item:focus {
+  outline: 2px solid #6690ff;
+  outline-offset: 2px;
+}
+
 .library-item-art {
   position: absolute;
   inset: 0;
@@ -1863,12 +1868,42 @@
   /* border: 1px solid rgba(255, 255, 255, 0.08); */
   border-radius: 14px;
   padding: 8px;
+  position: relative;
+  overflow: hidden;
 }
 
 .settings-app-logo {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.settings-app-logo-red .settings-app-logo {
+  filter: brightness(0) saturate(100%) invert(24%) sepia(98%) saturate(7280%) hue-rotate(349deg) brightness(96%) contrast(96%);
+}
+
+.settings-logo-ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: #ff3f58;
+  opacity: 0;
+  pointer-events: none;
+  animation: settingsLogoRipple 0.6s ease-out forwards;
+}
+
+@keyframes settingsLogoRipple {
+  0% {
+    opacity: 0.7;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(8);
+  }
 }
 
 .settings-app-meta {

@@ -111,6 +111,10 @@ export function playAchievementAlert(): void {
   play('achievement')
 }
 
+export function playNotification(): void {
+  play('achievement')
+}
+
 export function playControllerConnected(): void {
   play('controllerConnected')
 }

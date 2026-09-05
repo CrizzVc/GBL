@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import steamLogo from '../assets/tiendas/steamLogo.png'
+import { playNotification } from '../services/soundService'
 
 interface DownloadCompleteNotificationProps {
   id: string
@@ -19,6 +20,7 @@ export default function DownloadCompleteNotification({ id, name, iconUrl, onDism
   }, [id, onDismiss])
 
   useEffect(() => {
+    playNotification()
     const timer = setTimeout(() => {
       handleDismiss()
     }, 5000)

@@ -434,6 +434,9 @@ function App(): React.JSX.Element {
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const [updateLink, setUpdateLink] = useState<string | null>(null)
   const [settingsWallpaperPage, setSettingsWallpaperPage] = useState(0)
+  const [logoClicks, setLogoClicks] = useState(0)
+  const [logoIsRed, setLogoIsRed] = useState(false)
+  const logoWrapRef = useRef<HTMLDivElement>(null)
   const [defaultStore, setDefaultStore] = useState<string>(() => {
     try { return localStorage.getItem(DEFAULT_STORE_STORAGE_KEY) || 'steam' } catch { return 'steam' }
   })
@@ -4016,6 +4019,15 @@ function App(): React.JSX.Element {
                         placeholder="Buscar juego..."
                         value={librarySearch}
                         onChange={(e) => setLibrarySearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const firstArticle = libraryGridRef.current?.querySelector('.library-item') as HTMLElement | null
+                            if (firstArticle) {
+                              firstArticle.tabIndex = 0
+                              firstArticle.focus()
+                            }
+                          }
+                        }}
                       />
                     </div>
                     {librarySource === 'local' && (
@@ -4184,7 +4196,28 @@ function App(): React.JSX.Element {
                 <div className="settings-tab-panel">
                   {/* Top program info row */}
                   <div className="settings-hero-card">
-                    <div className="settings-app-logo-wrap">
+                    <div
+                      className={`settings-app-logo-wrap${logoIsRed ? ' settings-app-logo-red' : ''}`}
+                      ref={logoWrapRef}
+                      onClick={(e) => {
+                        if (logoIsRed) return
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                        const x = e.clientX - rect.left
+                        const y = e.clientY - rect.top
+                        const ripple = document.createElement('span')
+                        ripple.className = 'settings-logo-ripple'
+                        ripple.style.left = `${x}px`
+                        ripple.style.top = `${y}px`
+                        e.currentTarget.appendChild(ripple)
+                        ripple.addEventListener('animationend', () => ripple.remove())
+                        setLogoClicks((prev) => {
+                          const next = prev + 1
+                          if (next >= 10) setLogoIsRed(true)
+                          return next
+                        })
+                      }}
+                      style={{ cursor: logoIsRed ? 'default' : 'pointer' }}
+                    >
                       <img src={hashiLogo} alt="HASHI Logo" className="settings-app-logo" draggable={false} />
                     </div>
                     <div className="settings-app-meta">
