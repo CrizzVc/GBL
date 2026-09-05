@@ -1041,7 +1041,7 @@
 
 .btn-primary {
   padding: 10px 24px;
-  background: var(--gbl-accent-gradient);
+  background: #242424a9;
   border: none;
   border-radius: var(--gbl-radius-sm);
   color: white;
@@ -1053,7 +1053,6 @@
 }
 
 .btn-primary:hover {
-  box-shadow: var(--gbl-shadow-glow);
   transform: translateY(-1px);
 }
 
@@ -1254,10 +1253,10 @@
 
 .library-search-input {
   width: 200px;
-  height: 40px;
+  height: 36px;
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: none;
   border-radius: 8px;
   color: #fff;
   font-size: 13px;
@@ -1333,14 +1332,13 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  background: #242424;
-  border: 1px solid white;
+  background: #242424a9;
+  /* border: 1px solid white; */
   box-shadow: none;
 }
 
 .library-add-button:hover {
   background: #242424;
-  box-shadow: 0 6px 30px var(--gbl-accent-glow);
 }
 
 .library-hero {

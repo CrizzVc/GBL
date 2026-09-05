@@ -4033,9 +4033,6 @@ function App(): React.JSX.Element {
 
               {/* Right Content Area */}
               <main className="settings-content-area edit-game-content-area">
-                <button className="edit-game-close-btn" onClick={() => setModal(null)}>
-                  <CloseIcon size={18} />
-                </button>
 
                 {/* Tab: Inicio */}
                 {editGameTab === 'inicio' && (
@@ -4160,6 +4157,7 @@ function App(): React.JSX.Element {
                           onClick={() => {
                             if (editingGameId) openSteamGridModal(editingGameId)
                           }}
+                          style={{ background: "#111114", border: "solid 1px #3a3a3a3f" }}
                         >
                           <ImageIcon size={18} /> Buscar Artwork en SteamGridDB
                         </button>
@@ -4274,7 +4272,7 @@ function App(): React.JSX.Element {
 
                 {/* Footer buttons */}
                 <div className="edit-game-footer">
-                  <button type="button" className="btn-secondary" onClick={() => setModal(null)}>
+                  <button type="button" className="btn-secondary" style={{ background: "#111114" }} onClick={() => setModal(null)}>
                     Cancelar
                   </button>
                   {!isSteamEdit && (
