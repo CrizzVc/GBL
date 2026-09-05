@@ -37,6 +37,20 @@ import RatingE from './assets/ratings/E.png'
 import RatingE10 from './assets/ratings/E10.png'
 import RatingT from './assets/ratings/T.png'
 import RatingM from './assets/ratings/M.png'
+
+const APP_VERSION = '1.0.0'
+
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0
+    const nb = pb[i] || 0
+    if (na > nb) return 1
+    if (na < nb) return -1
+  }
+  return 0
+}
 import RatingAO from './assets/ratings/AO.png'
 import RatingRP from './assets/ratings/RP.png'
 import RatingRP17 from './assets/ratings/RP17.png'
@@ -417,6 +431,7 @@ function App(): React.JSX.Element {
   const [startupEnabled, setStartupEnabled] = useState(false)
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+  const [updateLink, setUpdateLink] = useState<string | null>(null)
   const [settingsWallpaperPage, setSettingsWallpaperPage] = useState(0)
   const [defaultStore, setDefaultStore] = useState<string>(() => {
     try { return localStorage.getItem(DEFAULT_STORE_STORAGE_KEY) || 'steam' } catch { return 'steam' }
@@ -1745,14 +1760,28 @@ function App(): React.JSX.Element {
     }
   }, [startupEnabled])
 
-  const handleCheckForUpdates = useCallback(() => {
+  const handleCheckForUpdates = useCallback(async () => {
     setIsCheckingUpdate(true)
     setUpdateMessage(null)
-    setTimeout(() => {
-      setIsCheckingUpdate(false)
-      setUpdateMessage('HASHI v1.0.0 está actualizado')
+    setUpdateLink(null)
+    try {
+      const data = await window.api.checkForUpdates()
+      const apiVersion = data.version
+      const downloadLink = data.link
+      const cmp = compareVersions(apiVersion, APP_VERSION)
+      if (cmp > 0) {
+        setUpdateMessage(`Nueva versión encontrada: v${apiVersion}`)
+        setUpdateLink(downloadLink)
+      } else {
+        setUpdateMessage('HASHI está actualizado')
+        setTimeout(() => setUpdateMessage(null), 4000)
+      }
+    } catch {
+      setUpdateMessage('Error al buscar actualizaciones')
       setTimeout(() => setUpdateMessage(null), 4000)
-    }, 1200)
+    } finally {
+      setIsCheckingUpdate(false)
+    }
   }, [])
 
   const handleOpenWallpaperFolderPicker = useCallback(async () => {
@@ -4152,7 +4181,7 @@ function App(): React.JSX.Element {
                     <div className="settings-app-meta">
                       <div className="settings-app-title-row">
                         <span className="settings-app-name">HASHI</span>
-                        <span className="settings-version-badge">v1.0.0</span>
+                        <span className="settings-version-badge">v{APP_VERSION}</span>
                       </div>
                       <div className="settings-app-stats-grid">
                         <div className="settings-stat-box">
@@ -4222,8 +4251,8 @@ function App(): React.JSX.Element {
                       {/* Option 3: Search Update */}
                       <button
                         type="button"
-                        className={`settings-action-btn ${isCheckingUpdate ? 'loading' : ''}`}
-                        onClick={handleCheckForUpdates}
+                        className={`settings-action-btn ${isCheckingUpdate ? 'loading' : ''} ${updateLink ? 'has-update' : ''}`}
+                        onClick={updateLink ? () => window.api.openExternal(updateLink) : handleCheckForUpdates}
                         disabled={isCheckingUpdate}
                       >
                         <div className="settings-action-icon-wrap">
@@ -4231,7 +4260,7 @@ function App(): React.JSX.Element {
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">
-                            {isCheckingUpdate ? 'Buscando...' : 'Buscar actualización'}
+                            {isCheckingUpdate ? 'Buscando...' : updateLink ? 'Descargar actualización' : 'Buscar actualización'}
                           </span>
                           <span className="settings-action-desc">
                             {updateMessage ? updateMessage : 'Comprobar nuevas versiones'}

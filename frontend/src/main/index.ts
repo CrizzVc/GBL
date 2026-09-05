@@ -1440,6 +1440,27 @@ app.whenReady().then(() => {
     clearInterval(downloadParseInterval)
   })
 
+  ipcMain.handle('check-for-updates', async () => {
+    const https = await import('https')
+    return new Promise((resolve, reject) => {
+      https.get('https://crizzvc.github.io/Hashi-API/api.json', (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error('Error en la red'))
+          return
+        }
+        let data = ''
+        res.on('data', (chunk) => { data += chunk })
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data))
+          } catch {
+            reject(new Error('Error parseando JSON'))
+          }
+        })
+      }).on('error', reject)
+    })
+  })
+
   ipcMain.handle('get-steam-download-progress', async () => {
     const steamRoots = getSteamPaths()
     const downloads: SteamDownloadProgress[] = []

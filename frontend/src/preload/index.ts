@@ -63,6 +63,7 @@ const api = {
   openSteamOpenId: () => ipcRenderer.invoke('open-steam-openid'),
   getSteamInstallationStatus: (appIds: string[]) => ipcRenderer.invoke('get-steam-installation-status', appIds),
   getSteamDownloadProgress: () => ipcRenderer.invoke('get-steam-download-progress'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   // Startup shortcut APIs
   createStartupShortcut: () => ipcRenderer.invoke('create-startup-shortcut'),
   getStartupStatus: () => ipcRenderer.invoke('get-startup-status'),

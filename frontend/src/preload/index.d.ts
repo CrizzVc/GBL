@@ -85,6 +85,7 @@ declare global {
         percent: number
         downloadSpeed: number
       }>>
+      checkForUpdates: () => Promise<{ name: string; tipe: string; version: string; link: string }>
       createStartupShortcut: () => Promise<{ success: boolean; error?: string }>
       getStartupStatus: () => Promise<{ enabled: boolean }>
       removeStartupShortcut: () => Promise<{ success: boolean; error?: string }>

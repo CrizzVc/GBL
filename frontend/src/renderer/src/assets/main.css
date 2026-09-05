@@ -1992,6 +1992,17 @@
   background: rgb(217 76 76 / 6%);
 }
 
+.settings-action-btn.has-update {
+  border-color: rgb(76 175 80 / 40%);
+  background: rgb(76 175 80 / 8%);
+  cursor: pointer;
+}
+
+.settings-action-btn.has-update:hover {
+  border-color: rgb(76 175 80 / 60%);
+  background: rgb(76 175 80 / 14%);
+}
+
 .settings-action-icon-wrap {
   width: 32px;
   height: 32px;
