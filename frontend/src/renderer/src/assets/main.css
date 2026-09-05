@@ -2863,6 +2863,35 @@
   transition: background var(--gbl-transition-slow);
 }
 
+.detail-back-button {
+  position: absolute;
+  top: 20px;
+  left: 36px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: var(--gbl-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: color var(--gbl-transition-fast), background var(--gbl-transition-fast), border-color var(--gbl-transition-fast), transform var(--gbl-transition-fast);
+}
+
+.detail-back-button:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateX(-2px);
+}
+
 .detail-close {
   position: absolute;
   top: 20px;

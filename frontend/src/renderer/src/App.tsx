@@ -1022,9 +1022,15 @@ function App(): React.JSX.Element {
         installed: Boolean(installStatus?.[game.appid]) || Boolean(game.installed)
       }))
 
-      setSteamLibrary(finalGames)
-      if (librarySource === 'steam' && finalGames.length > 0) {
-        setSelectedSteamAppId(String(finalGames[0].appid))
+      let hidden: string[] = []
+      try {
+        hidden = JSON.parse(localStorage.getItem('gbl_hidden_steam_apps') || '[]')
+      } catch {}
+      const visibleGames = finalGames.filter((g) => !hidden.includes(String(g.appid)))
+
+      setSteamLibrary(visibleGames)
+      if (librarySource === 'steam' && visibleGames.length > 0) {
+        setSelectedSteamAppId(String(visibleGames[0].appid))
       }
     } catch (err) {
       console.error('Error loading Steam library:', err)
@@ -1546,13 +1552,35 @@ function App(): React.JSX.Element {
   // ── Delete game ──
   const handleDeleteGame = useCallback(
     (gameId: string) => {
+      if (gameId.startsWith('steam-')) {
+        const appid = gameId.replace(/^steam-/, '')
+        setSteamLibrary((prev) => prev.filter((g) => String(g.appid) !== String(appid)))
+        if (selectedSteamAppId === appid) {
+          setSelectedSteamAppId(null)
+        }
+        if (detailGameId === gameId) {
+          setDetailGameId(null)
+        }
+        try {
+          const hidden = JSON.parse(localStorage.getItem('gbl_hidden_steam_apps') || '[]')
+          if (!hidden.includes(appid)) {
+            localStorage.setItem('gbl_hidden_steam_apps', JSON.stringify([...hidden, appid]))
+          }
+        } catch (e) {
+          console.error(e)
+        }
+        return
+      }
       const newGames = games.filter((g) => g.id !== gameId)
       saveGames(newGames)
       if (selectedGameId === gameId) {
         setSelectedGameId(newGames.length > 0 ? newGames[0].id : null)
       }
+      if (detailGameId === gameId) {
+        setDetailGameId(null)
+      }
     },
-    [games, selectedGameId, saveGames]
+    [games, selectedGameId, selectedSteamAppId, detailGameId, saveGames]
   )
 
   // ── Launch game ──
@@ -1698,14 +1726,28 @@ function App(): React.JSX.Element {
   const openEditGameModal = useCallback(
     (gameId: string) => {
       const game = games.find((g) => g.id === gameId)
-      if (!game) return
+      if (!game) {
+        if (gameId.startsWith('steam-')) {
+          const appid = gameId.replace(/^steam-/, '')
+          const steamGame = steamLibrary.find((g) => String(g.appid) === String(appid))
+          if (steamGame) {
+            setEditingGameId(gameId)
+            setFormName(steamGame.name)
+            setFormExePath(steamGame.installed ? `steam://rungameid/${steamGame.appid}` : `steam://install/${steamGame.appid}`)
+            setFormIconUrl(steamGame.iconDataUrl || null)
+            setModal('editGame')
+            return
+          }
+        }
+        return
+      }
       setEditingGameId(gameId)
       setFormName(game.name)
       setFormExePath(game.exePath)
       setFormIconUrl(game.iconDataUrl)
       setModal('editGame')
     },
-    [games]
+    [games, steamLibrary]
   )
 
   const resetForm = (): void => {
@@ -3364,7 +3406,7 @@ function App(): React.JSX.Element {
                   ? 'Abrir'
                   : 'Jugar'}
             </button>
-            {!isSteam && !isQuickApp && !quickAppTarget && (
+            {!isQuickApp && !quickAppTarget && (
               <button
                 className="context-menu-item"
                 onClick={() => {
@@ -3395,24 +3437,20 @@ function App(): React.JSX.Element {
             >
               <ImageIcon size={16} /> Buscar Artwork
             </button>
-            {!isSteam && (
-              <>
-                <div className="context-menu-separator" />
-                <button
-                  className="context-menu-item danger"
-                  onClick={() => {
-                    if (quickAppId && quickAppTarget) {
-                      saveQuickApps(quickApps.filter((a) => a.id !== quickAppId))
-                    } else if (contextMenu.gameId) {
-                      handleDeleteGame(contextMenu.gameId)
-                    }
-                    setContextMenu((p) => ({ ...p, visible: false }))
-                  }}
-                >
-                  <TrashIcon size={16} /> Eliminar
-                </button>
-              </>
-            )}
+            <div className="context-menu-separator" />
+            <button
+              className="context-menu-item danger"
+              onClick={() => {
+                if (quickAppId && quickAppTarget) {
+                  saveQuickApps(quickApps.filter((a) => a.id !== quickAppId))
+                } else if (contextMenu.gameId) {
+                  handleDeleteGame(contextMenu.gameId)
+                }
+                setContextMenu((p) => ({ ...p, visible: false }))
+              }}
+            >
+              <TrashIcon size={16} /> Eliminar
+            </button>
           </div>
         )
       })()}
@@ -3425,6 +3463,9 @@ function App(): React.JSX.Element {
             className="detail-bg fade-in-bg"
             style={detailBgStyle}
           />
+          <button className="detail-back-button" onClick={handleCloseDetail}>
+            <ChevronLeftIcon size={18} /> Volver
+          </button>
           <button className="detail-close" onClick={handleCloseDetail}>
             <CloseIcon size={20} />
           </button>
@@ -3774,10 +3815,17 @@ function App(): React.JSX.Element {
               })()}
               <button
                 className="detail-edit-button"
-                onClick={() => {
-                  openSteamGridModal(detailGame.id)
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setContextMenu({
+                    visible: true,
+                    x: rect.left,
+                    y: rect.bottom + 6,
+                    gameId: detailGame.id
+                  })
                 }}
-                aria-label="Editar Artwork"
+                aria-label="Más opciones"
               >
                 <MoreIcon size={20} />
               </button>
@@ -3928,79 +3976,76 @@ function App(): React.JSX.Element {
       )}
 
       {/* ── Edit Game Modal ── */}
-      {modal === 'editGame' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">{detailGame?.isSteam ? 'Detalles de Steam' : 'Editar Juego'}</h2>
-              <button className="modal-close" onClick={() => setModal(null)}>
-                <CloseIcon size={20} />
-              </button>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Nombre del juego</label>
-              <input
-                className="form-input"
-                type="text"
-                placeholder="Nombre del juego"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                readOnly={detailGame?.isSteam}
-                autoFocus
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Archivo ejecutable</label>
-              <div className="form-file-row">
+      {modal === 'editGame' && (() => {
+        const isSteamEdit = editingGameId?.startsWith('steam-')
+        return (
+          <div className="modal-overlay" onClick={() => setModal(null)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="modal-title">{isSteamEdit ? 'Detalles del Juego (Steam)' : 'Editar Juego'}</h2>
+                <button className="modal-close" onClick={() => setModal(null)}>
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nombre del juego</label>
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="Ruta al .exe o acceso directo"
-                  value={formExePath}
-                  onChange={(e) => setFormExePath(e.target.value)}
-                  readOnly={detailGame?.isSteam}
+                  placeholder="Nombre del juego"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  readOnly={isSteamEdit}
+                  autoFocus
                 />
-                {!detailGame?.isSteam && (
-                  <button className="btn-browse" onClick={handleBrowse}>
-                    <FolderIcon size={16} />
-                  </button>
-                )}
               </div>
-            </div>
-            {formIconUrl && (
-              <div className="icon-preview">
-                <img src={formIconUrl} alt="Icono del juego" />
-                <span className="icon-preview-text">Icono del juego</span>
+              <div className="form-group">
+                <label className="form-label">Archivo ejecutable</label>
+                <div className="form-file-row">
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="Ruta al .exe o acceso directo"
+                    value={formExePath}
+                    onChange={(e) => setFormExePath(e.target.value)}
+                    readOnly={isSteamEdit}
+                  />
+                  {!isSteamEdit && (
+                    <button className="btn-browse" onClick={handleBrowse}>
+                      <FolderIcon size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-            <div className="modal-actions">
-              {detailGame?.isSteam ? (
-                <button className="btn-primary" onClick={() => setModal(null)}>
-                  Cerrar
+              {formIconUrl && (
+                <div className="icon-preview">
+                  <img src={formIconUrl} alt="Icono del juego" />
+                  <span className="icon-preview-text">Icono del juego</span>
+                </div>
+              )}
+              <div className="modal-actions">
+                <button
+                  className="btn-danger"
+                  onClick={() => {
+                    if (editingGameId) handleDeleteGame(editingGameId)
+                    setModal(null)
+                    resetForm()
+                  }}
+                >
+                  Eliminar
                 </button>
-              ) : (
-                <>
-                  <button
-                    className="btn-danger"
-                    onClick={() => {
-                      if (editingGameId) handleDeleteGame(editingGameId)
-                      setModal(null)
-                      resetForm()
-                    }}
-                  >
-                    Eliminar
-                  </button>
-                  <button
-                    className="btn-secondary"
-                    onClick={() => {
-                      if (editingGameId) openSteamGridModal(editingGameId)
-                    }}
-                  >
-                    <ImageIcon size={14} /> Artwork
-                  </button>
-                  <button className="btn-secondary" onClick={() => setModal(null)}>
-                    Cancelar
-                  </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    if (editingGameId) openSteamGridModal(editingGameId)
+                  }}
+                >
+                  <ImageIcon size={14} /> Artwork
+                </button>
+                <button className="btn-secondary" onClick={() => setModal(null)}>
+                  {isSteamEdit ? 'Cerrar' : 'Cancelar'}
+                </button>
+                {!isSteamEdit && (
                   <button
                     className="btn-primary"
                     onClick={handleEditGame}
@@ -4008,12 +4053,12 @@ function App(): React.JSX.Element {
                   >
                     Guardar
                   </button>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ── Library View ── */}
       {libraryView && (
