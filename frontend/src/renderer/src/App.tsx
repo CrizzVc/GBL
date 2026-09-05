@@ -499,6 +499,7 @@ function App(): React.JSX.Element {
     [selectedSteamAppId, steamLibrary]
   )
   const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x600.jpg`, [])
+  const steamLogoUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/logo.png`, [])
   const librarySelectedGame = games.find((g) => g.id === selectedGameId) || sortedLibraryGames[0] || null
   const detailGame = useMemo<Game | null>(() => {
     const localGame = games.find((g) => g.id === detailGameId) || null
@@ -4019,14 +4020,13 @@ function App(): React.JSX.Element {
                                 }
                               }}
                             />
-                            {game.logoImageUrl && (
-                              <img
-                                src={game.logoImageUrl}
-                                alt=""
-                                className="library-item-logo-overlay"
-                                draggable={false}
-                              />
-                            )}
+                            <img
+                              src={game.logoImageUrl || steamLogoUrl(game.appid)}
+                              alt=""
+                              className="library-item-logo-overlay"
+                              draggable={false}
+                              onError={(e) => { e.currentTarget.style.display = 'none' }}
+                            />
                             {!game.installed && (
                               <img
                                 src={installIcon}

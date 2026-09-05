@@ -1489,6 +1489,7 @@
   object-position: left center;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
   pointer-events: none;
+  z-index: 3;
 }
 
 .library-item-download-badge {
