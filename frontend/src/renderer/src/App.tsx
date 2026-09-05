@@ -3428,7 +3428,7 @@ function App(): React.JSX.Element {
             {/* Screenshot carousel */}
             <div className="detail-carousel">
               {detailLoadingShots && (
-                <div className="detail-carousel-status">Cargando capturas...</div>
+                <div className="shimmer shimmer-carousel" />
               )}
               {!detailLoadingShots && detailScreenshots.length === 0 && (
                 <div className="detail-carousel-status">
@@ -3481,7 +3481,11 @@ function App(): React.JSX.Element {
               <div className="detail-description">
                 <h3 className="detail-section-title">Acerca del juego</h3>
                 {detailInfoLoading && (
-                  <p className="detail-description-text muted">Cargando descripción...</p>
+                  <div className="detail-description-text" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className="shimmer shimmer-text" />
+                    <div className="shimmer shimmer-text" />
+                    <div className="shimmer shimmer-text short" />
+                  </div>
                 )}
                 {!detailInfoLoading && detailInfo?.description && (
                   <p className="detail-description-text">{detailInfo.description}</p>
@@ -3553,7 +3557,22 @@ function App(): React.JSX.Element {
 
             {/* Reviews, then release info, then tags */}
             <div className={`detail-ratings-panel ${smallDetailLayout ? 'esrb-only' : ''}`}>
-              {smallDetailLayout ? (
+              {detailInfoLoading && (
+                <div className="detail-meta-section">
+                  <div className="shimmer-meta-row"><div className="shimmer shimmer-meta-label" /><div className="shimmer shimmer-meta-value" /></div>
+                  <div className="shimmer-meta-row"><div className="shimmer shimmer-meta-label" /><div className="shimmer shimmer-meta-value" /></div>
+                  <div className="shimmer-meta-row"><div className="shimmer shimmer-meta-label" /><div className="shimmer shimmer-meta-value" /></div>
+                  <div className="shimmer-meta-row"><div className="shimmer shimmer-meta-label" /><div className="shimmer shimmer-meta-value" /></div>
+                  <div className="shimmer-tags-row" style={{ marginTop: '12px' }}>
+                    <div className="shimmer shimmer-tag" />
+                    <div className="shimmer shimmer-tag" />
+                    <div className="shimmer shimmer-tag" />
+                    <div className="shimmer shimmer-tag" />
+                    <div className="shimmer shimmer-tag" />
+                  </div>
+                </div>
+              )}
+              {!detailInfoLoading && smallDetailLayout ? (
                 detailInfo?.rating && (detailInfo.rating.rating || detailInfo.rating.descriptors.length > 0) && (
                   <div className="rating-widget">
                     <img src={getRatingImage(detailInfo.rating.rating)} alt="" style={{ width: '80px' }} />

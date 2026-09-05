@@ -2958,6 +2958,64 @@
   white-space: nowrap;
 }
 
+/* ── Shimmer Skeleton ── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--gbl-radius-sm);
+}
+
+.shimmer-carousel {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--gbl-radius-md);
+}
+
+.shimmer-text {
+  height: 14px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.shimmer-text.short {
+  width: 65%;
+}
+
+.shimmer-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.shimmer-meta-label {
+  height: 12px;
+  width: 100px;
+}
+
+.shimmer-meta-value {
+  height: 14px;
+  width: 120px;
+}
+
+.shimmer-tag {
+  height: 30px;
+  width: 80px;
+  border-radius: var(--gbl-radius-sm);
+}
+
+.shimmer-tags-row {
+  display: flex;
+  gap: 8px;
+}
+
 .detail-info-row {
   flex-shrink: 0;
   display: grid;
