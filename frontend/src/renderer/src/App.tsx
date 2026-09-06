@@ -3110,9 +3110,9 @@ function App(): React.JSX.Element {
               id={`game-card-${game.id}`}
             >
               {runningGameId === game.id && <div className="running-badge" />}
-              {game.squareGridImageUrl || game.gridImageUrl ? (
+              {game.squareGridImageUrl ? (
                 <img
-                  src={game.squareGridImageUrl || game.gridImageUrl!}
+                  src={game.squareGridImageUrl}
                   alt={game.name}
                   className="game-card-cover"
                   draggable={false}
@@ -4603,16 +4603,10 @@ function App(): React.JSX.Element {
                         >
                           <div className="library-item-art steam-library-art">
                             <img
-                              src={game.gridImageUrl || steamLibraryArtUrl(game.appid)}
+                              src={game.squareGridImageUrl || steamLibraryArtUrl(game.appid)}
                               alt={game.name}
                               className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                               draggable={false}
-                              onError={(e) => {
-                                const img = e.currentTarget
-                                if (img.src.includes('library_600x600')) {
-                                  img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
-                                }
-                              }}
                             />
                             {!game.installed && (
                               <img
@@ -4662,8 +4656,8 @@ function App(): React.JSX.Element {
                         onDoubleClick={() => { detailFromLibraryRef.current = true; setLibraryView(false); openDetailView(game.id) }}
                       >
                         <div className="library-item-art">
-                          {game.gridImageUrl ? (
-                            <img src={game.gridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
+                          {game.squareGridImageUrl ? (
+                            <img src={game.squareGridImageUrl} alt={game.name} className="library-item-cover" draggable={false} />
                           ) : game.iconDataUrl ? (
                             <img src={game.iconDataUrl} alt={game.name} className="library-item-icon" draggable={false} />
                           ) : (
