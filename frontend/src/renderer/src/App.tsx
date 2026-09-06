@@ -860,7 +860,7 @@ function App(): React.JSX.Element {
       }
       dismissCompletion(comp.appId)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedDownloads, dismissCompletion, downloadingGameId, steamLibrary])
 
   const dismissDownloadNotification = useCallback((id: string) => {
@@ -4944,7 +4944,7 @@ function App(): React.JSX.Element {
                     <div className="settings-wallpaper-hero-overlay">
                       <div className="settings-wallpaper-hero-info">
                         <span className="settings-wallpaper-badge">
-                          {backgroundImage ? 'Fondo personalizado' : 'Fondo por defecto'}
+                          {backgroundImage ? t.customBackground : t.defaultBackground}
                         </span>
                       </div>
                       <div className="settings-wallpaper-hero-actions">
@@ -4953,7 +4953,7 @@ function App(): React.JSX.Element {
                           className="btn-secondary settings-mini-btn"
                           onClick={handleSelectBackground}
                         >
-                          <ImageIcon size={14} /> Cambiar fondo
+                          <ImageIcon size={14} /> {t.changeBackground}
                         </button>
                         {backgroundImage && (
                           <button
@@ -4961,7 +4961,7 @@ function App(): React.JSX.Element {
                             className="btn-danger settings-mini-btn"
                             onClick={handleClearBackground}
                           >
-                            Restaurar
+                            {t.restoreBackground}
                           </button>
                         )}
                         <button
@@ -4969,7 +4969,7 @@ function App(): React.JSX.Element {
                           className="btn-secondary settings-mini-btn"
                           onClick={handleOpenWallpaperFolderPicker}
                         >
-                          <FolderIcon size={14} /> Elegir carpeta
+                          <FolderIcon size={14} /> {t.chooseFolder}
                         </button>
                       </div>
                     </div>
@@ -4988,10 +4988,10 @@ function App(): React.JSX.Element {
                       <div className="settings-folder-wallpapers-section">
                         <div className="settings-folder-wallpapers-header">
                           <div className="settings-folder-header-left">
-                            <span className="settings-folder-wallpapers-title">Fondos de la carpeta</span>
+                            <span className="settings-folder-wallpapers-title">{t.folderBackgrounds}</span>
                             {wallpaperImages && wallpaperImages.length > 0 && (
                               <span className="settings-wallpaper-count-badge">
-                                {wallpaperImages.length} {wallpaperImages.length === 1 ? 'fondo' : 'fondos'}
+                                {wallpaperImages.length} {wallpaperImages.length === 1 ? t.backgroundCountSingular : t.backgroundCountPlural}
                               </span>
                             )}
                           </div>
@@ -5069,7 +5069,7 @@ function App(): React.JSX.Element {
 
                   {/* Profile section */}
                   <div className="settings-section">
-                    <h3 className="settings-section-title">Perfil</h3>
+                    <h3 className="settings-section-title">{t.profileTitle}</h3>
                     <div className="settings-profile-row">
                       <div
                         className="settings-profile-avatar"
@@ -5087,7 +5087,7 @@ function App(): React.JSX.Element {
                         </div>
                       </div>
                       <div className="settings-profile-fields">
-                        <label className="form-label">Nombre de usuario</label>
+                        <label className="form-label">{t.username}</label>
                         <input
                           className="form-input"
                           placeholder="Nombre de usuario"
