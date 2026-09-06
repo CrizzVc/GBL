@@ -474,7 +474,6 @@ function App(): React.JSX.Element {
 
   // Settings modal state
   const [settingsTab, setSettingsTab] = useState<'inicio' | 'personalizacion' | 'ayuda'>('inicio')
-  const [startupEnabled] = useState(false)
   const [language, setLanguage] = useState<Language>(() => {
     try {
       return (localStorage.getItem('gbl-language') as Language) || 'es'
@@ -1960,21 +1959,7 @@ function App(): React.JSX.Element {
     [profileAvatar]
   )
 
-  const handleToggleStartupShortcut = useCallback(async () => {
-    try {
-      if (startupEnabled) {
-        await window.api.removeStartupShortcut?.()
-        setStartupEnabled(false)
-      } else {
-        const res = await window.api.createStartupShortcut?.()
-        if (res?.success) {
-          setStartupEnabled(true)
-        }
-      }
-    } catch (err) {
-      console.error('Error toggling startup shortcut:', err)
-    }
-  }, [startupEnabled])
+
 
   const handleCheckForUpdates = useCallback(async () => {
     setIsCheckingUpdate(true)
@@ -4855,7 +4840,9 @@ function App(): React.JSX.Element {
                             {language === 'es' ? t.spanish : t.english}
                           </span>
                         </div>
-                        <ChevronDownIcon size={14} style={{ color: 'rgba(255, 255, 255, 0.45)', marginLeft: 'auto', flexShrink: 0 }} />
+                        <span style={{ color: 'rgba(255, 255, 255, 0.45)', marginLeft: 'auto', flexShrink: 0 }}>
+                          <ChevronDownIcon size={14} />
+                        </span>
                         <select
                           className="settings-action-select-overlay"
                           value={language}
