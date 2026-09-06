@@ -1,5 +1,5 @@
 # HASHI v1.0.0
-<img width="7000" height="3020" alt="banner" src="https://github.com/user-attachments/assets/1a2cdaea-3899-4c2b-bb7d-1a86b081ab1a" />
+<img width="7000" height="3020" alt="Agregar un título" src="https://github.com/user-attachments/assets/0f17e714-61b2-4634-a0d8-6332c0b5da12" />
 <img width="1919" height="1079" alt="Captura de pantalla 2026-09-04 225617" src="https://github.com/user-attachments/assets/ed0cd404-08bb-4abe-a638-b00e3865b4e0" />
 
 ## HOME VIEW
