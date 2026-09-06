@@ -101,6 +101,10 @@ export interface TranslationSchema {
   noIcon: string
   changeHero: string
   noHero: string
+  btnPlay: string
+  BtnEnter: string
+  BtnEdit: string
+  btnDownload: string
   btnSearchArtwork: string
   labelLaunchArgs: string
   labelCategory: string
@@ -376,6 +380,10 @@ export const translations: Record<Language, TranslationSchema> = {
     personalizationArtwork: 'Personalización de Artwork',
     artworkPersonalizationSub: 'Elige carátulas, banners, logos e iconos de alta definición para este juego',
     btnSearchArtwork: 'Buscar Artwork',
+    btnPlay: 'Jugar',
+    BtnEnter: 'Entrar',
+    BtnEdit: 'Editar',
+    btnDownload: 'Descargar',
     labelLaunchArgs: 'Parámetros de lanzamiento',
     labelCategory: 'Categoría',
     btnSave: 'Guardar',
@@ -627,6 +635,10 @@ export const translations: Record<Language, TranslationSchema> = {
     personalizationArtwork: 'Artwork Personalization',
     artworkPersonalizationSub: 'Choose high-definition covers, banners, logos and icons for this game',
     btnSearchArtwork: 'Search Artwork',
+    btnPlay: 'Play',
+    BtnEnter: 'Enter',
+    BtnEdit: 'Edit',
+    btnDownload: 'Download',
     labelLaunchArgs: 'Launch arguments',
     labelCategory: 'Category',
     btnSave: 'Save',

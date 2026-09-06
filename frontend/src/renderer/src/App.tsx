@@ -3607,10 +3607,10 @@ function App(): React.JSX.Element {
               >
                 <PlayIcon size={16} />{' '}
                 {isSteam && !steamInstalled
-                  ? 'Descargar'
+                  ? t.btnDownload
                   : quickAppTarget?.kind === 'program'
-                    ? 'Abrir'
-                    : 'Jugar'}
+                    ? t.BtnEnter
+                    : t.btnPlay}
               </button>
               {!isQuickApp && !quickAppTarget && (
                 <button
@@ -3620,7 +3620,7 @@ function App(): React.JSX.Element {
                     setContextMenu((p) => ({ ...p, visible: false }))
                   }}
                 >
-                  <EditIcon size={16} /> Editar
+                  <EditIcon size={16} /> {t.BtnEdit}
                 </button>
               )}
               {quickAppTarget && (
