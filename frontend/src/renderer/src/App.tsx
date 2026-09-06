@@ -19,8 +19,11 @@ import {
   HomeIcon,
   DownloadIcon,
   ExtensionIcon,
-  HelpIcon
+  HelpIcon,
+  GlobeIcon
 } from './components/Icons'
+
+import { translations, Language } from './translations'
 
 import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
@@ -463,7 +466,30 @@ function App(): React.JSX.Element {
 
   // Settings modal state
   const [settingsTab, setSettingsTab] = useState<'inicio' | 'personalizacion' | 'ayuda'>('inicio')
-  const [startupEnabled, setStartupEnabled] = useState(false)
+  const [startupEnabled] = useState(false)
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      return (localStorage.getItem('gbl-language') as Language) || 'es'
+    } catch {
+      return 'es'
+    }
+  })
+
+  const t = translations[language] || translations.es
+
+  const handleLanguageChange = (newLang: Language): void => {
+    setLanguage(newLang)
+    try {
+      localStorage.setItem('gbl-language', newLang)
+    } catch (e) {
+      console.error('Error saving language setting:', e)
+    }
+  }
+
+  const handleLanguageToggle = (): void => {
+    handleLanguageChange(language === 'es' ? 'en' : 'es')
+  }
+
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const [updateLink, setUpdateLink] = useState<string | null>(null)
@@ -2956,26 +2982,26 @@ function App(): React.JSX.Element {
           </h1>
         </div>
         <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><PlusIcon size={18} /></div> Agregar juego
+          <div className="sidebar-item-icon"><PlusIcon size={18} /></div> {t.addGame}
         </button>
         <button className={`sidebar-item ${sidebarIndex === 1 ? 'focused' : ''}`} onClick={() => { handleOpenStore(defaultStore); setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><StoreIcon size={18} /></div> Tienda
+          <div className="sidebar-item-icon"><StoreIcon size={18} /></div> {t.store}
         </button>
         <button className={`sidebar-item ${sidebarIndex === 2 ? 'focused' : ''}`} onClick={() => { handleOpenSpecs(); setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><SystemIcon size={18} /></div> Especificaciones
+          <div className="sidebar-item-icon"><SystemIcon size={18} /></div> {t.specs}
         </button>
         <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setShowDownloadsModal(true); setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><DownloadIcon size={18} /></div> Descargas
+          <div className="sidebar-item-icon"><DownloadIcon size={18} /></div> {t.downloads}
         </button>
         <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { /* TODO: abrir extensiones */ setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><ExtensionIcon size={18} /></div> Extensiones
+          <div className="sidebar-item-icon"><ExtensionIcon size={18} /></div> {t.extensions}
         </button>
         <button className={`sidebar-item ${sidebarIndex === 5 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
-          <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> Ajustes
+          <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> {t.settings}
         </button>
         <div style={{ marginTop: 'auto' }}>
           <button className={`sidebar-item ${sidebarIndex === 6 ? 'focused' : ''}`} onClick={() => window.close()}>
-            <div className="sidebar-item-icon"><PowerIcon size={18} /></div> Salir
+            <div className="sidebar-item-icon"><PowerIcon size={18} /></div> {t.exit}
           </button>
         </div>
       </div>
@@ -3424,11 +3450,11 @@ function App(): React.JSX.Element {
                     </button>
                   </div>
                   <div className="friends-row">
-                    <button className="friends-btn es-btn" onClick={(e) => e.stopPropagation()}>
-                      ES
+                    <button className="friends-btn es-btn" onClick={(e) => { e.stopPropagation(); handleLanguageToggle() }}>
+                      {language === 'es' ? 'ES' : 'EN'}
                     </button>
                     <button className="friends-btn salir-btn" onClick={() => window.close()}>
-                      Salir
+                      {t.exit}
                     </button>
                   </div>
                 </>
@@ -4723,7 +4749,7 @@ function App(): React.JSX.Element {
               <div className="settings-sidebar-header">
                 <div className="settings-sidebar-header-bg" />
                 <div className="settings-sidebar-header-overlay" />
-                <h2 className="settings-sidebar-title">Ajustes</h2>
+                <h2 className="settings-sidebar-title">{t.settings}</h2>
               </div>
 
               <nav className="settings-sidebar-nav">
@@ -4733,7 +4759,7 @@ function App(): React.JSX.Element {
                   onClick={() => setSettingsTab('inicio')}
                 >
                   <HomeIcon size={18} className="settings-nav-icon" />
-                  <span>Inicio</span>
+                  <span>{t.tabHome}</span>
                 </button>
                 <button
                   type="button"
@@ -4741,7 +4767,7 @@ function App(): React.JSX.Element {
                   onClick={() => setSettingsTab('personalizacion')}
                 >
                   <PaletteIcon size={18} className="settings-nav-icon" />
-                  <span>Personalización</span>
+                  <span>{t.tabCustomization}</span>
                 </button>
                 <button
                   type="button"
@@ -4749,7 +4775,7 @@ function App(): React.JSX.Element {
                   onClick={() => setSettingsTab('ayuda')}
                 >
                   <HelpIcon size={18} className="settings-nav-icon" />
-                  <span>Ayuda</span>
+                  <span>{t.tabHelp}</span>
                 </button>
               </nav>
             </aside>
@@ -4806,29 +4832,27 @@ function App(): React.JSX.Element {
 
                   {/* Action row (3 options) */}
                   <div className="settings-section">
-                    <h3 className="settings-section-title">Accesos directos</h3>
-                    <p className="settings-section-subtitle">Opciones rápidas y configuración del sistema</p>
+                    <h3 className="settings-section-title">{t.shortcutsTitle}</h3>
+                    <p className="settings-section-subtitle">{t.shortcutsSubtitle}</p>
 
                     <div className="settings-actions-row">
-                      {/* Option 1: Startup Shortcut */}
-                      <button
-                        type="button"
-                        className={`settings-action-btn ${startupEnabled ? 'active' : ''}`}
-                        onClick={handleToggleStartupShortcut}
-                      >
+                      {/* Option 1: Select de Idiomas (Replaces Crear atajo en Inicio) */}
+                      <div className="settings-action-btn settings-action-select-card">
                         <div className="settings-action-icon-wrap">
-                          <DesktopIcon size={20} />
+                          <GlobeIcon size={20} />
                         </div>
                         <div className="settings-action-text-col">
-                          <span className="settings-action-title">
-                            {startupEnabled ? 'En inicio de Windows' : 'Crear atajo en Inicio'}
-                          </span>
-                          <span className="settings-action-desc">
-                            {startupEnabled ? 'Se iniciará con Windows' : 'Agregar acceso en Inicio'}
-                          </span>
+                          <span className="settings-action-title">{t.languageTitle}</span>
+                          <select
+                            className="settings-action-select"
+                            value={language}
+                            onChange={(e) => handleLanguageChange(e.target.value as Language)}
+                          >
+                            <option value="es">{t.spanish}</option>
+                            <option value="en">{t.english}</option>
+                          </select>
                         </div>
-                        {startupEnabled && <CheckIcon size={16} className="settings-action-check" />}
-                      </button>
+                      </div>
 
                       {/* Option 2: Steam Link */}
                       <button
@@ -4845,10 +4869,10 @@ function App(): React.JSX.Element {
                               ? (steamAccount.accountName && !steamAccount.accountName.toLowerCase().startsWith('steam 76561') && !/^\d{17}$/.test(steamAccount.accountName)
                                 ? steamAccount.accountName
                                 : 'Steam')
-                              : 'Vincular Steam'}
+                              : t.linkSteam}
                           </span>
                           <span className="settings-action-desc">
-                            {steamAccount.linked ? 'Cuenta conectada' : 'Crear atajo de Steam'}
+                            {steamAccount.linked ? t.steamLinked : t.createSteamShortcut}
                           </span>
                         </div>
                         {steamAccount.linked && <CheckIcon size={16} className="settings-action-check" />}
@@ -4866,10 +4890,10 @@ function App(): React.JSX.Element {
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">
-                            {isCheckingUpdate ? 'Buscando...' : updateLink ? 'Descargar actualización' : 'Buscar actualización'}
+                            {isCheckingUpdate ? t.checkingUpdates : updateLink ? t.downloadUpdate : t.checkUpdates}
                           </span>
                           <span className="settings-action-desc">
-                            {updateMessage ? updateMessage : 'Comprobar nuevas versiones'}
+                            {updateMessage ? updateMessage : t.checkNewVersions}
                           </span>
                         </div>
                       </button>
@@ -4877,20 +4901,20 @@ function App(): React.JSX.Element {
 
                     {steamAccount.linked && (
                       <div className="settings-steam-account-bar">
-                        <span>Cuenta conectada: <strong>{steamAccount.accountName || steamAccount.steamId}</strong></span>
+                        <span>{t.steamLinked}: <strong>{steamAccount.accountName || steamAccount.steamId}</strong></span>
                         <button type="button" className="settings-btn-link danger" onClick={handleSteamUnlink}>
-                          Desvincular
+                          {t.unlink}
                         </button>
                       </div>
                     )}
                   </div>
 
                   <div className="settings-section">
-                    <h3 className="settings-section-title">Otros</h3>
-                    <p className="settings-section-subtitle">Configuración general de la aplicación</p>
+                    <h3 className="settings-section-title">{t.otherTitle}</h3>
+                    <p className="settings-section-subtitle">{t.otherSubtitle}</p>
 
                     <div className="settings-other-row">
-                      <span className="settings-other-label">Tienda por defecto</span>
+                      <span className="settings-other-label">{t.defaultStore}</span>
                       <select
                         className="settings-other-select"
                         value={defaultStore}
@@ -5293,6 +5317,7 @@ function App(): React.JSX.Element {
       <ModalHelper
         isOpen={showHelperModal}
         onClose={() => setShowHelperModal(false)}
+        language={language}
       />
 
     </div>

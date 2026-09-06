@@ -3,17 +3,21 @@ import { CloseIcon, CheckIcon } from './Icons'
 import helper1Video from '../assets/HelperImages/helper1.mp4'
 import helper2Image from '../assets/HelperImages/hellper2.png'
 import bannerImage from '../assets/HelperImages/banner.png'
+import { translations, Language } from '../translations'
 
 interface ModalHelperProps {
   isOpen: boolean
   onClose: () => void
+  language?: Language
 }
 
 const HELPER_MODAL_STORAGE_KEY = 'gbl_has_seen_helper_modal'
 
-export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => {
+export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose, language = 'es' }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [dontShowAgain, setDontShowAgain] = useState(true)
+
+  const t = translations[language] || translations.es
 
   useEffect(() => {
     if (isOpen) {
@@ -40,9 +44,9 @@ export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => 
 
   const steps = [
     {
-      title: 'Te damos la bienvenida a HASHI',
-      heading: 'Tu lanzador de juegos personal',
-      description: 'Organiza y ejecuta todos tus juegos de PC, Steam y aplicaciones desde un solo lugar.',
+      title: t.welcome,
+      heading: t.welcomeHeading1,
+      description: t.welcomeDesc1,
       media: (
         <video
           src={helper1Video}
@@ -55,9 +59,9 @@ export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => 
       )
     },
     {
-      title: 'Te damos la bienvenida a HASHI',
-      heading: 'Personalizalo todo!',
-      description: 'Desde portadas hasta fondos, cada detalle está en tus manos.',
+      title: t.welcome,
+      heading: t.welcomeHeading2,
+      description: t.welcomeDesc2,
       media: (
         <img
           src={helper2Image}
@@ -68,9 +72,9 @@ export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => 
       )
     },
     {
-      title: 'Te damos la bienvenida a HASHI',
-      heading: 'Todo listo para comenzar',
-      description: 'Disfruta de tu biblioteca personalizada con soporte para mando, efectos de sonido e interfaz inmersiva.',
+      title: t.welcome,
+      heading: t.welcomeHeading3,
+      description: t.welcomeDesc3,
       media: (
         <div className="modal-helper-banner-wrapper">
           <img
@@ -80,7 +84,7 @@ export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => 
             draggable={false}
           />
           <div className="modal-helper-banner-overlay">
-            <h1 className="modal-helper-welcome-text">Bienvenido</h1>
+            <h1 className="modal-helper-welcome-text">{language === 'en' ? 'Welcome' : 'Bienvenido'}</h1>
             <h3 className="modal-helper-Subtitle-text">by Hashi</h3>
           </div>
         </div>
@@ -124,7 +128,7 @@ export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => 
             <span className="modal-helper-custom-checkbox">
               {dontShowAgain && <CheckIcon size={12} />}
             </span>
-            <span>No mostrar de nuevo</span>
+            <span>{t.dontShowAgain}</span>
           </label>
 
           <div className="modal-helper-indicators">
@@ -139,7 +143,7 @@ export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => 
           </div>
 
           <button className="btn-primary modal-helper-next-btn" onClick={handleNext}>
-            {currentStep === 2 ? 'Comenzar' : 'Siguiente'}
+            {currentStep === 2 ? t.start : t.next}
           </button>
         </div>
       </div>

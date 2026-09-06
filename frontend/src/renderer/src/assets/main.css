@@ -2347,6 +2347,42 @@
   text-overflow: ellipsis;
 }
 
+.settings-action-select-card {
+  cursor: default;
+}
+
+.settings-action-select-card:hover {
+  transform: none;
+}
+
+.settings-action-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.95);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  margin-top: 3px;
+  width: fit-content;
+  max-width: 100%;
+  transition: all 0.2s ease;
+}
+
+.settings-action-select:hover,
+.settings-action-select:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.settings-action-select option {
+  background: #18181b;
+  color: #fff;
+}
+
 .settings-action-check {
   color: #4cd964;
   margin-left: auto;
