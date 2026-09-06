@@ -107,6 +107,8 @@ declare global {
       getMediaSessions: () => Promise<any[]>
       mediaControl: (action: string, target?: any) => Promise<any>
       onMediaSessionsChanged: (callback: (sessions: any[]) => void) => () => void
+      // Omniconsole
+      setOmniconsole: (enabled: boolean) => Promise<void>
     }
   }
 }

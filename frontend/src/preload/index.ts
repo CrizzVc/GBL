@@ -78,7 +78,9 @@ const api = {
     const sub = (_event: any, sessions: any[]) => callback(sessions)
     ipcRenderer.on('media-sessions-changed', sub)
     return () => ipcRenderer.removeListener('media-sessions-changed', sub)
-  }
+  },
+  // Omniconsole — prevent launcher from hiding when a game is launched
+  setOmniconsole: (enabled: boolean) => ipcRenderer.invoke('set-omniconsole', enabled)
 }
 
 // Compat: WPS5 referencia usa window.electronAPI

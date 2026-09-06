@@ -39,6 +39,9 @@ let backendProcess: ChildProcess | null = null
 // ── Game session flag — suspende actividades durante gameplay ──
 let isGameRunning = false
 
+// ── Omniconsole — prevent launcher from hiding when a game launches ──
+let omniconsoleEnabled = false
+
 function startBackend(): void {
   if (is.dev) return // En dev se corre manualmente con "npm run dev" en backend/
 
@@ -421,7 +424,7 @@ function createWindow(): void {
 
   // Guard: prevent window from being shown while a game is running
   mainWindow.on('show', () => {
-    if (isGameRunning) {
+    if (isGameRunning && !omniconsoleEnabled) {
       mainWindow.hide()
     }
   })
@@ -682,7 +685,11 @@ app.whenReady().then(() => {
         isGameRunning = true
         suspendActivities()
         if (win && !win.isDestroyed()) {
-          win.hide()
+          if (omniconsoleEnabled) {
+            win.minimize()
+          } else {
+            win.hide()
+          }
         }
         if (win && !win.isDestroyed()) {
           win.webContents.send('game-session-start', { gameId })
@@ -721,7 +728,11 @@ app.whenReady().then(() => {
         isGameRunning = true
         suspendActivities()
         if (win && !win.isDestroyed()) {
-          win.hide()
+          if (omniconsoleEnabled) {
+            win.minimize()
+          } else {
+            win.hide()
+          }
         }
         if (win && !win.isDestroyed()) {
           win.webContents.send('game-session-start', { gameId })
@@ -732,7 +743,11 @@ app.whenReady().then(() => {
         for (const delay of [0, 500, 1500, 3000]) {
           setTimeout(() => {
             if (isGameRunning && win && !win.isDestroyed()) {
-              win.hide()
+              if (omniconsoleEnabled) {
+                win.minimize()
+              } else {
+                win.hide()
+              }
             }
           }, delay)
         }
@@ -822,6 +837,10 @@ app.whenReady().then(() => {
           : ext === '.bmp' ? 'image/bmp'
             : 'image/jpeg'
     return `data:${mimeType};base64,${data.toString('base64')}`
+  })
+
+  ipcMain.handle('set-omniconsole', (_event, enabled: boolean) => {
+    omniconsoleEnabled = enabled
   })
 
   ipcMain.handle('get-background-image', async () => {

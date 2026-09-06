@@ -137,6 +137,8 @@ export interface TranslationSchema {
   otherTitle: string
   otherSubtitle: string
   defaultStore: string
+  omniconsoleTitle: string
+  omniconsoleDesc: string
 
   // Settings - Customization Tab
   profileTitle: string
@@ -300,6 +302,8 @@ export const translations: Record<Language, TranslationSchema> = {
     otherTitle: 'Otros',
     otherSubtitle: 'Configuración general de la aplicación',
     defaultStore: 'Tienda por defecto',
+    omniconsoleTitle: 'Omniconsole',
+    omniconsoleDesc: 'Evita que el launcher se oculte al ejecutar juegos',
 
     profileTitle: 'Perfil',
     username: 'Nombre de usuario',
@@ -458,6 +462,8 @@ export const translations: Record<Language, TranslationSchema> = {
     otherTitle: 'Other',
     otherSubtitle: 'General application settings',
     defaultStore: 'Default store',
+    omniconsoleTitle: 'Omniconsole',
+    omniconsoleDesc: 'Prevents the launcher from hiding when launching games',
 
     profileTitle: 'Profile',
     username: 'Username',

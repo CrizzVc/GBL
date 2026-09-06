@@ -239,6 +239,7 @@ const RECENT_GAMES_LIMIT = 15
 const STEAM_ARTWORK_STORAGE_KEY = 'gbl-steam-artwork'
 const DEFAULT_STORE_STORAGE_KEY = 'gbl-default-store'
 const FORGOTTEN_DOWNLOADS_KEY = 'gbl-forgotten-downloads'
+const OMNICONSOLE_STORAGE_KEY = 'gbl-omniconsole'
 
 function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridImageUrl' | 'squareGridImageUrl' | 'heroImageUrl' | 'logoImageUrl' | 'iconDataUrl'>> {
   try {
@@ -507,6 +508,14 @@ function App(): React.JSX.Element {
   const [defaultStore, setDefaultStore] = useState<string>(() => {
     try { return localStorage.getItem(DEFAULT_STORE_STORAGE_KEY) || 'steam' } catch { return 'steam' }
   })
+  const [omniconsole, setOmniconsole] = useState<boolean>(() => {
+    try { return localStorage.getItem(OMNICONSOLE_STORAGE_KEY) === 'true' } catch { return false }
+  })
+
+  // Sync omniconsole setting to main process on mount and when changed
+  useEffect(() => {
+    window.api.setOmniconsole(omniconsole)
+  }, [omniconsole])
 
   // Add / Edit game form state
   const [formName, setFormName] = useState('')
@@ -4928,6 +4937,24 @@ function App(): React.JSX.Element {
                         <option value="gog">GOG</option>
                       </select>
                     </div>
+
+                    <div className="settings-other-row">
+                      <span className="settings-other-label">{t.omniconsoleTitle}</span>
+                      <button
+                        type="button"
+                        className={`settings-toggle-btn ${omniconsole ? 'active' : ''}`}
+                        onClick={() => {
+                          const next = !omniconsole
+                          setOmniconsole(next)
+                          try { localStorage.setItem(OMNICONSOLE_STORAGE_KEY, String(next)) } catch { }
+                        }}
+                      >
+                        <span className="settings-toggle-track">
+                          <span className="settings-toggle-thumb" />
+                        </span>
+                      </button>
+                    </div>
+                    <p className="settings-section-subtitle" style={{ marginTop: '-0.5rem' }}>{t.omniconsoleDesc}</p>
                   </div>
                 </div>
               )}
@@ -5112,9 +5139,9 @@ function App(): React.JSX.Element {
               {settingsTab === 'ayuda' && (
                 <div className="settings-tab-panel">
                   <div className="settings-section">
-                    <h3 className="settings-section-title">Centro de ayuda y tutoriales</h3>
+                    <h3 className="settings-section-title">{t.helpTitle}</h3>
                     <p className="settings-section-subtitle">
-                      Explora las guías interactivas para conocer y aprovechar al máximo HASHI.
+                      {t.helpSubtitle}
                     </p>
 
                     <div className="settings-helpers-grid">
@@ -5129,7 +5156,7 @@ function App(): React.JSX.Element {
                           <span className="settings-helper-tag">HASHI v{APP_VERSION}</span>
                         </div>
                         <div className="settings-helper-card-body">
-                          <h4 className="settings-helper-title">Bienvenida</h4>
+                          <h4 className="settings-helper-title">{t.welcomeTutorial}</h4>
                           <p className="settings-helper-desc">
                             Guía de introducción sobre la organización de tus juegos de PC, Steam, accesos rápidos y personalización visual de la plataforma.
                           </p>

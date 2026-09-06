@@ -2425,6 +2425,7 @@
   background: rgba(255, 255, 255, 0.04);
   /* border: 1px solid rgba(255, 255, 255, 0.08); */
   border-radius: 10px;
+  margin-bottom: 15px;
 }
 
 .settings-other-label {
@@ -2457,6 +2458,45 @@
 .settings-other-select option {
   background: #1a1a1e;
   color: #fff;
+}
+
+/* ── Omniconsole Toggle Switch ── */
+.settings-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.settings-toggle-track {
+  display: block;
+  width: 36px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.25s ease;
+}
+
+.settings-toggle-btn.active .settings-toggle-track {
+  background: rgb(219 49 49 / 80%);
+}
+
+.settings-toggle-thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.25s ease;
+}
+
+.settings-toggle-btn.active .settings-toggle-thumb {
+  transform: translateX(16px);
 }
 
 /* ── Wallpaper 100% Width Preview (Flush to Top & Sides) ── */
