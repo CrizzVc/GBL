@@ -1,9 +1,13 @@
-# HASHI
+# HASHI v1.0.0
 <img width="7000" height="3020" alt="banner" src="https://github.com/user-attachments/assets/1a2cdaea-3899-4c2b-bb7d-1a86b081ab1a" />
-
 <img width="1919" height="1079" alt="Captura de pantalla 2026-09-04 225617" src="https://github.com/user-attachments/assets/ed0cd404-08bb-4abe-a638-b00e3865b4e0" />
 
+## HOME VIEW
 <img width="1919" height="1079" alt="Captura de pantalla 2026-09-02 235415" src="https://github.com/user-attachments/assets/23c283d4-df5b-4ab0-9a2b-4e176305356b" />
+
+## DETAIL VIEW
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/d9af6969-a233-4e77-84aa-5b60677dfe68" />
+
 
 ## LOCAL GAMES
 <img width="1919" height="1079" alt="Captura de pantalla 2026-09-02 210054" src="https://github.com/user-attachments/assets/838ecdcb-c334-47fe-82ae-db8b2266ee6d" />
