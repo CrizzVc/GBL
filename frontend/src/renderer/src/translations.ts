@@ -1,5 +1,3 @@
-import { describe } from "node:test"
-
 export type Language = 'es' | 'en'
 
 export interface TranslationSchema {
@@ -144,6 +142,31 @@ export interface TranslationSchema {
   noMusicPlayingDesc: string
   controllingSystem: string
   selectTrack: string
+  imported: string
+  playingIn: string
+  localMusic: string
+  music: string
+  volume: string
+
+  // Detail View
+  noScreenshotsFound: string
+  screenshotAlt: string
+  prevScreenshot: string
+  nextScreenshot: string
+  screenshotNumber: string
+  aboutTheGame: string
+  noDescriptionAvailable: string
+  ageRatingFor: string
+  positiveReviews: string
+  negativeReviews: string
+  developer: string
+  publisher: string
+  releaseDate: string
+  recentReviews: string
+  allReviews: string
+  running: string
+  downloading: string
+  editGame: string
 
   // Settings Tabs
   tabHome: string
@@ -228,6 +251,13 @@ export interface TranslationSchema {
   confirm: string
   noGamesFound: string
   addYourFirstGame: string
+}
+
+export function t(template: string, params: Record<string, string | number>): string {
+  return Object.entries(params).reduce(
+    (result, [key, value]) => result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value)),
+    template
+  )
 }
 
 export const translations: Record<Language, TranslationSchema> = {
@@ -373,6 +403,30 @@ export const translations: Record<Language, TranslationSchema> = {
     noMusicPlayingDesc: 'reproduce en Spotify/YouTube',
     controllingSystem: 'Controlando sistema',
     selectTrack: 'Seleccionar pista',
+    imported: 'Importado',
+    playingIn: 'En {{appName}}',
+    localMusic: 'Música local',
+    music: 'Música',
+    volume: 'Volumen',
+
+    noScreenshotsFound: 'No se encontraron capturas para este juego',
+    screenshotAlt: 'Captura {{current}} de {{gameName}}',
+    prevScreenshot: 'Captura anterior',
+    nextScreenshot: 'Siguiente captura',
+    screenshotNumber: 'Captura {{number}}',
+    aboutTheGame: 'Acerca del juego',
+    noDescriptionAvailable: 'No hay descripción disponible.',
+    ageRatingFor: 'Clasificación por edades para: {{board}}',
+    positiveReviews: 'Reseñas positivas',
+    negativeReviews: 'Reseñas negativas',
+    developer: 'Desarrollador',
+    publisher: 'Editor',
+    releaseDate: 'Fecha de lanzamiento',
+    recentReviews: 'Reseñas recientes',
+    allReviews: 'Todas las reseñas',
+    running: 'Ejecutando...',
+    downloading: 'Descargando...',
+    editGame: 'Editar',
 
     tabHome: 'Inicio',
     tabCustomization: 'Personalización',
@@ -582,6 +636,30 @@ export const translations: Record<Language, TranslationSchema> = {
     noMusicPlayingDesc: 'Play in Spotify/YouTube',
     controllingSystem: 'Controlling system',
     selectTrack: 'Select track',
+    imported: 'Imported',
+    playingIn: 'On {{appName}}',
+    localMusic: 'Local music',
+    music: 'Music',
+    volume: 'Volume',
+
+    noScreenshotsFound: 'No screenshots found for this game',
+    screenshotAlt: 'Screenshot {{current}} of {{gameName}}',
+    prevScreenshot: 'Previous screenshot',
+    nextScreenshot: 'Next screenshot',
+    screenshotNumber: 'Screenshot {{number}}',
+    aboutTheGame: 'About the game',
+    noDescriptionAvailable: 'No description available.',
+    ageRatingFor: 'Age rating for: {{board}}',
+    positiveReviews: 'Positive reviews',
+    negativeReviews: 'Negative reviews',
+    developer: 'Developer',
+    publisher: 'Publisher',
+    releaseDate: 'Release date',
+    recentReviews: 'Recent reviews',
+    allReviews: 'All reviews',
+    running: 'Running...',
+    downloading: 'Downloading...',
+    editGame: 'Edit',
 
     tabHome: 'Home',
     tabCustomization: 'Customization',

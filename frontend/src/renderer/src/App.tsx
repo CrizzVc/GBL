@@ -23,7 +23,7 @@ import {
   GlobeIcon
 } from './components/Icons'
 
-import { translations, Language } from './translations'
+import { translations, Language, t as tInterp } from './translations'
 
 import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
@@ -3069,7 +3069,7 @@ function App(): React.JSX.Element {
                   <div className="hero-meta-dot" />
                   <span>
                     {t.lastTime}:{' '}
-                    {new Date(selectedGame.lastPlayed).toLocaleDateString('es', {
+                    {new Date(selectedGame.lastPlayed).toLocaleDateString(language, {
                       day: 'numeric',
                       month: 'short'
                     })}
@@ -3084,7 +3084,7 @@ function App(): React.JSX.Element {
 
       {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
       {(isHomeCardFocused || showIdleMode) && (
-        <MusicPlayer isVisible={isHomeCardFocused && !showIdleMode} isIdle={showIdleMode} isGameRunning={isGameRunning} />
+        <MusicPlayer isVisible={isHomeCardFocused && !showIdleMode} isIdle={showIdleMode} isGameRunning={isGameRunning} language={language} />
       )}
 
       {/* ── Wallpaper row (solo Home, tras elegir carpeta con W) — Enter/doble click fija fondo Home ──
@@ -3655,7 +3655,7 @@ function App(): React.JSX.Element {
                   setContextMenu((p) => ({ ...p, visible: false }))
                 }}
               >
-                <TrashIcon size={16} /> Eliminar
+                <TrashIcon size={16} /> {t.cmDelete}
               </button>
             </div>
           </div>
@@ -3699,7 +3699,7 @@ function App(): React.JSX.Element {
                   <>
                     {' '}
                     · {t.lastTime}:{' '}
-                    {new Date(detailGame.lastPlayed).toLocaleDateString('es', {
+                    {new Date(detailGame.lastPlayed).toLocaleDateString(language, {
                       day: 'numeric',
                       month: 'short'
                     })}
@@ -3717,7 +3717,7 @@ function App(): React.JSX.Element {
               )}
               {!detailLoadingShots && detailScreenshots.length === 0 && (
                 <div className="detail-carousel-status">
-                  No se encontraron capturas para este juego
+                  {t.noScreenshotsFound}
                 </div>
               )}
               {!detailLoadingShots && detailScreenshots.length > 0 && (
@@ -3725,7 +3725,7 @@ function App(): React.JSX.Element {
                   <img
                     key={detailShotIndex}
                     src={detailScreenshots[detailShotIndex].path_full}
-                    alt={`Captura ${detailShotIndex + 1} de ${detailGame.name}`}
+                    alt={tInterp(t.screenshotAlt, { current: detailShotIndex + 1, gameName: detailGame.name })}
                     className="detail-carousel-image"
                     draggable={false}
                   />
@@ -3734,14 +3734,14 @@ function App(): React.JSX.Element {
                       <button
                         className="detail-carousel-nav prev"
                         onClick={handlePrevShot}
-                        aria-label="Captura anterior"
+                        aria-label={t.prevScreenshot}
                       >
                         <ChevronLeftIcon size={20} />
                       </button>
                       <button
                         className="detail-carousel-nav next"
                         onClick={handleNextShot}
-                        aria-label="Siguiente captura"
+                        aria-label={t.nextScreenshot}
                       >
                         <ChevronRightIcon size={20} />
                       </button>
@@ -3751,7 +3751,7 @@ function App(): React.JSX.Element {
                             key={i}
                             className={`detail-carousel-dot ${i === detailShotIndex ? 'active' : ''}`}
                             onClick={() => setDetailShotIndex(i)}
-                            aria-label={`Captura ${i + 1}`}
+                            aria-label={tInterp(t.screenshotNumber, { number: i + 1 })}
                           />
                         ))}
                       </div>
@@ -3764,7 +3764,7 @@ function App(): React.JSX.Element {
             {/* Description, then a real-style Metacritic + rating card below it */}
             <div className="detail-side-panel">
               <div className="detail-description">
-                <h3 className="detail-section-title">Acerca del juego</h3>
+                <h3 className="detail-section-title">{t.aboutTheGame}</h3>
                 {detailInfoLoading && (
                   <div className="detail-description-text" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div className="shimmer shimmer-text" />
@@ -3776,7 +3776,7 @@ function App(): React.JSX.Element {
                   <p className="detail-description-text">{detailInfo.description}</p>
                 )}
                 {!detailInfoLoading && !detailInfo?.description && (
-                  <p className="detail-description-text muted">No hay descripción disponible.</p>
+                  <p className="detail-description-text muted">{t.noDescriptionAvailable}</p>
                 )}
               </div>
 
@@ -3832,7 +3832,7 @@ function App(): React.JSX.Element {
                         </ul>
                       )}
                       <span className="rating-widget-caption">
-                        Clasificación por edades para: {detailInfo.rating.board}
+                        {tInterp(t.ageRatingFor, { board: detailInfo.rating.board })}
                       </span>
                     </div>
                   </div>
@@ -3870,7 +3870,7 @@ function App(): React.JSX.Element {
                         </ul>
                       )}
                       <span className="rating-widget-caption">
-                        Clasificación por edades para: {detailInfo.rating.board}
+                        {tInterp(t.ageRatingFor, { board: detailInfo.rating.board })}
                       </span>
                     </div>
                   </div>
@@ -3881,7 +3881,7 @@ function App(): React.JSX.Element {
                     <div className="detail-meta-section">
                       {detailInfo?.reviewsPositive && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Reseñas positivas</span>
+                          <span className="detail-meta-label">{t.positiveReviews}</span>
                           <span className="detail-meta-value link">
                             {detailInfo.reviewsPositive.summary} ({detailInfo.reviewsPositive.count})
                           </span>
@@ -3889,7 +3889,7 @@ function App(): React.JSX.Element {
                       )}
                       {detailInfo?.reviewsNegative && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Reseñas negativas</span>
+                          <span className="detail-meta-label">{t.negativeReviews}</span>
                           <span className="detail-meta-value link">
                             {detailInfo.reviewsNegative.summary} ({detailInfo.reviewsNegative.count})
                           </span>
@@ -3913,7 +3913,7 @@ function App(): React.JSX.Element {
                     <div className="detail-meta-section">
                       {detailInfo?.reviewsRecent && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Reseñas recientes</span>
+                          <span className="detail-meta-label">{t.recentReviews}</span>
                           <span className="detail-meta-value link">
                             {detailInfo.reviewsRecent.summary} ({detailInfo.reviewsRecent.count})
                           </span>
@@ -3921,7 +3921,7 @@ function App(): React.JSX.Element {
                       )}
                       {detailInfo?.reviewsAll && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Todas las reseñas</span>
+                          <span className="detail-meta-label">{t.allReviews}</span>
                           <span className="detail-meta-value link">
                             {detailInfo.reviewsAll.summary} ({detailInfo.reviewsAll.count})
                           </span>
@@ -3934,19 +3934,19 @@ function App(): React.JSX.Element {
                     <div className="detail-meta-section">
                       {detailInfo?.releaseDate && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Fecha de lanzamiento</span>
+                          <span className="detail-meta-label">{t.releaseDate}</span>
                           <span className="detail-meta-value">{detailInfo.releaseDate}</span>
                         </div>
                       )}
                       {detailInfo?.developer && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Desarrollador</span>
+                          <span className="detail-meta-label">{t.developer}</span>
                           <span className="detail-meta-value link">{detailInfo.developer}</span>
                         </div>
                       )}
                       {detailInfo?.publisher && (
                         <div className="detail-meta-row">
-                          <span className="detail-meta-label">Editor</span>
+                          <span className="detail-meta-label">{t.publisher}</span>
                           <span className="detail-meta-value link">{detailInfo.publisher}</span>
                         </div>
                       )}
@@ -3989,7 +3989,7 @@ function App(): React.JSX.Element {
                     {isRunning ? (
                       <>
                         <PlayIcon size={20} />
-                        Ejecutando...
+                        {t.running}
                       </>
                     ) : showProgress ? (
                       <div className="btn-play-progress-content">
@@ -4004,17 +4004,17 @@ function App(): React.JSX.Element {
                     ) : isDownloading ? (
                       <>
                         <PlayIcon size={20} />
-                        Descargando...
+                        {t.downloading}
                       </>
                     ) : detailGame.isSteam && !steamDetailIsInstalled ? (
                       <>
                         <PlayIcon size={20} />
-                        Descargar
+                        {t.download}
                       </>
                     ) : (
                       <>
                         <PlayIcon size={20} />
-                        Jugar
+                        {t.play}
                       </>
                     )}
                   </button>
@@ -4026,7 +4026,7 @@ function App(): React.JSX.Element {
                   if (detailGame.id) openEditGameModal(detailGame.id)
                   setContextMenu((p) => ({ ...p, visible: false }))
                 }}
-                aria-label="Editar"
+                aria-label={t.editGame}
               >
                 <MoreIcon size={20} />
               </button>

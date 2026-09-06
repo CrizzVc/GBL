@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSystemMedia } from '../hooks/useSystemMedia'
-import { translations, Language } from '../translations'
+import { translations, Language, t as tInterp } from '../translations'
 import {
   formatMediaTime,
   getAppIconName,
@@ -246,7 +246,7 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
       return {
         id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         title,
-        artist: 'Importado',
+        artist: t.imported,
         src: url,
         fileName: file.name,
         color: FALLBACK_COLORS[tracks.length % FALLBACK_COLORS.length]
@@ -267,7 +267,7 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
   const displayDurationMs = systemActive ? nowPlaying!.durationMs : durationSec * 1000
   const displayPlaying = systemActive ? nowPlaying!.playbackStatus === 'playing' : isPlaying
   const fallbackAccent = systemActive ? getAppIconName(nowPlaying!.appName).bg : (track?.color ?? '#1DB954')
-  const headerLabel = systemActive ? `En ${nowPlaying!.appName}` : tracks.length > 0 ? 'Música local' : 'Música'
+  const headerLabel = systemActive ? tInterp(t.playingIn, { appName: nowPlaying!.appName }) : tracks.length > 0 ? t.localMusic : t.music
   const progress = displayDurationMs > 0 ? displayPositionMs / displayDurationMs : 0
   const canControl = systemActive || !!track
 
@@ -474,7 +474,7 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
             <div className="music-player-local-actions">
               <div className="music-player-volume">
                 <span>{formatLocalTime(positionSec)} / {formatLocalTime(durationSec)}</span>
-                <input type="range" className="music-player-volume-range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volumen" />
+                <input type="range" className="music-player-volume-range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label={t.volume} />
               </div>
               <button className="music-btn add" onClick={() => fileInputRef.current?.click()}>
                 <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
