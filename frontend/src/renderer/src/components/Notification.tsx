@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { translations, Language } from '../translations'
 import steamLogo from '../assets/tiendas/steamLogo.png'
 
 export interface NotificationData {
@@ -7,14 +8,17 @@ export interface NotificationData {
   gameName: string
   avatarUrl: string | null
   timestamp: number
+  language?: Language
 }
 
 interface NotificationProps {
   notification: NotificationData
   onDismiss: (id: string) => void
+  language?: Language
 }
 
-export default function Notification({ notification, onDismiss }: NotificationProps): React.JSX.Element {
+export default function Notification({ notification, onDismiss, language = 'es' }: NotificationProps): React.JSX.Element {
+  const t = translations[language] || translations.es
   const [isExiting, setIsExiting] = useState(false)
   const onDismissRef = useRef(onDismiss)
   onDismissRef.current = onDismiss
@@ -56,9 +60,9 @@ export default function Notification({ notification, onDismiss }: NotificationPr
         </div>
         <div className="notification-divider" />
         <div className="notification-title">
-          {notification.friendName} está jugando a {notification.gameName}
+          {notification.friendName} {t.playingGame} {notification.gameName}
         </div>
-        <div className="notification-subtitle">presiona Tab para ampliar</div>
+        <div className="notification-subtitle">{t.playingGameDesc}</div>
       </div>
     </div>
   )
