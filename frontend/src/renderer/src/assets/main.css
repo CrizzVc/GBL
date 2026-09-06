@@ -5973,9 +5973,8 @@
 
 .ps-download-card.focused,
 .ps-download-card.active {
-  border-color: #f12540;
-  background: rgba(241, 37, 64, 0.06);
-  box-shadow: 0 0 16px rgba(241, 37, 64, 0.2), inset 0 0 10px rgba(241, 37, 64, 0.04);
+  border-color: #5c1821;
+  background: rgba(241, 37, 64, 0.027);
 }
 
 .ps-card-content {
