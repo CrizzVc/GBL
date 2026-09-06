@@ -368,6 +368,14 @@ function ChevronRightIcon({ size = 20 }: { size?: number }): React.JSX.Element {
   )
 }
 
+function ChevronDownIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
 function MoreIcon({ size = 20 }: { size?: number }): React.JSX.Element {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -4836,22 +4844,26 @@ function App(): React.JSX.Element {
                     <p className="settings-section-subtitle">{t.shortcutsSubtitle}</p>
 
                     <div className="settings-actions-row">
-                      {/* Option 1: Select de Idiomas (Replaces Crear atajo en Inicio) */}
+                      {/* Option 1: Select de Idiomas (El recuadro completo es el select) */}
                       <div className="settings-action-btn settings-action-select-card">
                         <div className="settings-action-icon-wrap">
                           <GlobeIcon size={20} />
                         </div>
                         <div className="settings-action-text-col">
                           <span className="settings-action-title">{t.languageTitle}</span>
-                          <select
-                            className="settings-action-select"
-                            value={language}
-                            onChange={(e) => handleLanguageChange(e.target.value as Language)}
-                          >
-                            <option value="es">{t.spanish}</option>
-                            <option value="en">{t.english}</option>
-                          </select>
+                          <span className="settings-action-desc">
+                            {language === 'es' ? t.spanish : t.english}
+                          </span>
                         </div>
+                        <ChevronDownIcon size={14} style={{ color: 'rgba(255, 255, 255, 0.45)', marginLeft: 'auto', flexShrink: 0 }} />
+                        <select
+                          className="settings-action-select-overlay"
+                          value={language}
+                          onChange={(e) => handleLanguageChange(e.target.value as Language)}
+                        >
+                          <option value="es">{t.spanish}</option>
+                          <option value="en">{t.english}</option>
+                        </select>
                       </div>
 
                       {/* Option 2: Steam Link */}
