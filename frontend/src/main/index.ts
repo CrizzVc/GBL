@@ -406,7 +406,7 @@ function createWindow(): void {
     minHeight: 768,
     show: false,
     autoHideMenuBar: true,
-    icon: appIconAsset,
+    icon: hashiLogoAsset,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
