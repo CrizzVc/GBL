@@ -31,6 +31,9 @@ export function useSteamDownloads(pollIntervalMs: number = 1000): {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mountedRef = useRef(true)
   const prevDownloadsRef = useRef<Map<string, SteamDownloadItem>>(new Map())
+  // Skip completion detection on the first poll: prevMap is empty so every game
+  // that was already installed would be treated as a fresh completion.
+  const isFirstPollRef = useRef(true)
 
   const fetchDownloads = useCallback((): void => {
     if (!window.api?.getSteamDownloadProgress) return
@@ -41,20 +44,24 @@ export function useSteamDownloads(pollIntervalMs: number = 1000): {
         const list = Array.isArray(result) ? result : []
         setDownloads(list)
 
-        // Detect completions
+        // Detect completions (skip on the very first poll to avoid false positives
+        // for games that were already installed before the app opened)
         const prevMap = prevDownloadsRef.current
         const completions: DownloadCompletion[] = []
 
-        for (const [appId, prev] of prevMap) {
-          const current = list.find((d) => d.appId === appId)
-          if (!current || (current.percent >= 100 && !current.downloading && !current.validating)) {
-            completions.push({ appId, name: prev.name })
+        if (!isFirstPollRef.current) {
+          for (const [appId, prev] of prevMap) {
+            const current = list.find((d) => d.appId === appId)
+            if (!current || (current.percent >= 100 && !current.downloading && !current.validating)) {
+              completions.push({ appId, name: prev.name })
+            }
+          }
+
+          if (completions.length > 0) {
+            setCompletedDownloads((prev) => [...prev, ...completions])
           }
         }
-
-        if (completions.length > 0) {
-          setCompletedDownloads((prev) => [...prev, ...completions])
-        }
+        isFirstPollRef.current = false
 
         const newMap = new Map<string, SteamDownloadItem>()
         for (const d of list) {

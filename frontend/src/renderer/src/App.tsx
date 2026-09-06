@@ -799,15 +799,19 @@ function App(): React.JSX.Element {
       return stored ? new Set(JSON.parse(stored)) : new Set()
     } catch { return new Set() }
   })
+  // Ref to track which appIds already have a visible notification — avoids putting
+  // downloadNotifications in the effect's deps array which would create an infinite loop.
+  const notifiedAppIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (completedDownloads.length === 0) return
     for (const comp of completedDownloads) {
-      // Avoid duplicates
-      if (downloadNotifications.some((n) => n.appId === comp.appId)) {
+      // Avoid duplicates using a ref so we don't need downloadNotifications in deps
+      if (notifiedAppIdsRef.current.has(comp.appId)) {
         dismissCompletion(comp.appId)
         continue
       }
+      notifiedAppIdsRef.current.add(comp.appId)
       const iconUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${comp.appId}/header.jpg`
       // Try to get custom icon from steam library
       const steamGame = steamLibrary.find((g) => String(g.appid) === comp.appId)
@@ -822,7 +826,8 @@ function App(): React.JSX.Element {
       }
       dismissCompletion(comp.appId)
     }
-  }, [completedDownloads, dismissCompletion, downloadingGameId, steamLibrary, downloadNotifications])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedDownloads, dismissCompletion, downloadingGameId, steamLibrary])
 
   const dismissDownloadNotification = useCallback((id: string) => {
     setDownloadNotifications((prev) => prev.filter((n) => n.id !== id))
