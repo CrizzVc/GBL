@@ -2537,47 +2537,52 @@ function App(): React.JSX.Element {
           void handleChooseWallpaperAsHome()
         }
       } else if (isHomeFocused && homeCardMode === 'quick-apps') {
-        const validQuickApps = quickAppSlots.filter((app): app is QuickApp => !!app)
-        if (validQuickApps.length === 0) return
-
         if (e.key === 'ArrowRight') {
           e.preventDefault()
           setQuickAppFocusIndex((prev) => {
-            const next = Math.min(prev + 1, validQuickApps.length - 1)
+            const next = prev === 0 ? 1 : prev === 2 ? 3 : prev
             if (next !== prev) playMove()
             return next
           })
         } else if (e.key === 'ArrowLeft') {
           e.preventDefault()
           setQuickAppFocusIndex((prev) => {
-            const next = Math.max(prev - 1, 0)
+            const next = prev === 1 ? 0 : prev === 3 ? 2 : prev
             if (next !== prev) playMove()
             return next
           })
         } else if (e.key === 'ArrowDown') {
           e.preventDefault()
           setQuickAppFocusIndex((prev) => {
-            const next = Math.min(prev + 2, validQuickApps.length - 1)
+            const next = prev === 0 ? 2 : prev === 1 ? 3 : prev
             if (next !== prev) playMove()
             return next
           })
         } else if (e.key === 'ArrowUp') {
           e.preventDefault()
-          setQuickAppFocusIndex((prev) => {
-            const next = Math.max(prev - 2, 0)
-            if (next !== prev) playMove()
-            return next
-          })
+          if (quickAppFocusIndex < 2) {
+            playClose()
+            setHomeCardMode('bottom')
+          } else {
+            setQuickAppFocusIndex((prev) => {
+              const next = prev === 2 ? 0 : prev === 3 ? 1 : prev
+              if (next !== prev) playMove()
+              return next
+            })
+          }
         } else if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
           setHomeCardMode('bottom')
         } else if (e.key === 'Enter') {
           e.preventDefault()
-          const app = validQuickApps[quickAppFocusIndex]
+          const app = quickAppSlots[quickAppFocusIndex]
           if (app) {
             playEnter()
             void handleLaunchQuickApp(app)
+          } else {
+            playEnter()
+            void handleAddQuickApp()
           }
         }
       } else if (isHomeFocused && homeCardMode === 'bottom') {
@@ -2680,7 +2685,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
