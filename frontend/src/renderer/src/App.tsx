@@ -25,6 +25,7 @@ import MusicPlayer from './components/MusicPlayer'
 import NotificationContainer from './components/NotificationContainer'
 import DownloadCompleteNotification from './components/DownloadCompleteNotification'
 import { DownloadsModal } from './components/DownloadsModal'
+import { ModalHelper } from './components/ModalHelper'
 
 import { useFriendNotifications } from './hooks/useFriendNotifications'
 import { useSteamDownloads } from './hooks/useSteamDownloads'
@@ -92,6 +93,7 @@ interface Game {
   // SteamGridDB fields
   steamGridId?: number | null
   gridImageUrl?: string | null
+  squareGridImageUrl?: string | null
   heroImageUrl?: string | null
   logoImageUrl?: string | null
 }
@@ -152,6 +154,31 @@ interface SteamGridImage {
 
 const DEFAULT_STEAM_API_KEY = 'B1F361EA3C07B455DC8B0D06ED179B00'
 const QUICK_APPS_STORAGE_KEY = 'gbl-quick-apps'
+const HELPER_MODAL_STORAGE_KEY = 'gbl_has_seen_helper_modal'
+
+interface FeaturedLibraryGame {
+  gameId: string
+  name: string
+  coverUrl: string
+}
+
+const DEFAULT_FEATURED_GAMES: FeaturedLibraryGame[] = [
+  {
+    gameId: 'default-descenders',
+    name: 'Descenders',
+    coverUrl: 'https://cdn2.steamgriddb.com/thumb/7dbdfd71d964683a8bcbe6f5f5b85eb9.jpg'
+  },
+  {
+    gameId: 'default-astroneer',
+    name: 'Astroneer',
+    coverUrl: 'https://cdn2.steamgriddb.com/thumb/48b505846f30602aaff7e2d336720e6d.jpg'
+  },
+  {
+    gameId: 'default-seaofthieves',
+    name: 'Sea of Thieves',
+    coverUrl: 'https://cdn2.steamgriddb.com/thumb/055c25fa28c4eb8c6bb0672e557eef80.jpg'
+  }
+]
 
 interface SteamAccount {
   linked: boolean
@@ -171,6 +198,7 @@ interface SteamLibraryGame {
   has_community_visible_stats: boolean
   installed: boolean
   gridImageUrl?: string | null
+  squareGridImageUrl?: string | null
   heroImageUrl?: string | null
   logoImageUrl?: string | null
   iconDataUrl?: string | null
@@ -208,7 +236,7 @@ const STEAM_ARTWORK_STORAGE_KEY = 'gbl-steam-artwork'
 const DEFAULT_STORE_STORAGE_KEY = 'gbl-default-store'
 const FORGOTTEN_DOWNLOADS_KEY = 'gbl-forgotten-downloads'
 
-function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridImageUrl' | 'heroImageUrl' | 'logoImageUrl' | 'iconDataUrl'>> {
+function getStoredSteamArtwork(): Record<string, Pick<SteamLibraryGame, 'gridImageUrl' | 'squareGridImageUrl' | 'heroImageUrl' | 'logoImageUrl' | 'iconDataUrl'>> {
   try {
     const stored = localStorage.getItem(STEAM_ARTWORK_STORAGE_KEY)
     return stored ? JSON.parse(stored) : {}
@@ -471,6 +499,55 @@ function App(): React.JSX.Element {
     icons: null
   })
 
+  // Computes the 3 most recently added games dynamically
+  const last3AddedGames = useMemo(() => {
+    const list: Array<{ id: string; name: string; coverUrl: string; createdAtTime: number }> = []
+
+    games.forEach((g) => {
+      const t = g.createdAt ? new Date(g.createdAt).getTime() : 0
+      list.push({
+        id: g.id,
+        name: g.name,
+        coverUrl: g.gridImageUrl || g.squareGridImageUrl || g.heroImageUrl || g.iconDataUrl || '',
+        createdAtTime: t
+      })
+    })
+
+    steamLibrary.forEach((sg) => {
+      const steamId = `steam-${sg.appid}`
+      if (!list.some((item) => item.id === steamId)) {
+        list.push({
+          id: steamId,
+          name: sg.name,
+          coverUrl: sg.gridImageUrl || sg.squareGridImageUrl || `https://cdn.akamai.steamstatic.com/steam/apps/${sg.appid}/library_600x600.jpg`,
+          createdAtTime: 0
+        })
+      }
+    })
+
+    // Sort newest added first
+    const sorted = [...list].sort((a, b) => b.createdAtTime - a.createdAtTime)
+
+    const result: Array<{ id: string; name: string; coverUrl: string }> = []
+    for (let i = 0; i < 3; i++) {
+      if (sorted[i]) {
+        result.push({
+          id: sorted[i].id,
+          name: sorted[i].name,
+          coverUrl: sorted[i].coverUrl
+        })
+      } else {
+        const def = DEFAULT_FEATURED_GAMES[i]
+        result.push({
+          id: def.gameId,
+          name: def.name,
+          coverUrl: def.coverUrl
+        })
+      }
+    }
+    return result
+  }, [games, steamLibrary])
+
   // Store carousel state
   const [stores, setStores] = useState<Store[]>([])
   const [currentStoreIndex, setCurrentStoreIndex] = useState(0)
@@ -497,6 +574,16 @@ function App(): React.JSX.Element {
   } | null>(null)
   const [detailInfoLoading, setDetailInfoLoading] = useState(false)
   const [windowSize, setWindowSize] = useState({ width: window.outerWidth, height: window.outerHeight })
+
+  // Helper Modal state (first time launch tutorial)
+  const [showHelperModal, setShowHelperModal] = useState<boolean>(() => {
+    try {
+      const hasSeen = localStorage.getItem(HELPER_MODAL_STORAGE_KEY)
+      return hasSeen !== 'true'
+    } catch {
+      return true
+    }
+  })
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
   const libraryGridRef = useRef<HTMLDivElement>(null)
@@ -2026,65 +2113,102 @@ function App(): React.JSX.Element {
   const handleSgdbSaveSelections = useCallback(() => {
     if (!sgdbTargetGameId || !sgdbSelectedGame) return
 
-    const applyToGame = (artField: string, imageUrl: string) => {
-      if (sgdbTargetGameId.startsWith('steam-')) {
-        const steamAppId = sgdbTargetGameId.replace(/^steam-/, '')
-        setSteamLibrary((previousGames) => previousGames.map((game) =>
-          String(game.appid) === steamAppId
-            ? { ...game, [artField]: imageUrl }
-            : game
-        ))
-        const artwork = getStoredSteamArtwork()
-        artwork[steamAppId] = {
-          ...(artwork[steamAppId] || {}),
-          [artField]: imageUrl
-        }
-        localStorage.setItem(STEAM_ARTWORK_STORAGE_KEY, JSON.stringify(artwork))
-      } else if (sgdbTargetGameId.startsWith('quick-')) {
-        const quickId = sgdbTargetGameId.replace(/^quick-/, '')
-        const quickField = artField === 'iconDataUrl' ? 'iconDataUrl'
-          : artField === 'logoImageUrl' ? null
-            : 'artworkUrl'
-        if (quickField) {
-          const updatedApps = quickApps.map((app) =>
-            app.id === quickId ? { ...app, [quickField]: imageUrl } : app
-          )
-          saveQuickApps(updatedApps)
-        }
-        if (games.some((g) => g.id === sgdbTargetGameId)) {
-          const syncedGames = games.map((g) =>
-            g.id === sgdbTargetGameId ? { ...g, [artField]: imageUrl } : g
-          )
-          saveGames(syncedGames)
-        }
-      } else {
-        const newGames = games.map((g) =>
-          g.id === sgdbTargetGameId
-            ? { ...g, [artField]: imageUrl, steamGridId: sgdbSelectedGame.id }
-            : g
-        )
-        saveGames(newGames)
-      }
-    }
-
     const fieldMap: [SteamGridArtType, string][] = [
-      ['square_grids', 'gridImageUrl'],
+      ['square_grids', 'squareGridImageUrl'],
       ['grids', 'gridImageUrl'],
       ['heroes', 'heroImageUrl'],
       ['logos', 'logoImageUrl'],
       ['icons', 'iconDataUrl']
     ]
 
+    const updates: Record<string, string> = {}
     for (const [artType, artField] of fieldMap) {
       const selected = sgdbSelections[artType]
       if (selected) {
-        applyToGame(artField, selected.url)
+        updates[artField] = selected.url
       }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      setModal(null)
+      resetSgdbState()
+      return
+    }
+
+    if (sgdbTargetGameId.startsWith('steam-')) {
+      const steamAppId = sgdbTargetGameId.replace(/^steam-/, '')
+      setSteamLibrary((previousGames) =>
+        previousGames.map((game) =>
+          String(game.appid) === steamAppId ? { ...game, ...updates } : game
+        )
+      )
+      const artwork = getStoredSteamArtwork()
+      artwork[steamAppId] = {
+        ...(artwork[steamAppId] || {}),
+        ...updates
+      }
+      localStorage.setItem(STEAM_ARTWORK_STORAGE_KEY, JSON.stringify(artwork))
+
+      setGames((prevGames) => {
+        if (!prevGames.some((g) => g.id === sgdbTargetGameId || g.steamAppId === steamAppId)) {
+          return prevGames
+        }
+        const updated = prevGames.map((g) =>
+          g.id === sgdbTargetGameId || g.steamAppId === steamAppId
+            ? { ...g, ...updates, steamGridId: sgdbSelectedGame.id }
+            : g
+        )
+        window.api.saveGames(updated)
+        return updated
+      })
+    } else if (sgdbTargetGameId.startsWith('quick-')) {
+      const quickId = sgdbTargetGameId.replace(/^quick-/, '')
+      const quickUpdates: Record<string, string> = {}
+      if (updates.iconDataUrl) quickUpdates.iconDataUrl = updates.iconDataUrl
+      if (updates.gridImageUrl || updates.squareGridImageUrl) {
+        quickUpdates.artworkUrl = updates.gridImageUrl || updates.squareGridImageUrl || ''
+      }
+
+      if (Object.keys(quickUpdates).length > 0) {
+        setQuickApps((prevApps) => {
+          const updatedApps = prevApps.map((app) =>
+            app.id === quickId ? { ...app, ...quickUpdates } : app
+          )
+          saveQuickApps(updatedApps)
+          return updatedApps
+        })
+      }
+      setGames((prevGames) => {
+        if (!prevGames.some((g) => g.id === sgdbTargetGameId)) return prevGames
+        const updated = prevGames.map((g) =>
+          g.id === sgdbTargetGameId
+            ? { ...g, ...updates, steamGridId: sgdbSelectedGame.id }
+            : g
+        )
+        window.api.saveGames(updated)
+        return updated
+      })
+    } else {
+      setGames((prevGames) => {
+        const updated = prevGames.map((g) =>
+          g.id === sgdbTargetGameId
+            ? { ...g, ...updates, steamGridId: sgdbSelectedGame.id }
+            : g
+        )
+        window.api.saveGames(updated)
+        return updated
+      })
     }
 
     setModal(null)
     resetSgdbState()
-  }, [sgdbTargetGameId, sgdbSelectedGame, sgdbSelections, games, saveGames, quickApps, saveQuickApps, resetSgdbState])
+  }, [
+    sgdbTargetGameId,
+    sgdbSelectedGame,
+    sgdbSelections,
+    resetSgdbState,
+    saveQuickApps
+  ])
 
   const openSteamGridModal = useCallback((gameId: string) => {
     if (gameId.startsWith('steam-')) {
@@ -2915,14 +3039,7 @@ function App(): React.JSX.Element {
             </div>
           </div>
         )}
-        {!selectedGame && games.length === 0 && (
-          <div className="hero-content">
-            <h1 className="hero-title">Bienvenido a HASHI</h1>
-            <div className="hero-meta">
-              <span>Agrega tu primer juego para comenzar</span>
-            </div>
-          </div>
-        )}
+
       </section>
 
       {/* ── Music Player — arriba del row de juegos, máx 400W, usa API del PC ── */}
@@ -2977,7 +3094,7 @@ function App(): React.JSX.Element {
           >
             <div className="library-card-content">
               <div className="library-card-icon-wrapper">
-                <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3.1875L21.4501 10.275L21.0001 11.625H20.25V20.25H3.75005V11.625H3.00005L2.55005 10.275L12 3.1875ZM5.25005 10.125V18.75H18.75V10.125L12 5.0625L5.25005 10.125Z" fill="#ffffff" ></path> </g></svg>
+                <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fillRule="evenodd" clipRule="evenodd" d="M12 3.1875L21.4501 10.275L21.0001 11.625H20.25V20.25H3.75005V11.625H3.00005L2.55005 10.275L12 3.1875ZM5.25005 10.125V18.75H18.75V10.125L12 5.0625L5.25005 10.125Z" fill="#ffffff" ></path> </g></svg>
               </div>
             </div>
           </div>
@@ -2993,9 +3110,9 @@ function App(): React.JSX.Element {
               id={`game-card-${game.id}`}
             >
               {runningGameId === game.id && <div className="running-badge" />}
-              {game.gridImageUrl ? (
+              {game.squareGridImageUrl || game.gridImageUrl ? (
                 <img
-                  src={game.gridImageUrl}
+                  src={game.squareGridImageUrl || game.gridImageUrl!}
                   alt={game.name}
                   className="game-card-cover"
                   draggable={false}
@@ -3029,6 +3146,11 @@ function App(): React.JSX.Element {
             setBottomCardIndex(0)
             openLibraryView()
           }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            openLibraryView()
+          }}
           style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
         >
           <div className="dashboard">
@@ -3041,20 +3163,22 @@ function App(): React.JSX.Element {
               </div>
             </div>
 
-            {/* Tarjeta 2: Descenders */}
-            <div className="tile game-tile" style={{ backgroundImage: "url('https://cdn2.steamgriddb.com/thumb/7dbdfd71d964683a8bcbe6f5f5b85eb9.jpg')", '--layer': 3 } as React.CSSProperties}>
-              <div className="game-overlay"></div>
-            </div>
-
-            {/* Tarjeta 3: Astroneer */}
-            <div className="tile game-tile" style={{ backgroundImage: "url('https://cdn2.steamgriddb.com/thumb/48b505846f30602aaff7e2d336720e6d.jpg')", '--layer': 2 } as React.CSSProperties}>
-              <div className="game-overlay"></div>
-            </div>
-
-            {/* Tarjeta 4: Sea of Thieves */}
-            <div className="tile game-tile" style={{ backgroundImage: "url('https://cdn2.steamgriddb.com/thumb/055c25fa28c4eb8c6bb0672e557eef80.jpg')", '--layer': 1 } as React.CSSProperties}>
-              <div className="game-overlay"></div>
-            </div>
+            {/* Tarjetas 2, 3, 4: Portadas de los 3 últimos juegos añadidos */}
+            {last3AddedGames.map((item, index) => {
+              const layer = 3 - index
+              return (
+                <div
+                  key={`featured-${item.id || index}`}
+                  className="tile game-tile"
+                  style={{
+                    backgroundImage: item.coverUrl ? `url("${item.coverUrl}")` : undefined,
+                    '--layer': layer
+                  } as React.CSSProperties}
+                >
+                  <div className="game-overlay"></div>
+                </div>
+              )
+            })}
           </div>
 
           {/* Texto superpuesto al frente de todo */}
@@ -4201,7 +4325,21 @@ function App(): React.JSX.Element {
 
                     <div className="edit-artwork-preview-grid">
                       <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
-                        <span className="edit-artwork-label">Portada (Grid 600x900)</span>
+                        <span className="edit-artwork-label">Grid 1:1 (Row / Biblioteca)</span>
+                        <div className="edit-artwork-img-box grid-square">
+                          {(currentTargetGame as any)?.squareGridImageUrl ? (
+                            <img src={(currentTargetGame as any).squareGridImageUrl} alt="Grid 1:1" draggable={false} />
+                          ) : (
+                            <div className="edit-artwork-empty">Sin grid 1:1</div>
+                          )}
+                        </div>
+                        <button type="button" className="btn-secondary edit-artwork-btn">
+                          <EditIcon size={14} /> Cambiar grid 1:1
+                        </button>
+                      </div>
+
+                      <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
+                        <span className="edit-artwork-label">Portada (My games & apps)</span>
                         <div className="edit-artwork-img-box grid">
                           {(currentTargetGame as any)?.gridImageUrl ? (
                             <img src={(currentTargetGame as any).gridImageUrl} alt="Grid" draggable={false} />
@@ -4948,39 +5086,35 @@ function App(): React.JSX.Element {
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="Buscar juego..."
+                  placeholder="Nombre del juego..."
                   value={sgdbSearch}
                   onChange={(e) => setSgdbSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSgdbSearch()
-                  }}
-                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleSgdbSearch()}
                 />
-                <button className="btn-browse" onClick={handleSgdbSearch} disabled={sgdbLoading}>
-                  <SearchIcon size={16} />
+                <button className="btn-secondary" onClick={handleSgdbSearch} disabled={sgdbLoading}>
+                  <SearchIcon size={14} /> {sgdbLoading ? 'Buscando...' : 'Buscar'}
                 </button>
               </div>
             </div>
 
-            {/* Search results */}
-            {sgdbLoading && <div className="sgdb-loading">Buscando...</div>}
-
-            {!sgdbSelectedGame && sgdbResults.length > 0 && (
-              <div className="sgdb-results">
+            {/* Results list */}
+            {sgdbResults.length > 0 && !sgdbSelectedGame && (
+              <div className="sgdb-results-list">
+                <div className="sgdb-results-title">Selecciona un juego:</div>
                 {sgdbResults.map((game) => (
                   <button
                     key={game.id}
                     className="sgdb-result-item"
                     onClick={() => handleSgdbSelectGame(game)}
                   >
-                    <span className="sgdb-result-name">{game.name}</span>
-                    {game.verified && <span className="sgdb-verified">✓</span>}
+                    <span>{game.name}</span>
+                    {game.verified && <span className="sgdb-verified-badge">Verificado</span>}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Art type tabs + images */}
+            {/* Selected game art grid */}
             {sgdbSelectedGame && (
               <>
                 <div className="sgdb-game-header">
@@ -5048,6 +5182,8 @@ function App(): React.JSX.Element {
         </div>
       )}
 
+
+
       {/* ── Downloads Modal (PS5 Composition) ── */}
       <DownloadsModal
         isOpen={showDownloadsModal}
@@ -5088,6 +5224,12 @@ function App(): React.JSX.Element {
           ))}
         </div>
       )}
+
+      {/* ── Modal Helper (Tutorial de Bienvenida) ── */}
+      <ModalHelper
+        isOpen={showHelperModal}
+        onClose={() => setShowHelperModal(false)}
+      />
 
     </div>
   )
