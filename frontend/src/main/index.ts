@@ -1331,9 +1331,21 @@ app.whenReady().then(() => {
           }
         }
 
-        // Parse ALL update started lines, keep the LAST one per AppID
+        // Parse ALL update started lines, keep the LAST one per AppID (only recent logs)
         const appUpdates = new Map<string, { downloaded: number; total: number; timestamp: number }>()
+        const finishedAppIds = new Set<string>()
+        const now = Date.now()
+        const MAX_LOG_AGE_MS = 15 * 60 * 1000
+
         for (const line of lines) {
+          const finishedMatch = line.match(/AppID\s+(\d+)\s+update (finished|canceled)/i)
+          if (finishedMatch) {
+            finishedAppIds.add(finishedMatch[1])
+            appUpdates.delete(finishedMatch[1])
+            downloadInfoCache.delete(finishedMatch[1])
+            continue
+          }
+
           const match = line.match(/AppID\s+(\d+)\s+update started\s*:\s*download\s+(\d+)\/(\d+)/)
           if (match) {
             const appId = match[1]
@@ -1341,16 +1353,18 @@ app.whenReady().then(() => {
             const total = parseInt(match[3], 10)
             // Extract timestamp from line
             const tsMatch = line.match(/^\[(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\]/)
-            let timestamp = Date.now()
+            let timestamp = now
             if (tsMatch) {
-              timestamp = new Date(tsMatch[1]).getTime()
+              const parsed = new Date(tsMatch[1]).getTime()
+              if (!isNaN(parsed)) timestamp = parsed
             }
-            appUpdates.set(appId, { downloaded, total, timestamp })
+            if (now - timestamp <= MAX_LOG_AGE_MS && !finishedAppIds.has(appId)) {
+              appUpdates.set(appId, { downloaded, total, timestamp })
+            }
           }
         }
 
         // Update cache with latest info
-        const now = Date.now()
         for (const [appId, info] of appUpdates) {
           const existing = downloadInfoCache.get(appId)
           // Only update if this is newer or if we don't have data
@@ -1380,9 +1394,11 @@ app.whenReady().then(() => {
           }
         }
 
-        // If we have cached apps but no new log entries, still estimate progress
+        // Clean up old cached entries
         for (const [appId, info] of downloadInfoCache) {
-          if (!appUpdates.has(appId) && info.speed > 0 && info.downloaded < info.total) {
+          if (!appUpdates.has(appId) && (now - info.updated > MAX_LOG_AGE_MS || info.downloaded >= info.total)) {
+            downloadInfoCache.delete(appId)
+          } else if (!appUpdates.has(appId) && info.speed > 0 && info.downloaded < info.total) {
             const elapsedMs = now - info.updated
             const elapsedSec = elapsedMs / 1000
             const speedBytesPerSec = (info.speed * 1_000_000) / 8
@@ -1499,14 +1515,10 @@ app.whenReady().then(() => {
             const downloading = (stateFlags & 0x100000) !== 0
             const validating = (stateFlags & 0x200000) !== 0
             const paused = (stateFlags & 0x8) !== 0
-            const updateRequired = (stateFlags & 0x40) !== 0
-
-            const downloadingFolder = join(steamappsDir, 'downloading', appId)
-            const hasDownloadingFolder = fs.existsSync(downloadingFolder)
+            const isStaging = (stateFlags & 0x400000) !== 0
 
             // Get real-time info from content_log.txt cache
             const realTimeInfo = downloadInfoCache.get(appId)
-            const isStaging = (stateFlags & 0x400000) !== 0
 
             let total: number
             let downloaded: number
@@ -1530,9 +1542,11 @@ app.whenReady().then(() => {
             const percent = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0
             const downloadSpeed = realTimeInfo?.speed || 0
 
-            const isActive = downloading || validating || paused || updateRequired || hasDownloadingFolder || isStaging ||
-              (bytesToDownload > 0 && bytesDownloaded < bytesToDownload) ||
-              (bytesToStage > 0 && bytesStaged < bytesToStage)
+            const isActuallyDownloading = downloading || validating || isStaging
+            const isPaused = paused && ((bytesToDownload > 0 && bytesDownloaded < bytesToDownload) || (bytesToStage > 0 && bytesStaged < bytesToStage))
+            const hasUnfinishedBytes = (bytesToDownload > 0 && bytesDownloaded < bytesToDownload) || (bytesToStage > 0 && bytesStaged < bytesToStage)
+
+            const isActive = isActuallyDownloading || isPaused || hasUnfinishedBytes
 
             if (isActive) {
               downloads.push({
@@ -1543,7 +1557,7 @@ app.whenReady().then(() => {
                 bytesToStage,
                 bytesStaged,
                 stateFlags,
-                downloading: downloading || hasDownloadingFolder,
+                downloading: downloading || (isActuallyDownloading && percent < 100),
                 validating,
                 paused,
                 percent,

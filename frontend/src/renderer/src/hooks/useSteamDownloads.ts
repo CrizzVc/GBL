@@ -51,9 +51,18 @@ export function useSteamDownloads(pollIntervalMs: number = 1000): {
 
         if (!isFirstPollRef.current) {
           for (const [appId, prev] of prevMap) {
-            const current = list.find((d) => d.appId === appId)
-            if (!current || (current.percent >= 100 && !current.downloading && !current.validating)) {
-              completions.push({ appId, name: prev.name })
+            // A completion ONLY triggers if the item WAS actively downloading/validating in previous poll
+            const wasActivelyDownloading =
+              prev.downloading ||
+              prev.validating ||
+              (prev.bytesToDownload > 0 && prev.bytesDownloaded < prev.bytesToDownload) ||
+              (prev.percent > 0 && prev.percent < 100)
+
+            if (wasActivelyDownloading) {
+              const current = list.find((d) => d.appId === appId)
+              if (!current || (current.percent >= 100 && !current.downloading && !current.validating)) {
+                completions.push({ appId, name: prev.name })
+              }
             }
           }
 
