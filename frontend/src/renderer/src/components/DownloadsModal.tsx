@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { SteamDownloadItem } from '../hooks/useSteamDownloads'
+import { translations, Language, TranslationSchema } from '../translations'
 
 export interface DownloadsModalGame {
   id: string
@@ -33,12 +34,13 @@ interface DownloadsModalProps {
   games: DownloadsModalGame[]
   steamLibrary: DownloadsModalSteamGame[]
   onSelectGame?: (gameId: string) => void
+  language?: Language
 }
 
-function formatTimeRemaining(dl: SteamDownloadItem): string {
-  if (dl.paused) return 'Paused'
-  if (dl.validating) return 'Validating'
-  if (!dl.downloading && dl.percent === 0) return 'Queued (1 item)'
+function formatTimeRemaining(dl: SteamDownloadItem, t: TranslationSchema): string {
+  if (dl.paused) return t.statusPaused
+  if (dl.validating) return t.statusValidating
+  if (!dl.downloading && dl.percent === 0) return `${t.statusQueued} (${t.itemSingular})`
 
   const total = dl.bytesToDownload > 0 ? dl.bytesToDownload : dl.bytesToStage
   const downloaded = dl.bytesToDownload > 0 ? dl.bytesDownloaded : dl.bytesStaged
@@ -50,25 +52,25 @@ function formatTimeRemaining(dl: SteamDownloadItem): string {
     const remainingSeconds = Math.round(remainingBytes / bytesPerSec)
 
     if (remainingSeconds < 60) {
-      return `${remainingSeconds} s left (1 item)`
+      return `${remainingSeconds} ${t.timeLeftSec} (${t.itemSingular})`
     }
     const minutes = Math.floor(remainingSeconds / 60)
     if (minutes < 60) {
-      return `${minutes} m left (1 item)`
+      return `${minutes} ${t.timeLeftMin} (${t.itemSingular})`
     }
     const hours = Math.floor(minutes / 60)
     const remMinutes = minutes % 60
-    return `${hours} h ${remMinutes} m left (1 item)`
+    return `${hours} ${t.timeLeftHours} ${remMinutes} ${t.timeLeftMin} (${t.itemSingular})`
   }
 
   if (dl.downloading) {
     if (dl.percent > 0) {
-      return `${dl.percent.toFixed(0)}% (1 item)`
+      return `${dl.percent.toFixed(0)}% (${t.itemSingular})`
     }
-    return 'Downloading (1 item)'
+    return `${t.statusDownloading} (${t.itemSingular})`
   }
 
-  return 'Queued (1 item)'
+  return `${t.statusQueued} (${t.itemSingular})`
 }
 
 export const DownloadsModal: React.FC<DownloadsModalProps> = ({
@@ -79,8 +81,10 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
   onForgetDownload,
   games,
   steamLibrary,
-  onSelectGame
+  onSelectGame,
+  language = 'es'
 }) => {
+  const t = translations[language] || translations.es
   const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; appId: string | null }>({
     visible: false,
     x: 0,
@@ -200,18 +204,18 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
         <div className="ps-downloads-main">
           {/* Section: Downloads/Copies */}
           <div className="ps-downloads-section">
-            <div className="ps-section-header">Downloads/Copies</div>
+            <div className="ps-section-header">{t.downloadsTitle}</div>
 
             <div className="ps-section-list">
               {visibleDownloads.length === 0 ? (
                 <div className="ps-download-empty-card">
-                  <span className="ps-download-empty-text">No active downloads</span>
+                  <span className="ps-download-empty-text">{t.noActiveDownloads}</span>
                 </div>
               ) : (
                 visibleDownloads.map((dl, index) => {
                   const coverUrl = getGameCover(dl.appId, dl.name)
                   const isFirstActive = index === 0
-                  const timeText = formatTimeRemaining(dl)
+                  const timeText = formatTimeRemaining(dl, t)
                   const hasProgress = dl.downloading || dl.percent > 0 || dl.paused || dl.validating
 
                   return (
@@ -254,7 +258,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
                             {dl.name}
                           </div>
                           <div className="ps-card-meta">
-                            <span className="ps-card-badge">PS5</span>
+                            <span className="ps-card-badge">STEAM</span>
                           </div>
                         </div>
 
@@ -282,12 +286,12 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
 
           {/* Section: Recently installed */}
           <div className="ps-downloads-section">
-            <div className="ps-section-header">Recently installed</div>
+            <div className="ps-section-header">{language === 'en' ? 'Recently installed' : 'Instalados recientemente'}</div>
 
             <div className="ps-section-list">
               {recentlyInstalledList.length === 0 ? (
                 <div className="ps-download-empty-card">
-                  <span className="ps-download-empty-text">No hay juegos instalados recientemente</span>
+                  <span className="ps-download-empty-text">{language === 'en' ? 'No recently installed games' : 'No hay juegos instalados recientemente'}</span>
                 </div>
               ) : (
                 recentlyInstalledList.map((item) => (
@@ -327,7 +331,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
 
                       {/* Status */}
                       <div className="ps-card-status">
-                        <span className="ps-status-text">{item.status}</span>
+                        <span className="ps-status-text">{language === 'en' ? 'Installed' : 'Instalado'}</span>
                       </div>
                     </div>
                   </div>
@@ -338,7 +342,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
         </div>
 
         {/* Close Button top-right (subtle) */}
-        <button className="ps-modal-close-btn" onClick={onClose} title="Cerrar">
+        <button className="ps-modal-close-btn" onClick={onClose} title={t.close}>
           &times;
         </button>
       </div>
@@ -361,7 +365,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
                 setContextMenu({ visible: false, x: 0, y: 0, appId: null })
               }}
             >
-              Olvidar
+              {t.cmHideFromList}
             </button>
           </div>
         </div>

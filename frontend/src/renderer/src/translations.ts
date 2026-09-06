@@ -17,6 +17,20 @@ export interface TranslationSchema {
   noMusic: string
   gameSingular: string
   gamePlural: string
+  searchPlaceholder: string
+  refresh: string
+  musicPlayer: string
+  controllerConnected: string
+  controllerDisconnected: string
+
+  // Filters & Sorting
+  filterAll: string
+  filterInstalled: string
+  filterFavorites: string
+  sortNameAsc: string
+  sortNameDesc: string
+  sortLastPlayed: string
+  sortDateAdded: string
 
   // Home card & Actions
   connected: string
@@ -27,6 +41,77 @@ export interface TranslationSchema {
   install: string
   download: string
   open: string
+
+  // Context Menu (Game Cards)
+  cmPlay: string
+  cmPlaying: string
+  cmInstall: string
+  cmDetails: string
+  cmEdit: string
+  cmHide: string
+  cmFavorite: string
+  cmUnfavorite: string
+  cmDesktopShortcut: string
+  cmUninstall: string
+  cmViewOnSteam: string
+  cmDelete: string
+
+  // Add / Edit Game Modal
+  modalAddTitle: string
+  modalEditTitle: string
+  modalTabGeneral: string
+  modalTabCustomization: string
+  modalTabDetails: string
+  modalTabDanger: string
+  labelGameName: string
+  labelExePath: string
+  browseFile: string
+  labelIconUrl: string
+  searchSteamGridDB: string
+  labelLaunchArgs: string
+  labelCategory: string
+  btnSave: string
+  btnCancel: string
+  btnDeleteGame: string
+  deleteGameWarning: string
+
+  // Game Details View
+  backToLibrary: string
+  buyOrViewInStore: string
+  lastPlayed: string
+  neverPlayed: string
+  timePlayed: string
+  achievements: string
+  achievementsUnlocked: string
+  stats: string
+  noAchievements: string
+
+  // Downloads Modal & Bar
+  downloadsTitle: string
+  pauseAll: string
+  resumeAll: string
+  clearCompleted: string
+  noActiveDownloads: string
+  statusPaused: string
+  statusValidating: string
+  statusQueued: string
+  statusDownloading: string
+  statusCompleted: string
+  timeLeftSec: string
+  timeLeftMin: string
+  timeLeftHours: string
+  itemSingular: string
+  cmGoToGame: string
+  cmHideFromList: string
+
+  // Notifications
+  installedSuccessfully: string
+  readyToPlay: string
+
+  // Music Player
+  noMusicPlaying: string
+  controllingSystem: string
+  selectTrack: string
 
   // Settings Tabs
   tabHome: string
@@ -72,7 +157,7 @@ export interface TranslationSchema {
   welcomeTutorial: string
   viewTutorial: string
 
-  // Helper Modal
+  // Helper Modal & General
   welcome: string
   welcomeHeading1: string
   welcomeDesc1: string
@@ -83,6 +168,10 @@ export interface TranslationSchema {
   dontShowAgain: string
   next: string
   start: string
+  close: string
+  confirm: string
+  noGamesFound: string
+  addYourFirstGame: string
 }
 
 export const translations: Record<Language, TranslationSchema> = {
@@ -101,6 +190,19 @@ export const translations: Record<Language, TranslationSchema> = {
     noMusic: 'Sin música',
     gameSingular: 'juego',
     gamePlural: 'juegos',
+    searchPlaceholder: 'Buscar juegos...',
+    refresh: 'Refrescar',
+    musicPlayer: 'Reproductor de música',
+    controllerConnected: 'Mando conectado',
+    controllerDisconnected: 'Mando desconectado',
+
+    filterAll: 'Todos los juegos',
+    filterInstalled: 'Instalados',
+    filterFavorites: 'Favoritos',
+    sortNameAsc: 'Nombre (A-Z)',
+    sortNameDesc: 'Nombre (Z-A)',
+    sortLastPlayed: 'Último jugado',
+    sortDateAdded: 'Fecha de agregado',
 
     connected: 'Conectado',
     disconnected: 'Desconectado',
@@ -110,6 +212,71 @@ export const translations: Record<Language, TranslationSchema> = {
     install: 'Instalar',
     download: 'Descargar',
     open: 'Abrir',
+
+    cmPlay: 'Jugar',
+    cmPlaying: 'Jugando',
+    cmInstall: 'Instalar',
+    cmDetails: 'Ver detalles',
+    cmEdit: 'Editar juego',
+    cmHide: 'Ocultar',
+    cmFavorite: 'Añadir a favoritos',
+    cmUnfavorite: 'Quitar de favoritos',
+    cmDesktopShortcut: 'Crear acceso directo en Escritorio',
+    cmUninstall: 'Desinstalar',
+    cmViewOnSteam: 'Ver en Steam',
+    cmDelete: 'Eliminar de la biblioteca',
+
+    modalAddTitle: 'Agregar nuevo juego',
+    modalEditTitle: 'Editar juego',
+    modalTabGeneral: 'Inicio',
+    modalTabCustomization: 'Personalización',
+    modalTabDetails: 'Detalles',
+    modalTabDanger: 'Eliminar',
+    labelGameName: 'Nombre del juego',
+    labelExePath: 'Ruta del ejecutable',
+    browseFile: 'Buscar archivo...',
+    labelIconUrl: 'URL del icono o imagen',
+    searchSteamGridDB: 'Buscar en SteamGridDB',
+    labelLaunchArgs: 'Parámetros de lanzamiento',
+    labelCategory: 'Categoría',
+    btnSave: 'Guardar',
+    btnCancel: 'Cancelar',
+    btnDeleteGame: 'Eliminar juego',
+    deleteGameWarning: '¿Estás seguro de que deseas eliminar este juego de tu biblioteca?',
+
+    backToLibrary: 'VOLVER A LA BIBLIOTECA',
+    buyOrViewInStore: 'VER EN TIENDA',
+    lastPlayed: 'Última sesión',
+    neverPlayed: 'Nunca',
+    timePlayed: 'Tiempo jugado',
+    achievements: 'Logros',
+    achievementsUnlocked: 'desbloqueados',
+    stats: 'Estadísticas',
+    noAchievements: 'No hay logros disponibles para este juego.',
+
+    downloadsTitle: 'Descargas',
+    pauseAll: 'Pausar todas',
+    resumeAll: 'Reanudar todas',
+    clearCompleted: 'Limpiar completadas',
+    noActiveDownloads: 'No hay descargas activas',
+    statusPaused: 'Pausado',
+    statusValidating: 'Validando',
+    statusQueued: 'En cola',
+    statusDownloading: 'Descargando',
+    statusCompleted: 'Completado',
+    timeLeftSec: 's restantes',
+    timeLeftMin: 'm restantes',
+    timeLeftHours: 'h',
+    itemSingular: '1 elemento',
+    cmGoToGame: 'Ir al juego',
+    cmHideFromList: 'Ocultar de la lista',
+
+    installedSuccessfully: 'instalado correctamente',
+    readyToPlay: 'Listo para jugar',
+
+    noMusicPlaying: 'Sin música en reproducción',
+    controllingSystem: 'Controlando sistema',
+    selectTrack: 'Seleccionar pista',
 
     tabHome: 'Inicio',
     tabCustomization: 'Personalización',
@@ -160,7 +327,11 @@ export const translations: Record<Language, TranslationSchema> = {
     welcomeDesc3: 'Disfruta de tu biblioteca personalizada con soporte para mando, efectos de sonido e interfaz inmersiva.',
     dontShowAgain: 'No mostrar de nuevo',
     next: 'Siguiente',
-    start: 'Comenzar'
+    start: 'Comenzar',
+    close: 'Cerrar',
+    confirm: 'Confirmar',
+    noGamesFound: 'No se encontraron juegos',
+    addYourFirstGame: 'Agrega tu primer juego para comenzar'
   },
   en: {
     addGame: 'Add game',
@@ -177,6 +348,19 @@ export const translations: Record<Language, TranslationSchema> = {
     noMusic: 'No music',
     gameSingular: 'game',
     gamePlural: 'games',
+    searchPlaceholder: 'Search games...',
+    refresh: 'Refresh',
+    musicPlayer: 'Music player',
+    controllerConnected: 'Controller connected',
+    controllerDisconnected: 'Controller disconnected',
+
+    filterAll: 'All games',
+    filterInstalled: 'Installed',
+    filterFavorites: 'Favorites',
+    sortNameAsc: 'Name (A-Z)',
+    sortNameDesc: 'Name (Z-A)',
+    sortLastPlayed: 'Recently played',
+    sortDateAdded: 'Date added',
 
     connected: 'Online',
     disconnected: 'Offline',
@@ -186,6 +370,71 @@ export const translations: Record<Language, TranslationSchema> = {
     install: 'Install',
     download: 'Download',
     open: 'Open',
+
+    cmPlay: 'Play',
+    cmPlaying: 'Playing',
+    cmInstall: 'Install',
+    cmDetails: 'View details',
+    cmEdit: 'Edit game',
+    cmHide: 'Hide',
+    cmFavorite: 'Add to favorites',
+    cmUnfavorite: 'Remove from favorites',
+    cmDesktopShortcut: 'Create desktop shortcut',
+    cmUninstall: 'Uninstall',
+    cmViewOnSteam: 'View on Steam',
+    cmDelete: 'Delete from library',
+
+    modalAddTitle: 'Add new game',
+    modalEditTitle: 'Edit game',
+    modalTabGeneral: 'General',
+    modalTabCustomization: 'Customization',
+    modalTabDetails: 'Details',
+    modalTabDanger: 'Danger Zone',
+    labelGameName: 'Game name',
+    labelExePath: 'Executable path',
+    browseFile: 'Browse file...',
+    labelIconUrl: 'Icon or image URL',
+    searchSteamGridDB: 'Search on SteamGridDB',
+    labelLaunchArgs: 'Launch arguments',
+    labelCategory: 'Category',
+    btnSave: 'Save',
+    btnCancel: 'Cancel',
+    btnDeleteGame: 'Delete game',
+    deleteGameWarning: 'Are you sure you want to delete this game from your library?',
+
+    backToLibrary: 'BACK TO LIBRARY',
+    buyOrViewInStore: 'VIEW IN STORE',
+    lastPlayed: 'Last played',
+    neverPlayed: 'Never',
+    timePlayed: 'Time played',
+    achievements: 'Achievements',
+    achievementsUnlocked: 'unlocked',
+    stats: 'Stats',
+    noAchievements: 'No achievements available for this game.',
+
+    downloadsTitle: 'Downloads',
+    pauseAll: 'Pause all',
+    resumeAll: 'Resume all',
+    clearCompleted: 'Clear completed',
+    noActiveDownloads: 'No active downloads',
+    statusPaused: 'Paused',
+    statusValidating: 'Validating',
+    statusQueued: 'Queued',
+    statusDownloading: 'Downloading',
+    statusCompleted: 'Completed',
+    timeLeftSec: 's left',
+    timeLeftMin: 'm left',
+    timeLeftHours: 'h',
+    itemSingular: '1 item',
+    cmGoToGame: 'Go to game',
+    cmHideFromList: 'Hide from list',
+
+    installedSuccessfully: 'installed successfully',
+    readyToPlay: 'Ready to play',
+
+    noMusicPlaying: 'No music playing',
+    controllingSystem: 'Controlling system',
+    selectTrack: 'Select track',
 
     tabHome: 'Home',
     tabCustomization: 'Customization',
@@ -236,6 +485,11 @@ export const translations: Record<Language, TranslationSchema> = {
     welcomeDesc3: 'Enjoy your customized library with controller support, sound effects, and an immersive interface.',
     dontShowAgain: "Don't show again",
     next: 'Next',
-    start: 'Get started'
+    start: 'Get started',
+    close: 'Close',
+    confirm: 'Confirm',
+    noGamesFound: 'No games found',
+    addYourFirstGame: 'Add your first game to get started'
   }
 }
+

@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import steamLogo from '../assets/tiendas/steamLogo.png'
 import { playNotification } from '../services/soundService'
+import { translations, Language } from '../translations'
 
 interface DownloadCompleteNotificationProps {
   id: string
   name: string
   iconUrl: string | null
   onDismiss: (id: string) => void
+  language?: Language
 }
 
-export default function DownloadCompleteNotification({ id, name, iconUrl, onDismiss }: DownloadCompleteNotificationProps): React.JSX.Element {
+export default function DownloadCompleteNotification({ id, name, iconUrl, onDismiss, language = 'es' }: DownloadCompleteNotificationProps): React.JSX.Element {
+  const t = translations[language] || translations.es
   const [isExiting, setIsExiting] = useState(false)
   const onDismissRef = useRef(onDismiss)
   onDismissRef.current = onDismiss
@@ -57,10 +60,11 @@ export default function DownloadCompleteNotification({ id, name, iconUrl, onDism
         </div>
         <div className="notification-divider" />
         <div className="notification-title">
-          {name} instalado correctamente
+          {name} {t.installedSuccessfully}
         </div>
-        <div className="notification-subtitle">Listo para jugar</div>
+        <div className="notification-subtitle">{t.readyToPlay}</div>
       </div>
     </div>
   )
 }
+

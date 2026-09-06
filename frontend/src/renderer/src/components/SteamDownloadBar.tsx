@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { translations, Language, TranslationSchema } from '../translations'
 
 export interface SteamDownloadItem {
   appId: string
@@ -16,6 +17,7 @@ export interface SteamDownloadItem {
 
 interface SteamDownloadBarProps {
   downloads: SteamDownloadItem[]
+  language?: Language
 }
 
 function formatBytes(bytes: number): string {
@@ -26,14 +28,15 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(i > 1 ? 1 : 0)} ${units[i]}`
 }
 
-function getStatusText(dl: SteamDownloadItem): string {
-  if (dl.paused) return 'Pausado'
-  if (dl.validating) return 'Validando'
-  if (dl.downloading) return 'Descargando'
-  return 'En cola'
+function getStatusText(dl: SteamDownloadItem, t: TranslationSchema): string {
+  if (dl.paused) return t.statusPaused
+  if (dl.validating) return t.statusValidating
+  if (dl.downloading) return t.statusDownloading
+  return t.statusQueued
 }
 
-export default function SteamDownloadBar({ downloads }: SteamDownloadBarProps): React.JSX.Element | null {
+export default function SteamDownloadBar({ downloads, language = 'es' }: SteamDownloadBarProps): React.JSX.Element | null {
+  const t = translations[language] || translations.es
   const activeDownloads = useMemo(() => downloads.filter((dl) => dl.percent > 0 || dl.downloading || dl.validating), [downloads])
 
   if (activeDownloads.length === 0) return null
@@ -44,7 +47,7 @@ export default function SteamDownloadBar({ downloads }: SteamDownloadBarProps): 
         <div key={dl.appId} className="steam-download-item">
           <div className="steam-download-info">
             <span className="steam-download-name">{dl.name}</span>
-            <span className="steam-download-status">{getStatusText(dl)}</span>
+            <span className="steam-download-status">{getStatusText(dl, t)}</span>
           </div>
           <div className="steam-download-progress-row">
             <div className="steam-download-progress-track">
@@ -64,3 +67,4 @@ export default function SteamDownloadBar({ downloads }: SteamDownloadBarProps): 
     </div>
   )
 }
+

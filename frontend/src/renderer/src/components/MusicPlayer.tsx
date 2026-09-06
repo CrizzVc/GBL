@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSystemMedia } from '../hooks/useSystemMedia'
+import { translations, Language } from '../translations'
 import {
   formatMediaTime,
   getAppIconName,
@@ -95,9 +96,11 @@ interface MusicPlayerProps {
   isVisible: boolean
   isIdle?: boolean
   isGameRunning?: boolean
+  language?: Language
 }
 
-export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning = false }: MusicPlayerProps): React.JSX.Element {
+export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning = false, language = 'es' }: MusicPlayerProps): React.JSX.Element {
+  const t = translations[language] || translations.es
   const { nowPlaying } = useSystemMedia(isGameRunning)
   const systemActive = Boolean(nowPlaying)
   const systemTarget = getMediaControlTarget(nowPlaying)
@@ -337,20 +340,10 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
           </div>
           <div className="music-player-main">
             <div className="music-player-info">
-              <span className="music-player-title muted">Sin música</span>
-              <span className="music-player-artist">{isIdle ? 'Reproduce algo en el PC' : 'reproduce en Spotify/YouTube'}</span>
+              <span className="music-player-title muted">{t.noMusicPlaying}</span>
+              <span className="music-player-artist">{isIdle ? (language === 'en' ? 'Play something on PC' : 'Reproduce algo en el PC') : (language === 'en' ? 'Play in Spotify/YouTube' : 'reproduce en Spotify/YouTube')}</span>
               {systemActive && <span className="music-player-source">{headerLabel}</span>}
             </div>
-            {/* <div className="music-player-local-actions">
-              <button
-                className="music-btn add"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isImporting}
-              >
-                {isImporting ? '…' : '+'}
-              </button>
-              <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.flac,.ogg,.m4a,.aac,.wav" multiple onChange={handleImport} style={{ display: 'none' }} />
-            </div> */}
           </div>
         </div>
       </div>
