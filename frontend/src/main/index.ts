@@ -408,6 +408,7 @@ function createWindow(): void {
     minWidth: 1366,
     minHeight: 768,
     show: false,
+    fullscreen: true,
     autoHideMenuBar: true,
     icon: appIconAsset,
     webPreferences: {
