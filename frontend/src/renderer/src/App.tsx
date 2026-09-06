@@ -1395,7 +1395,7 @@ function App(): React.JSX.Element {
         let appid = detailGame.steamAppId
         if (!appid) {
           const resolveRes = await fetch(
-            `${BACKEND_URL}/api/steam/resolve?term=${encodeURIComponent(detailGame.name)}`
+            `${BACKEND_URL}/api/steam/resolve?term=${encodeURIComponent(detailGame.name)}&lang=${language}`
           )
           if (!resolveRes.ok) return
           const resolved = await resolveRes.json()
@@ -1405,8 +1405,8 @@ function App(): React.JSX.Element {
 
         // 2) Fetch screenshots and store details in parallel
         const [shotsRes, detailsRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/api/steam/screenshots/${appid}`),
-          fetch(`${BACKEND_URL}/api/steam/details/${appid}`)
+          fetch(`${BACKEND_URL}/api/steam/screenshots/${appid}?lang=${language}`),
+          fetch(`${BACKEND_URL}/api/steam/details/${appid}?lang=${language}`)
         ])
 
         if (!cancelled && shotsRes.ok) {
@@ -1430,7 +1430,7 @@ function App(): React.JSX.Element {
     return () => {
       cancelled = true
     }
-  }, [detailGameId])
+  }, [detailGameId, language])
 
   // ── Close detail view with Escape (sonido close) ──
   useEffect(() => {

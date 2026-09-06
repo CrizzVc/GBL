@@ -15,11 +15,11 @@ const router = Router();
 // Resolve a game name to a Steam AppID
 router.get('/resolve', async (req, res) => {
   try {
-    const { term } = req.query;
+    const { term, lang } = req.query;
     if (!term || typeof term !== 'string' || term.trim().length === 0) {
       return res.status(400).json({ error: 'Se requiere el parámetro "term"' });
     }
-    const result = await resolveAppId(term.trim());
+    const result = await resolveAppId(term.trim(), { lang });
     res.json(result);
   } catch (error) {
     console.error('[Steam] Error resolviendo appid:', error.message);
@@ -31,10 +31,11 @@ router.get('/resolve', async (req, res) => {
 router.get('/screenshots/:appid', async (req, res) => {
   try {
     const { appid } = req.params;
+    const lang = req.query.lang || 'es';
     if (!appid) {
       return res.status(400).json({ error: 'Se requiere el appid' });
     }
-    const screenshots = await getScreenshots(appid);
+    const screenshots = await getScreenshots(appid, { lang });
     res.json(screenshots);
   } catch (error) {
     console.error('[Steam] Error obteniendo screenshots:', error.message);
@@ -46,10 +47,11 @@ router.get('/screenshots/:appid', async (req, res) => {
 router.get('/details/:appid', async (req, res) => {
   try {
     const { appid } = req.params;
+    const lang = req.query.lang || 'es';
     if (!appid) {
       return res.status(400).json({ error: 'Se requiere el appid' });
     }
-    const details = await getAppDetails(appid);
+    const details = await getAppDetails(appid, { lang });
     if (!details) {
       return res.status(404).json({ error: 'No se encontraron detalles para este appid' });
     }

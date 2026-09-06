@@ -19,20 +19,31 @@ function setCache(key, data) {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
+const LANG_MAP = { es: 'es', en: 'en' };
+const ACCEPT_LANG_MAP = { es: 'es-419,es;q=0.9,en;q=0.8', en: 'en-US,en;q=0.9,es;q=0.8' };
+
+function getLangParams(lang) {
+  const l = LANG_MAP[lang] || 'es';
+  const acceptLang = ACCEPT_LANG_MAP[lang] || ACCEPT_LANG_MAP.es;
+  return { l, acceptLang };
+}
+
 /**
  * Get Steam AppID from a game name via the Steam Store search endpoint.
  * @param {string} term - Game name
+ * @param {{ lang?: string }} options
  * @returns {Promise<{appid: number, name: string} | null>}
  */
-export async function resolveAppId(term) {
-  const key = `resolve:${term}`;
+export async function resolveAppId(term, { lang } = {}) {
+  const { l, acceptLang } = getLangParams(lang);
+  const key = `resolve:${lang || 'es'}:${term}`;
   const cached = getCached(key);
   if (cached) return cached;
 
   try {
     const res = await fetch(
-      `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(term)}&l=es&cc=us`,
-      { headers: { 'Accept-Language': 'es-419,es;q=0.9,en;q=0.8' } }
+      `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(term)}&l=${l}&cc=us`,
+      { headers: { 'Accept-Language': acceptLang } }
     );
     if (!res.ok) {
       throw new Error(`Steam search error ${res.status}`);
@@ -51,16 +62,18 @@ export async function resolveAppId(term) {
 /**
  * Get store details (including screenshots) for a Steam AppID.
  * @param {number|string} appid - Steam AppID
+ * @param {{ lang?: string }} options
  * @returns {Promise<Array>} Array of screenshot objects
  */
-export async function getScreenshots(appid) {
-  const key = `shots:${appid}`;
+export async function getScreenshots(appid, { lang } = {}) {
+  const { l, acceptLang } = getLangParams(lang);
+  const key = `shots:${lang || 'es'}:${appid}`;
   const cached = getCached(key);
   if (cached) return cached;
 
   try {
-    const res = await fetch(`${STORE_API}?appids=${appid}&l=es`, {
-      headers: { 'Accept-Language': 'es-419,es;q=0.9,en;q=0.8' }
+    const res = await fetch(`${STORE_API}?appids=${appid}&l=${l}`, {
+      headers: { 'Accept-Language': acceptLang }
     });
     if (!res.ok) {
       throw new Error(`Steam appdetails error ${res.status}`);
@@ -82,10 +95,11 @@ export async function getScreenshots(appid) {
 /**
  * Get a review summary (score description + total count) for a Steam AppID.
  * @param {number|string} appid - Steam AppID
- * @param {{ dayRange?: number }} options - Optional day_range to restrict to "recent" reviews (e.g. 30)
+ * @param {{ dayRange?: number, reviewType?: string, lang?: string }} options
  * @returns {Promise<{summary: string, count: number} | null>}
  */
-async function fetchReviewSummary(appid, { dayRange, reviewType = 'all' } = {}) {
+async function fetchReviewSummary(appid, { dayRange, reviewType = 'all', lang } = {}) {
+  const { acceptLang } = getLangParams(lang);
   const params = new URLSearchParams({
     json: '1',
     language: 'all',
@@ -96,7 +110,7 @@ async function fetchReviewSummary(appid, { dayRange, reviewType = 'all' } = {}) 
   if (dayRange) params.set('day_range', String(dayRange));
 
   const res = await fetch(`${REVIEWS_API}/${appid}?${params.toString()}`, {
-    headers: { 'Accept-Language': 'es-419,es;q=0.9,en;q=0.8' }
+    headers: { 'Accept-Language': acceptLang }
   });
   if (!res.ok) {
     throw new Error(`Steam reviews error ${res.status}`);
@@ -164,16 +178,18 @@ function pickRating(ratings) {
  * Get full store details for a Steam AppID: description, developer, publisher,
  * release date, recent/all review summaries and community tags.
  * @param {number|string} appid - Steam AppID
+ * @param {{ lang?: string }} options
  * @returns {Promise<object|null>}
  */
-export async function getAppDetails(appid) {
-  const key = `details:${appid}`;
+export async function getAppDetails(appid, { lang } = {}) {
+  const { l, acceptLang } = getLangParams(lang);
+  const key = `details:${lang || 'es'}:${appid}`;
   const cached = getCached(key);
   if (cached) return cached;
 
   try {
-    const res = await fetch(`${STORE_API}?appids=${appid}&l=es`, {
-      headers: { 'Accept-Language': 'es-419,es;q=0.9,en;q=0.8' }
+    const res = await fetch(`${STORE_API}?appids=${appid}&l=${l}`, {
+      headers: { 'Accept-Language': acceptLang }
     });
     if (!res.ok) {
       throw new Error(`Steam appdetails error ${res.status}`);
@@ -186,19 +202,19 @@ export async function getAppDetails(appid) {
     const data = entry.data;
 
     const [reviewsRecent, reviewsAll, reviewsPositive, reviewsNegative, tags] = await Promise.all([
-      fetchReviewSummary(appid, { dayRange: 30 }).catch((err) => {
+      fetchReviewSummary(appid, { dayRange: 30, lang }).catch((err) => {
         console.error('[SteamService] Error obteniendo reseñas recientes:', err.message);
         return null;
       }),
-      fetchReviewSummary(appid).catch((err) => {
+      fetchReviewSummary(appid, { lang }).catch((err) => {
         console.error('[SteamService] Error obteniendo reseñas totales:', err.message);
         return null;
       }),
-      fetchReviewSummary(appid, { reviewType: 'positive' }).catch((err) => {
+      fetchReviewSummary(appid, { reviewType: 'positive', lang }).catch((err) => {
         console.error('[SteamService] Error obteniendo reseñas positivas:', err.message);
         return null;
       }),
-      fetchReviewSummary(appid, { reviewType: 'negative' }).catch((err) => {
+      fetchReviewSummary(appid, { reviewType: 'negative', lang }).catch((err) => {
         console.error('[SteamService] Error obteniendo reseñas negativas:', err.message);
         return null;
       }),
