@@ -5128,7 +5128,7 @@ function App(): React.JSX.Element {
                           }}
                         />
                         <p className="settings-profile-hint">
-                          El nombre se guarda al salir o pulsar Enter. Haz clic en la foto para cambiarla (icono.png por defecto).
+                          {t.usernameDesc}
                         </p>
                       </div>
                     </div>
@@ -5158,7 +5158,7 @@ function App(): React.JSX.Element {
                         <div className="settings-helper-card-body">
                           <h4 className="settings-helper-title">{t.welcomeTutorial}</h4>
                           <p className="settings-helper-desc">
-                            Guía de introducción sobre la organización de tus juegos de PC, Steam, accesos rápidos y personalización visual de la plataforma.
+                            {t.welcomeDescription}
                           </p>
                         </div>
                         <div className="settings-helper-card-footer">
@@ -5170,7 +5170,7 @@ function App(): React.JSX.Element {
                               setShowHelperModal(true)
                             }}
                           >
-                            Ver tutorial
+                            {t.viewTutorial}
                           </button>
                         </div>
                       </div>

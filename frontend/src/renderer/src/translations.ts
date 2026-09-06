@@ -143,6 +143,7 @@ export interface TranslationSchema {
   // Settings - Customization Tab
   profileTitle: string
   username: string
+  usernameDesc: string
   customBackground: string
   defaultBackground: string
   changeBackground: string
@@ -157,6 +158,7 @@ export interface TranslationSchema {
   helpTitle: string
   helpSubtitle: string
   welcomeTutorial: string
+  welcomeDescription: string
   viewTutorial: string
 
   // Helper Modal & General
@@ -307,6 +309,7 @@ export const translations: Record<Language, TranslationSchema> = {
 
     profileTitle: 'Perfil',
     username: 'Nombre de usuario',
+    usernameDesc: 'El nombre de usuario se guardará al salir o pulsar Enter. Haz clic en la foto para cambiarla (icono.png por defecto).',
     customBackground: 'Fondo personalizado',
     defaultBackground: 'Fondo por defecto',
     changeBackground: 'Cambiar fondo',
@@ -320,6 +323,7 @@ export const translations: Record<Language, TranslationSchema> = {
     helpTitle: 'Centro de ayuda y tutoriales',
     helpSubtitle: 'Explora las guías interactivas para conocer y aprovechar al máximo HASHI.',
     welcomeTutorial: 'Bienvenida',
+    welcomeDescription: 'Guía de introducción sobre la organización de tus juegos de PC, Steam, accesos rápidos y personalización visual de la plataforma.',
     viewTutorial: 'Ver tutorial',
 
     welcome: 'Te damos la bienvenida a HASHI',
@@ -467,6 +471,7 @@ export const translations: Record<Language, TranslationSchema> = {
 
     profileTitle: 'Profile',
     username: 'Username',
+    usernameDesc: 'The username will be saved when you exit or press Enter. Click on the photo to change it (default icon.png).',
     customBackground: 'Custom background',
     defaultBackground: 'Default background',
     changeBackground: 'Change background',
@@ -480,6 +485,7 @@ export const translations: Record<Language, TranslationSchema> = {
     helpTitle: 'Help Center & Tutorials',
     helpSubtitle: 'Explore interactive guides to discover and make the most of HASHI.',
     welcomeTutorial: 'Welcome',
+    welcomeDescription: 'Introductory guide on organizing your PC games, Steam, quick access, and visual customization of the platform.',
     viewTutorial: 'View tutorial',
 
     welcome: 'Welcome to HASHI',
