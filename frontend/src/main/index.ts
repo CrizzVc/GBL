@@ -9,6 +9,7 @@ import * as crypto from 'crypto'
 import { spawn, fork, execSync, type ChildProcess } from 'child_process'
 import * as http from 'http'
 import { URL } from 'url'
+import { translations, Language, t as tInterp } from '../renderer/src/translations'
 
 const STEAM_API_KEY = 'B1F361EA3C07B455DC8B0D06ED179B00'
 const STEAM_OPENID_RETURN_URL = 'http://127.0.0.1:8765/steam-openid'
@@ -238,6 +239,7 @@ function ensureSteamOpenIdServer(): void {
 
     const hashiLogoDataUri = assetToDataUri(hashiLogoAsset)
     const steamLogoDataUri = assetToDataUri(steamLogoAsset)
+    const t = translations['es']
 
     if (requestUrl.pathname === '/steam-openid' && mode === 'id_res' && identity) {
       const steamIdMatch = identity.match(/\/id\/(\d+)/)
@@ -313,8 +315,8 @@ function ensureSteamOpenIdServer(): void {
         <img src="${steamLogoDataUri}" alt="Steam">
       </div>
     </div>
-    <h1 class="title fade-in fade-in-d1">Te has conectado correctamente.</h1>
-    <p class="subtitle fade-in fade-in-d2">Puedes cerrar esta ventana o <a href="#" onclick="window.close()">cerrarla automaticamente</a>.</p>
+    <h1 class="title fade-in fade-in-d1">${t.steamConected}</h1>
+    <p class="subtitle fade-in fade-in-d2">${t.steamCloseConnection1} <a href="#" onclick="window.close()">${t.steamCloseConnection2}</a>.</p>
     <div class="links fade-in fade-in-d3">
       <a href="https://store.steampowered.com" target="_blank">Steam Store</a>
       <span>|</span>
@@ -328,7 +330,7 @@ function ensureSteamOpenIdServer(): void {
     }
 
     if (steamOpenIdReject) {
-      steamOpenIdReject(new Error('No se pudo completar la autenticación de Steam.'))
+      steamOpenIdReject(new Error(`No se pudo completar la autenticación de Steam.`))
     }
     steamOpenIdResolve = null
     steamOpenIdReject = null
@@ -385,8 +387,8 @@ function ensureSteamOpenIdServer(): void {
         <img src="${steamLogoDataUri}" alt="Steam">
       </div>
     </div>
-    <h1 class="title fade-in fade-in-d1">No se pudo conectar con Steam.</h1>
-    <p class="subtitle fade-in fade-in-d2">La autenticación no se completó. <a href="#" onclick="window.close()">Intentar de nuevo</a>.</p>
+    <h1 class="title fade-in fade-in-d1">${t.steamNotConected}</h1>
+    <p class="subtitle fade-in fade-in-d2">${t.steamLoginFailedDesc1} <a href="#" onclick="window.close()">${t.steamLoginFailedDesc2}</a>.</p>
     <div class="links fade-in fade-in-d3">
       <a href="https://help.steampowered.com" target="_blank">Steam Support</a>
       <span>|</span>
@@ -1010,7 +1012,7 @@ app.whenReady().then(() => {
         preview = img.resize({ width: WALLPAPER_PREVIEW_MAX_WIDTH, height: h, quality: 'best' })
       }
       const jpeg = preview.toJPEG(WALLPAPER_PREVIEW_QUALITY)
-      fs.promises.writeFile(cachePath, jpeg).catch(() => {})
+      fs.promises.writeFile(cachePath, jpeg).catch(() => { })
       return `data:image/jpeg;base64,${jpeg.toString('base64')}`
     } catch (err) {
       console.error('Error reading wallpaper preview:', err)

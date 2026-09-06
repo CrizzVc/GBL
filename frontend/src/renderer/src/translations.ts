@@ -145,6 +145,14 @@ export interface TranslationSchema {
   playingGame: string
   playingGameDesc: string
 
+  // Steam Connection
+  steamConected: string
+  steamNotConected: string
+  steamCloseConnection1: string
+  steamCloseConnection2: string
+  steamLoginFailedDesc1: string
+  steamLoginFailedDesc2: string
+
   // Music Player
   noMusicPlaying: string
   noMusicPlayingDesc: string
@@ -415,6 +423,13 @@ export const translations: Record<Language, TranslationSchema> = {
     playingGame: 'Está jugando a ',
     playingGameDesc: 'Presiona Tab para ampliar',
 
+    steamConected: 'Te has conectado correctamente.',
+    steamNotConected: 'No se pudo conectar con Steam.',
+    steamCloseConnection1: 'Puedes cerrar esta ventana o ',
+    steamCloseConnection2: ' cerrarla automaticamente',
+    steamLoginFailedDesc1: 'La autenticación no se completó.',
+    steamLoginFailedDesc2: 'Intentar de nuevo.',
+
     noMusicPlaying: 'Sin música en reproducción',
     noMusicPlayingDesc: 'reproduce en Spotify/YouTube',
     controllingSystem: 'Controlando sistema',
@@ -655,6 +670,15 @@ export const translations: Record<Language, TranslationSchema> = {
     readyToPlay: 'Ready to play',
     playingGame: 'is playing ',
     playingGameDesc: 'Press Tab to expand',
+
+    steamConected: 'Steam connected',
+    steamNotConected: 'Steam not connected',
+    steamCloseConnection1: 'You can close this window or ',
+    steamCloseConnection2: ' close it automatically',
+    steamLoginFailedDesc1: 'The authentication was not completed.',
+    steamLoginFailedDesc2: 'Try again.',
+
+
 
     noMusicPlaying: 'No music playing',
     noMusicPlayingDesc: 'Play in Spotify/YouTube',
