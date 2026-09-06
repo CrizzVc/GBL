@@ -18,7 +18,8 @@ import {
   PaletteIcon,
   HomeIcon,
   DownloadIcon,
-  ExtensionIcon
+  ExtensionIcon,
+  HelpIcon
 } from './components/Icons'
 
 import MusicPlayer from './components/MusicPlayer'
@@ -461,7 +462,7 @@ function App(): React.JSX.Element {
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
 
   // Settings modal state
-  const [settingsTab, setSettingsTab] = useState<'inicio' | 'personalizacion'>('inicio')
+  const [settingsTab, setSettingsTab] = useState<'inicio' | 'personalizacion' | 'ayuda'>('inicio')
   const [startupEnabled, setStartupEnabled] = useState(false)
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
@@ -4742,6 +4743,14 @@ function App(): React.JSX.Element {
                   <PaletteIcon size={18} className="settings-nav-icon" />
                   <span>Personalización</span>
                 </button>
+                <button
+                  type="button"
+                  className={`settings-nav-item ${settingsTab === 'ayuda' ? 'active' : ''}`}
+                  onClick={() => setSettingsTab('ayuda')}
+                >
+                  <HelpIcon size={18} className="settings-nav-icon" />
+                  <span>Ayuda</span>
+                </button>
               </nav>
             </aside>
 
@@ -5071,6 +5080,49 @@ function App(): React.JSX.Element {
                         <p className="settings-profile-hint">
                           El nombre se guarda al salir o pulsar Enter. Haz clic en la foto para cambiarla (icono.png por defecto).
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsTab === 'ayuda' && (
+                <div className="settings-tab-panel">
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Centro de ayuda y tutoriales</h3>
+                    <p className="settings-section-subtitle">
+                      Explora las guías interactivas para conocer y aprovechar al máximo HASHI.
+                    </p>
+
+                    <div className="settings-helpers-grid">
+                      <div
+                        className="settings-helper-card"
+                        onClick={() => {
+                          setShowHelperModal(true)
+                        }}
+                      >
+                        <div className="settings-helper-card-header">
+                          <span className="settings-helper-badge">Tutorial</span>
+                          <span className="settings-helper-tag">HASHI v{APP_VERSION}</span>
+                        </div>
+                        <div className="settings-helper-card-body">
+                          <h4 className="settings-helper-title">Bienvenida</h4>
+                          <p className="settings-helper-desc">
+                            Guía de introducción sobre la organización de tus juegos de PC, Steam, accesos rápidos y personalización visual de la plataforma.
+                          </p>
+                        </div>
+                        <div className="settings-helper-card-footer">
+                          <button
+                            type="button"
+                            className="btn-primary settings-mini-btn"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShowHelperModal(true)
+                            }}
+                          >
+                            Ver tutorial
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

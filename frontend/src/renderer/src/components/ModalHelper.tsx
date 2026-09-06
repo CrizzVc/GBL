@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CloseIcon, CheckIcon } from './Icons'
 import helper1Video from '../assets/HelperImages/helper1.mp4'
 import helper2Image from '../assets/HelperImages/hellper2.png'
@@ -14,6 +14,12 @@ const HELPER_MODAL_STORAGE_KEY = 'gbl_has_seen_helper_modal'
 export const ModalHelper: React.FC<ModalHelperProps> = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [dontShowAgain, setDontShowAgain] = useState(true)
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(0)
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
