@@ -17,6 +17,8 @@ export interface TranslationSchema {
   noMusic: string
   gameSingular: string
   gamePlural: string
+  loadingGames: string
+  minutesPlayed: string
   searchPlaceholder: string
   refresh: string
   musicPlayer: string
@@ -61,18 +63,44 @@ export interface TranslationSchema {
   modalEditTitle: string
   modalTabGeneral: string
   modalTabCustomization: string
+  tabInstallation: string
   modalTabDetails: string
   modalTabDanger: string
   labelGameName: string
   labelExePath: string
+  exeLabel: string
+  exeDesc: string
+  deletePath: string
+  shortcutsSubTitle: string
+  shortcutsSubTitleDesc: string
   browseFile: string
   labelIconUrl: string
   searchSteamGridDB: string
+  personalizationArtwork: string
+  artworkPersonalizationSub: string
+  grid11: string
+  cover: string
+  icon: string
+  hero: string
+  noGrid11: string
+  changeGrid11: string
+  changeCover: string
+  noCover: string
+  changeBanner: string
+  noBanner: string
+  changeLogo: string
+  noLogo: string
+  changeIcon: string
+  noIcon: string
+  changeHero: string
+  noHero: string
+  btnSearchArtwork: string
   labelLaunchArgs: string
   labelCategory: string
   btnSave: string
   btnCancel: string
   btnDeleteGame: string
+  btnBack: string
   deleteGameWarning: string
 
   // Game Details View
@@ -119,6 +147,8 @@ export interface TranslationSchema {
   tabHelp: string
 
   // Settings - Home Tab
+  gamesAdd: string
+  timePlayedSetting: string
   shortcutsTitle: string
   shortcutsSubtitle: string
   languageTitle: string
@@ -129,6 +159,11 @@ export interface TranslationSchema {
   linkSteam: string
   steamLinked: string
   createSteamShortcut: string
+  createHomeMenu: string
+  optionsToStart: string
+  advancedOptions: string
+  advencePlaceholder: string
+  deleteArgs: string
   unlink: string
   checkUpdates: string
   checkingUpdates: string
@@ -194,6 +229,8 @@ export const translations: Record<Language, TranslationSchema> = {
     noMusic: 'Sin música',
     gameSingular: 'juego',
     gamePlural: 'juegos',
+    loadingGames: 'Cargando juegos...',
+    minutesPlayed: 'jugados',
     searchPlaceholder: 'Buscar juegos...',
     refresh: 'Refrescar',
     musicPlayer: 'Reproductor de música',
@@ -234,18 +271,44 @@ export const translations: Record<Language, TranslationSchema> = {
     modalEditTitle: 'Editar juego',
     modalTabGeneral: 'Inicio',
     modalTabCustomization: 'Personalización',
+    tabInstallation: 'Instalación',
     modalTabDetails: 'Detalles',
     modalTabDanger: 'Eliminar',
     labelGameName: 'Nombre del juego',
     labelExePath: 'Ruta del ejecutable',
+    exeLabel: 'Ejecutable',
+    exeDesc: 'Ruta del archivo que se ejecutará cuando presiones "Jugar"',
+    deletePath: 'Borrar ruta',
+    shortcutsSubTitle: 'Accesos directos',
+    shortcutsSubTitleDesc: 'Crea accesos directos para ejecutar el juego rápidamente',
+    grid11: 'Grid 1:1 (Row / Biblioteca)',
+    cover: 'Portada',
+    icon: 'Icono',
+    hero: 'Hero',
+    noGrid11: 'Sin grid 1:1',
+    changeGrid11: 'Cambiar grid 1:1',
+    changeCover: 'Cambiar portada',
+    noCover: 'Sin portada',
+    changeBanner: 'Cambiar banner',
+    noBanner: 'Sin banner',
+    changeLogo: 'Cambiar logo',
+    noLogo: 'Sin logo',
+    changeIcon: 'Cambiar icono',
+    noIcon: 'Sin icono',
+    changeHero: 'Cambiar hero',
+    noHero: 'Sin hero',
     browseFile: 'Buscar archivo...',
     labelIconUrl: 'URL del icono o imagen',
     searchSteamGridDB: 'Buscar en SteamGridDB',
+    personalizationArtwork: 'Personalización de Artwork',
+    artworkPersonalizationSub: 'Elige carátulas, banners, logos e iconos de alta definición para este juego',
+    btnSearchArtwork: 'Buscar Artwork',
     labelLaunchArgs: 'Parámetros de lanzamiento',
     labelCategory: 'Categoría',
     btnSave: 'Guardar',
     btnCancel: 'Cancelar',
     btnDeleteGame: 'Eliminar juego',
+    btnBack: 'Volver',
     deleteGameWarning: '¿Estás seguro de que deseas eliminar este juego de tu biblioteca?',
 
     backToLibrary: 'VOLVER A LA BIBLIOTECA',
@@ -286,6 +349,8 @@ export const translations: Record<Language, TranslationSchema> = {
     tabCustomization: 'Personalización',
     tabHelp: 'Ayuda',
 
+    gamesAdd: 'JUEGOS AGREGADOS',
+    timePlayedSetting: 'Tiempo jugado',
     shortcutsTitle: 'Accesos directos',
     shortcutsSubtitle: 'Opciones rápidas y configuración del sistema',
     languageTitle: 'Idioma',
@@ -296,6 +361,11 @@ export const translations: Record<Language, TranslationSchema> = {
     linkSteam: 'Vincular Steam',
     steamLinked: 'Cuenta conectada',
     createSteamShortcut: 'Crear atajo de Steam',
+    createHomeMenu: 'Crear atajo en el menú de inicio',
+    optionsToStart: 'Opciones para iniciar',
+    advancedOptions: 'Los usuarios avanzados pueden ingresar sus modificaciones para el inicio de sus juegos (característica experimental)',
+    advencePlaceholder: 'Sin parámetro especificado',
+    deleteArgs: 'Borrar argumentos',
     unlink: 'Desvincular',
     checkUpdates: 'Buscar actualización',
     checkingUpdates: 'Buscando...',
@@ -356,6 +426,8 @@ export const translations: Record<Language, TranslationSchema> = {
     noMusic: 'No music',
     gameSingular: 'game',
     gamePlural: 'games',
+    loadingGames: 'Loading games...',
+    minutesPlayed: 'played',
     searchPlaceholder: 'Search games...',
     refresh: 'Refresh',
     musicPlayer: 'Music player',
@@ -396,18 +468,44 @@ export const translations: Record<Language, TranslationSchema> = {
     modalEditTitle: 'Edit game',
     modalTabGeneral: 'General',
     modalTabCustomization: 'Customization',
+    tabInstallation: 'Installation',
     modalTabDetails: 'Details',
-    modalTabDanger: 'Danger Zone',
+    modalTabDanger: 'Delete',
     labelGameName: 'Game name',
     labelExePath: 'Executable path',
+    exeLabel: 'Executable',
+    exeDesc: 'Path to the file that will be executed when you press "Play"',
+    deletePath: 'Delete path',
+    shortcutsSubTitle: 'Shortcuts',
+    shortcutsSubTitleDesc: 'Create shortcuts to run the game quickly',
+    grid11: 'Grid 1:1 (Row / Library)',
+    cover: 'Cover',
+    icon: 'Icon',
+    hero: 'Hero',
+    noGrid11: 'No grid 1:1',
+    changeGrid11: 'Change grid 1:1',
+    changeCover: 'Change cover',
+    noCover: 'No cover',
+    changeBanner: 'Change banner',
+    noBanner: 'No banner',
+    changeLogo: 'Change logo',
+    noLogo: 'No logo',
+    changeIcon: 'Change icon',
+    noIcon: 'No icon',
+    changeHero: 'Change hero',
+    noHero: 'No hero',
     browseFile: 'Browse file...',
     labelIconUrl: 'Icon or image URL',
     searchSteamGridDB: 'Search on SteamGridDB',
+    personalizationArtwork: 'Artwork Personalization',
+    artworkPersonalizationSub: 'Choose high-definition covers, banners, logos and icons for this game',
+    btnSearchArtwork: 'Search Artwork',
     labelLaunchArgs: 'Launch arguments',
     labelCategory: 'Category',
     btnSave: 'Save',
     btnCancel: 'Cancel',
     btnDeleteGame: 'Delete game',
+    btnBack: 'Back',
     deleteGameWarning: 'Are you sure you want to delete this game from your library?',
 
     backToLibrary: 'BACK TO LIBRARY',
@@ -448,6 +546,8 @@ export const translations: Record<Language, TranslationSchema> = {
     tabCustomization: 'Customization',
     tabHelp: 'Help',
 
+    gamesAdd: 'GAMES ADDED',
+    timePlayedSetting: 'Time played',
     shortcutsTitle: 'Shortcuts & System',
     shortcutsSubtitle: 'Quick options and system settings',
     languageTitle: 'Language',
@@ -458,6 +558,11 @@ export const translations: Record<Language, TranslationSchema> = {
     linkSteam: 'Link Steam',
     steamLinked: 'Account connected',
     createSteamShortcut: 'Create Steam shortcut',
+    createHomeMenu: 'Create home menu',
+    optionsToStart: 'Options to start',
+    advancedOptions: 'Advanced users can enter their modifications for starting their games (experimental feature)',
+    advencePlaceholder: 'No parameter specified',
+    deleteArgs: 'Delete arguments',
     unlink: 'Unlink',
     checkUpdates: 'Check for updates',
     checkingUpdates: 'Checking...',

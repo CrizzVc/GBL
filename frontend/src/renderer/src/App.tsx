@@ -3063,7 +3063,7 @@ function App(): React.JSX.Element {
               <h1 className="hero-title">{selectedGame.name}</h1>
             )}
             <div className="hero-meta">
-              <span>{formatPlaytime(selectedGame.playtimeMinutes)} jugado</span>
+              <span>{formatPlaytime(selectedGame.playtimeMinutes)} {t.minutesPlayed}</span>
               {selectedGame.lastPlayed && (
                 <>
                   <div className="hero-meta-dot" />
@@ -3641,7 +3641,7 @@ function App(): React.JSX.Element {
                   setContextMenu((p) => ({ ...p, visible: false }))
                 }}
               >
-                <ImageIcon size={16} /> Buscar Artwork
+                <ImageIcon size={16} /> {t.btnSearchArtwork}
               </button>
               <div className="context-menu-separator" />
               <button
@@ -3671,7 +3671,7 @@ function App(): React.JSX.Element {
             style={detailBgStyle}
           />
           <button className="detail-back-button" onClick={handleCloseDetail}>
-            <ChevronLeftIcon size={18} /> Volver
+            <ChevronLeftIcon size={18} /> {t.btnBack}
           </button>
           <button className="detail-close" onClick={handleCloseDetail}>
             <CloseIcon size={20} />
@@ -3694,7 +3694,7 @@ function App(): React.JSX.Element {
             <div className="detail-actions-row">
 
               <span className="detail-playtime">
-                {formatPlaytime(detailGame.playtimeMinutes)} jugado
+                {formatPlaytime(detailGame.playtimeMinutes)} {t.minutesPlayed}
                 {detailGame.lastPlayed && (
                   <>
                     {' '}
@@ -4120,13 +4120,13 @@ function App(): React.JSX.Element {
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Agregar Juego</h2>
+              <h2 className="modal-title">{t.modalAddTitle}</h2>
               <button className="modal-close" onClick={() => setModal(null)}>
                 <CloseIcon size={20} />
               </button>
             </div>
             <div className="form-group">
-              <label className="form-label">Nombre del juego</label>
+              <label className="form-label">{t.labelGameName}</label>
               <input
                 className="form-input"
                 type="text"
@@ -4138,12 +4138,12 @@ function App(): React.JSX.Element {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Archivo ejecutable</label>
+              <label className="form-label">{t.labelExePath}</label>
               <div className="form-file-row">
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="Ruta al .exe o acceso directo"
+                  placeholder={t.browseFile}
                   value={formExePath}
                   onChange={(e) => setFormExePath(e.target.value)}
                   id="input-game-path"
@@ -4161,7 +4161,7 @@ function App(): React.JSX.Element {
             )}
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setModal(null)}>
-                Cancelar
+                {t.btnCancel}
               </button>
               <button
                 className="btn-primary"
@@ -4169,7 +4169,7 @@ function App(): React.JSX.Element {
                 disabled={!formName.trim()}
                 id="btn-save-game"
               >
-                Agregar juego
+                {t.btnSave}
               </button>
             </div>
           </div>
@@ -4195,7 +4195,7 @@ function App(): React.JSX.Element {
                     style={gameCoverBg ? { backgroundImage: `url(${gameCoverBg})` } : undefined}
                   />
                   <div className="settings-sidebar-header-overlay" />
-                  <h2 className="settings-sidebar-title">Ajustes</h2>
+                  <h2 className="settings-sidebar-title">{t.settings}</h2>
                 </div>
 
                 <nav className="settings-sidebar-nav">
@@ -4204,28 +4204,28 @@ function App(): React.JSX.Element {
                     className={`settings-nav-item ${editGameTab === 'inicio' ? 'active' : ''}`}
                     onClick={() => setEditGameTab('inicio')}
                   >
-                    <span>Inicio</span>
+                    <span>{t.tabHome}</span>
                   </button>
                   <button
                     type="button"
                     className={`settings-nav-item ${editGameTab === 'personalizacion' ? 'active' : ''}`}
                     onClick={() => setEditGameTab('personalizacion')}
                   >
-                    <span>Personalización</span>
+                    <span>{t.tabCustomization}</span>
                   </button>
                   <button
                     type="button"
                     className={`settings-nav-item ${editGameTab === 'detalles' ? 'active' : ''}`}
                     onClick={() => setEditGameTab('detalles')}
                   >
-                    <span>Instalación</span>
+                    <span>{t.tabInstallation}</span>
                   </button>
                   <button
                     type="button"
                     className={`settings-nav-item danger-tab ${editGameTab === 'eliminar' ? 'active' : ''}`}
                     onClick={() => setEditGameTab('eliminar')}
                   >
-                    <span>Eliminar</span>
+                    <span>{t.modalTabDanger}</span>
                   </button>
                 </nav>
               </aside>
@@ -4237,11 +4237,11 @@ function App(): React.JSX.Element {
                 {editGameTab === 'inicio' && (
                   <div className="settings-tab-panel">
                     <div className="edit-game-field-block">
-                      <label className="edit-game-field-title">Nombre del juego</label>
+                      <label className="edit-game-field-title">{t.labelGameName}</label>
                       <input
                         className="form-input edit-game-input"
                         type="text"
-                        placeholder="Nombre del juego"
+                        placeholder={t.labelGameName}
                         value={formName}
                         onChange={(e) => setFormName(e.target.value)}
                         readOnly={isSteamEdit}
@@ -4249,8 +4249,8 @@ function App(): React.JSX.Element {
                     </div>
 
                     <div className="edit-game-field-block">
-                      <label className="edit-game-field-title">Ejecutable</label>
-                      <span className="edit-game-field-subtitle">Ruta del archivo que se ejecutará cuando presiones "Jugar"</span>
+                      <label className="edit-game-field-title">{t.exeLabel}</label>
+                      <span className="edit-game-field-subtitle">{t.exeDesc}"</span>
                       <div className="edit-game-input-row">
                         <input
                           className="form-input edit-game-input"
@@ -4278,22 +4278,22 @@ function App(): React.JSX.Element {
                             onClick={() => setFormExePath('')}
                             title="Borrar ruta"
                           >
-                            <TrashIcon size={14} /> Borrar ruta
+                            <TrashIcon size={14} /> {t.deletePath}
                           </button>
                         )}
                       </div>
                     </div>
 
                     <div className="edit-game-field-block">
-                      <label className="edit-game-field-title">Accesos directos</label>
-                      <span className="edit-game-field-subtitle">Crea accesos directos para ejecutar el juego rápidamente</span>
+                      <label className="edit-game-field-title">{t.shortcutsSubTitle}</label>
+                      <span className="edit-game-field-subtitle">{t.shortcutsSubTitleDesc}</span>
                       <div className="edit-game-shortcuts-row">
                         <button
                           type="button"
                           className="edit-game-shortcut-btn"
                           onClick={() => { }}
                         >
-                          <DesktopIcon size={16} /> Crear atajo en el escritorio
+                          <DesktopIcon size={16} /> {t.cmDesktopShortcut}
                         </button>
                         <button
                           type="button"
@@ -4304,27 +4304,27 @@ function App(): React.JSX.Element {
                             }
                           }}
                         >
-                          <StoreIcon size={16} /> Crear atajo de Steam
+                          <StoreIcon size={16} /> {t.createSteamShortcut}
                         </button>
                         <button
                           type="button"
                           className="edit-game-shortcut-btn"
                           onClick={() => { }}
                         >
-                          Crear un atajo en el Menú de Inicio
+                          {t.createHomeMenu}
                         </button>
                       </div>
                     </div>
 
                     <div className="edit-game-field-block">
-                      <label className="edit-game-field-title">Opciones para iniciar</label>
-                      <span className="edit-game-field-subtitle">Los usuarios avanzados pueden ingresar sus modificaciones para el inicio de sus juegos (característica experimental)</span>
+                      <label className="edit-game-field-title">{t.optionsToStart}</label>
+                      <span className="edit-game-field-subtitle">{t.advancedOptions}</span>
                       <div className="edit-game-input-row">
                         <input
                           className="form-input edit-game-input"
                           style={{ flex: 1 }}
                           type="text"
-                          placeholder="Sin parámetro especificado"
+                          placeholder={t.advencePlaceholder}
                           value={formLaunchArgs}
                           onChange={(e) => setFormLaunchArgs(e.target.value)}
                         />
@@ -4333,9 +4333,9 @@ function App(): React.JSX.Element {
                             type="button"
                             className="btn-clear-action"
                             onClick={() => setFormLaunchArgs('')}
-                            title="Borrar argumentos"
+                            title={t.deleteArgs}
                           >
-                            <TrashIcon size={14} /> Borrar argumentos
+                            <TrashIcon size={14} /> {t.deleteArgs}
                           </button>
                         )}
                       </div>
@@ -4347,8 +4347,8 @@ function App(): React.JSX.Element {
                 {editGameTab === 'personalizacion' && (
                   <div className="settings-tab-panel">
                     <div className="edit-game-field-block">
-                      <label className="edit-game-field-title">Personalización de Artwork</label>
-                      <span className="edit-game-field-subtitle">Elige carátulas, banners, logos e iconos de alta definición para este juego</span>
+                      <label className="edit-game-field-title">{t.personalizationArtwork}</label>
+                      <span className="edit-game-field-subtitle">{t.artworkPersonalizationSub}</span>
                       <div style={{ marginTop: '10px', marginBottom: '14px' }}>
                         <button
                           type="button"
@@ -4358,37 +4358,37 @@ function App(): React.JSX.Element {
                           }}
                           style={{ background: "#111114", border: "solid 1px #3a3a3a3f" }}
                         >
-                          <ImageIcon size={18} /> Buscar Artwork en SteamGridDB
+                          <ImageIcon size={18} /> {t.searchSteamGridDB}
                         </button>
                       </div>
                     </div>
 
                     <div className="edit-artwork-preview-grid">
                       <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
-                        <span className="edit-artwork-label">Grid 1:1 (Row / Biblioteca)</span>
+                        <span className="edit-artwork-label">{t.grid11}</span>
                         <div className="edit-artwork-img-box grid-square">
                           {(currentTargetGame as any)?.squareGridImageUrl ? (
                             <img src={(currentTargetGame as any).squareGridImageUrl} alt="Grid 1:1" draggable={false} />
                           ) : (
-                            <div className="edit-artwork-empty">Sin grid 1:1</div>
+                            <div className="edit-artwork-empty">{t.noGrid11}</div>
                           )}
                         </div>
                         <button type="button" className="btn-secondary edit-artwork-btn">
-                          <EditIcon size={14} /> Cambiar grid 1:1
+                          <EditIcon size={14} /> {t.changeGrid11}
                         </button>
                       </div>
 
                       <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
-                        <span className="edit-artwork-label">Portada (My games & apps)</span>
+                        <span className="edit-artwork-label">{t.cover} (card "My games & apps")</span>
                         <div className="edit-artwork-img-box grid">
                           {(currentTargetGame as any)?.gridImageUrl ? (
                             <img src={(currentTargetGame as any).gridImageUrl} alt="Grid" draggable={false} />
                           ) : (
-                            <div className="edit-artwork-empty">Sin portada</div>
+                            <div className="edit-artwork-empty">{t.noCover}</div>
                           )}
                         </div>
                         <button type="button" className="btn-secondary edit-artwork-btn">
-                          <EditIcon size={14} /> Cambiar portada
+                          <EditIcon size={14} /> {t.changeCover}
                         </button>
                       </div>
 
@@ -4398,39 +4398,39 @@ function App(): React.JSX.Element {
                           {(currentTargetGame as any)?.heroImageUrl ? (
                             <img src={(currentTargetGame as any).heroImageUrl} alt="Hero" draggable={false} />
                           ) : (
-                            <div className="edit-artwork-empty">Sin banner</div>
+                            <div className="edit-artwork-empty">{t.noBanner}</div>
                           )}
                         </div>
                         <button type="button" className="btn-secondary edit-artwork-btn">
-                          <EditIcon size={14} /> Cambiar banner
+                          <EditIcon size={14} /> {t.changeBanner}
                         </button>
                       </div>
 
                       <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
-                        <span className="edit-artwork-label">Logo (Transparente)</span>
+                        <span className="edit-artwork-label">logo (Transparente)</span>
                         <div className="edit-artwork-img-box logo">
                           {(currentTargetGame as any)?.logoImageUrl ? (
                             <img src={(currentTargetGame as any).logoImageUrl} alt="Logo" draggable={false} />
                           ) : (
-                            <div className="edit-artwork-empty">Sin logo</div>
+                            <div className="edit-artwork-empty">{t.noLogo}</div>
                           )}
                         </div>
                         <button type="button" className="btn-secondary edit-artwork-btn">
-                          <EditIcon size={14} /> Cambiar logo
+                          <EditIcon size={14} /> {t.changeLogo}
                         </button>
                       </div>
 
                       <div className="edit-artwork-card" onClick={() => editingGameId && openSteamGridModal(editingGameId)}>
-                        <span className="edit-artwork-label">Icono</span>
+                        <span className="edit-artwork-label">{t.icon}</span>
                         <div className="edit-artwork-img-box icon">
                           {formIconUrl || (currentTargetGame as any)?.iconDataUrl ? (
                             <img src={formIconUrl || (currentTargetGame as any).iconDataUrl} alt="Icon" draggable={false} />
                           ) : (
-                            <div className="edit-artwork-empty">Sin icono</div>
+                            <div className="edit-artwork-empty">{t.noIcon}</div>
                           )}
                         </div>
                         <button type="button" className="btn-secondary edit-artwork-btn">
-                          <EditIcon size={14} /> Cambiar icono
+                          <EditIcon size={14} /> {t.changeIcon}
                         </button>
                       </div>
                     </div>
@@ -4449,7 +4449,7 @@ function App(): React.JSX.Element {
                           <span className="settings-stat-val">{isSteamEdit ? 'Steam' : 'Local / Manual'}</span>
                         </div>
                         <div className="settings-stat-box">
-                          <span className="settings-stat-label">Tiempo jugado</span>
+                          <span className="settings-stat-label">{t.timePlayed}</span>
                           <span className="settings-stat-val">{formatPlaytime((currentTargetGame as any)?.playtimeMinutes || 0)}</span>
                         </div>
                       </div>
@@ -4486,7 +4486,7 @@ function App(): React.JSX.Element {
                 {/* Footer buttons */}
                 <div className="edit-game-footer">
                   <button type="button" className="btn-secondary" style={{ background: "#111114" }} onClick={() => setModal(null)}>
-                    Cancelar
+                    {t.btnCancel}
                   </button>
                   {!isSteamEdit && (
                     <button
@@ -4495,7 +4495,7 @@ function App(): React.JSX.Element {
                       onClick={handleEditGame}
                       disabled={!formName.trim()}
                     >
-                      Guardar cambios
+                      {t.btnSave}
                     </button>
                   )}
                 </div>
@@ -4535,7 +4535,7 @@ function App(): React.JSX.Element {
                     setLibraryView(false)
                     setLibrarySearch('')
                   }}>
-                    <ChevronLeftIcon size={20} /> Volver
+                    <ChevronLeftIcon size={20} /> {t.btnBack}
                   </button>
                   <div className="library-title-row">
                     <button
@@ -4548,7 +4548,7 @@ function App(): React.JSX.Element {
                         }
                       }}
                     >
-                      Biblioteca
+                      {t.library}
                     </button>
                     <span className="library-view-divider">|</span>
                     <button
@@ -4570,15 +4570,15 @@ function App(): React.JSX.Element {
                   </div>
                   <p className="library-view-subtitle">
                     {librarySource === 'steam' && steamLibraryLoading
-                      ? 'Cargando juegos...'
-                      : `${currentLibraryCount} ${currentLibraryCount === 1 ? 'juego' : 'juegos'}`}
+                      ? t.loadingGames
+                      : `${currentLibraryCount} ${currentLibraryCount === 1 ? t.gameSingular : t.gamePlural}`}
                   </p>
                   <div className="library-actions-row">
                     <div className="library-search-bar">
                       <input
                         type="text"
                         className="library-search-input"
-                        placeholder="Buscar juego..."
+                        placeholder={t.searchPlaceholder}
                         value={librarySearch}
                         onChange={(e) => setLibrarySearch(e.target.value)}
                         onKeyDown={(e) => {
@@ -4607,7 +4607,7 @@ function App(): React.JSX.Element {
                     </div>
                     {librarySource === 'local' && (
                       <button className="btn-primary library-add-button" onClick={openAddGameModal}>
-                        <PlusIcon size={16} /> Agregar juego
+                        <PlusIcon size={16} /> {t.addGame}
                       </button>
                     )}
                   </div>
@@ -4667,7 +4667,7 @@ function App(): React.JSX.Element {
                           <div className="library-item-info">
                             <span className="library-item-name">{game.name}</span>
                             <span className="library-item-playtime">
-                              {formatPlaytime(Math.round(game.playtime_forever / 60))} jugado
+                              {formatPlaytime(Math.round(game.playtime_forever / 60))} {t.minutesPlayed}
                             </span>
                           </div>
                           <div className="library-item-actions">
@@ -4719,7 +4719,7 @@ function App(): React.JSX.Element {
                           ) : (
                             <span className="library-item-name">{game.name}</span>
                           )}
-                          <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} jugado</span>
+                          <span className="library-item-playtime">{formatPlaytime(game.playtimeMinutes)} {t.minutesPlayed}</span>
                         </div>
                         <div className="library-item-actions">
                           <button className="library-action-btn" onClick={(e) => { e.stopPropagation(); openEditGameModal(game.id) }}>
@@ -4819,11 +4819,11 @@ function App(): React.JSX.Element {
                       </div>
                       <div className="settings-app-stats-grid">
                         <div className="settings-stat-box">
-                          <span className="settings-stat-label">Juegos agregados</span>
+                          <span className="settings-stat-label">{t.gamesAdd}</span>
                           <span className="settings-stat-val">{games.length}</span>
                         </div>
                         <div className="settings-stat-box">
-                          <span className="settings-stat-label">Tiempo jugado</span>
+                          <span className="settings-stat-label">{t.timePlayedSetting}</span>
                           <span className="settings-stat-val">
                             {formatPlaytime(games.reduce((sum, g) => sum + g.playtimeMinutes, 0))}
                           </span>
@@ -5188,7 +5188,7 @@ function App(): React.JSX.Element {
         <div className="modal-overlay" onClick={() => { setModal(null); resetSgdbState() }}>
           <div className="modal sgdb-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Buscar Artwork en SteamGridDB</h2>
+              <h2 className="modal-title">{t.searchSteamGridDB}</h2>
               <button className="modal-close" onClick={() => { setModal(null); resetSgdbState() }}>
                 <CloseIcon size={20} />
               </button>
@@ -5241,7 +5241,7 @@ function App(): React.JSX.Element {
                       setSgdbSelections({ square_grids: null, grids: null, heroes: null, logos: null, icons: null })
                     }}
                   >
-                    ← Volver
+                    {t.btnBack}
                   </button>
                 </div>
 
