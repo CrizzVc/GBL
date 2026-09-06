@@ -125,7 +125,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
         if (steam?.gridImageUrl) return steam.gridImageUrl
         if (steam?.heroImageUrl) return steam.heroImageUrl
         if (steam?.iconDataUrl) return steam.iconDataUrl
-        return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/library_600x600.jpg`
+        return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900_2x.jpg`
       }
 
       return null
@@ -151,7 +151,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
       list.push({
         id: g.id,
         name: g.name,
-        cover: g.gridImageUrl || g.heroImageUrl || g.iconDataUrl || (g.steamAppId ? `https://cdn.akamai.steamstatic.com/steam/apps/${g.steamAppId}/library_600x600.jpg` : null),
+        cover: g.gridImageUrl || g.heroImageUrl || g.iconDataUrl || (g.steamAppId ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.steamAppId}/library_600x900_2x.jpg` : null),
         badge: g.isSteam ? 'STEAM' : 'PC',
         status: 'Instalado'
       })
@@ -165,7 +165,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
         list.push({
           id: `steam-${s.appid}`,
           name: s.name,
-          cover: s.gridImageUrl || s.heroImageUrl || s.iconDataUrl || `https://cdn.akamai.steamstatic.com/steam/apps/${s.appid}/library_600x600.jpg`,
+          cover: s.gridImageUrl || s.heroImageUrl || s.iconDataUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${s.appid}/library_600x900_2x.jpg`,
           badge: 'STEAM',
           status: 'Instalado'
         })

@@ -519,7 +519,7 @@ function App(): React.JSX.Element {
         list.push({
           id: steamId,
           name: sg.name,
-          coverUrl: sg.gridImageUrl || sg.squareGridImageUrl || `https://cdn.akamai.steamstatic.com/steam/apps/${sg.appid}/library_600x600.jpg`,
+          coverUrl: sg.gridImageUrl || sg.squareGridImageUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${sg.appid}/library_600x900_2x.jpg`,
           createdAtTime: 0
         })
       }
@@ -620,8 +620,9 @@ function App(): React.JSX.Element {
     () => filteredSteamLibrary.find((game) => String(game.appid) === selectedSteamAppId) ?? filteredSteamLibrary[0] ?? null,
     [selectedSteamAppId, filteredSteamLibrary]
   )
-  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x600.jpg`, [])
-  const steamLogoUrl = useCallback((appid: string): string => `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/logo.png`, [])
+  const steamLibraryArtUrl = useCallback((appid: string): string => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900_2x.jpg`, [])
+  const steamHeroUrl = useCallback((appid: string): string => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_hero.jpg`, [])
+  const steamLogoUrl = useCallback((appid: string): string => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/logo.png`, [])
   const librarySelectedGame = filteredLocalGames.find((g) => g.id === selectedGameId) || filteredLocalGames[0] || null
   const detailGame = useMemo<Game | null>(() => {
     const localGame = games.find((g) => g.id === detailGameId) || null
@@ -645,10 +646,10 @@ function App(): React.JSX.Element {
       isSteam: true,
       iconDataUrl: steamGame.iconDataUrl || null,
       gridImageUrl: steamGame.gridImageUrl || steamLibraryArtUrl(steamGame.appid),
-      heroImageUrl: steamGame.heroImageUrl || steamLibraryArtUrl(steamGame.appid),
+      heroImageUrl: steamGame.heroImageUrl || steamHeroUrl(steamGame.appid),
       logoImageUrl: steamGame.logoImageUrl || steamLogoUrl(steamGame.appid)
     }
-  }, [detailGameId, games, steamLibrary, steamLibraryArtUrl])
+  }, [detailGameId, games, steamLibrary, steamLibraryArtUrl, steamHeroUrl, steamLogoUrl])
   const currentLibraryItems = useMemo(
     () => (librarySource === 'steam' ? filteredSteamLibrary : filteredLocalGames),
     [librarySource, filteredSteamLibrary, filteredLocalGames]
@@ -807,7 +808,7 @@ function App(): React.JSX.Element {
         dismissCompletion(comp.appId)
         continue
       }
-      const iconUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${comp.appId}/header.jpg`
+      const iconUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${comp.appId}/header.jpg`
       // Try to get custom icon from steam library
       const steamGame = steamLibrary.find((g) => String(g.appid) === comp.appId)
       const finalIcon = steamGame?.iconDataUrl || iconUrl
@@ -4607,6 +4608,13 @@ function App(): React.JSX.Element {
                               alt={game.name}
                               className={`library-item-cover ${game.installed ? 'installed' : 'not-installed'}`}
                               draggable={false}
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                if (!target.dataset.fallback) {
+                                  target.dataset.fallback = 'true'
+                                  target.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`
+                                }
+                              }}
                             />
                             {!game.installed && (
                               <img
