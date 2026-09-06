@@ -25,6 +25,12 @@ export interface TranslationSchema {
   musicPlayer: string
   controllerConnected: string
   controllerDisconnected: string
+  activeNoGame: string
+  activeGame: string
+  offlineDesc: string
+  joinGame: string
+  viewProfile: string
+  otherFriends: string
 
   // Filters & Sorting
   filterAll: string
@@ -136,6 +142,8 @@ export interface TranslationSchema {
   // Notifications
   installedSuccessfully: string
   readyToPlay: string
+  playingGame: string
+  playingGameDesc: string
 
   // Music Player
   noMusicPlaying: string
@@ -295,6 +303,12 @@ export const translations: Record<Language, TranslationSchema> = {
 
     connected: 'Conectado',
     disconnected: 'Desconectado',
+    activeNoGame: 'Está conectado, pero no está jugando',
+    activeGame: 'Jugando a',
+    offlineDesc: 'No está conectado',
+    joinGame: 'Unirse al juego',
+    viewProfile: 'Ver perfil',
+    otherFriends: 'Otros amigos',
     active: 'Activo',
     play: 'Jugar',
     playing: 'Jugando',
@@ -398,6 +412,8 @@ export const translations: Record<Language, TranslationSchema> = {
 
     installedSuccessfully: 'instalado correctamente',
     readyToPlay: 'Listo para jugar',
+    playingGame: 'Está jugando a ',
+    playingGameDesc: 'Presiona Tab para ampliar',
 
     noMusicPlaying: 'Sin música en reproducción',
     noMusicPlayingDesc: 'reproduce en Spotify/YouTube',
@@ -528,6 +544,12 @@ export const translations: Record<Language, TranslationSchema> = {
 
     connected: 'Online',
     disconnected: 'Offline',
+    activeNoGame: 'Online but not playing',
+    activeGame: 'Playing',
+    offlineDesc: 'Not connected',
+    joinGame: 'Join game',
+    viewProfile: 'View profile',
+    otherFriends: 'Other friends',
     active: 'Active',
     play: 'Play',
     playing: 'Playing',
@@ -631,6 +653,8 @@ export const translations: Record<Language, TranslationSchema> = {
 
     installedSuccessfully: 'installed successfully',
     readyToPlay: 'Ready to play',
+    playingGame: 'is playing ',
+    playingGameDesc: 'Press Tab to expand',
 
     noMusicPlaying: 'No music playing',
     noMusicPlayingDesc: 'Play in Spotify/YouTube',

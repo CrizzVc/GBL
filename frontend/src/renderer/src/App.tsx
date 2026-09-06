@@ -3498,16 +3498,16 @@ function App(): React.JSX.Element {
               <div className="friend-panel-identity-text">
                 <h2>{selectedFriend.personaname}</h2>
                 <p className={`friend-panel-presence ${isFriendActive(selectedFriend) ? 'active' : ''}`}>
-                  {isFriendActive(selectedFriend) ? 'Conectado' : 'Desconectado'}
+                  {isFriendActive(selectedFriend) ? t.connected : t.disconnected}
                 </p>
               </div>
             </div>
             <p className={`friend-panel-activity ${selectedFriend.gameextrainfo ? 'playing' : ''}`}>
               {selectedFriend.gameextrainfo
-                ? `Jugando a ${selectedFriend.gameextrainfo}`
+                ? `${t.activeGame} ${selectedFriend.gameextrainfo}`
                 : isFriendActive(selectedFriend)
-                  ? 'Está conectado, pero no está jugando'
-                  : 'No está conectado'}
+                  ? t.activeNoGame
+                  : t.offlineDesc}
             </p>
             <button
               className="friend-panel-action"
@@ -3521,11 +3521,11 @@ function App(): React.JSX.Element {
                 }
               }}
             >
-              Ver perfil en Steam
+              {t.viewProfile}
             </button>
             {otherFriends.length > 0 && (
               <div className="friend-panel-list">
-                <h3>Otros amigos</h3>
+                <h3>{t.otherFriends}</h3>
                 {otherFriends.map((friend) => (
                   <button
                     key={friend.steamid}
@@ -3544,7 +3544,7 @@ function App(): React.JSX.Element {
                     <span className="friend-panel-friend-info">
                       <strong>{friend.personaname}</strong>
                       <small className={isFriendActive(friend) ? 'active' : ''}>
-                        {friend.gameextrainfo || (isFriendActive(friend) ? 'Activo' : 'Desconectado')}
+                        {friend.gameextrainfo || (isFriendActive(friend) ? t.active : t.disconnected)}
                       </small>
                     </span>
                     <span className={`friend-panel-friend-dot ${isFriendActive(friend) ? 'active' : ''}`} />
@@ -3560,7 +3560,7 @@ function App(): React.JSX.Element {
                   await window.api.openExternal(`steam://rungameid/${selectedFriend.gameid}`)
                 }}
               >
-                Unirse al juego
+                {t.joinGame}
               </button>
             )}
           </aside>
