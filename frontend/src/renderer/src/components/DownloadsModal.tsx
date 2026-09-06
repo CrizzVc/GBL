@@ -157,7 +157,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
         name: g.name,
         cover: g.gridImageUrl || g.heroImageUrl || g.iconDataUrl || (g.steamAppId ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.steamAppId}/library_600x900_2x.jpg` : null),
         badge: g.isSteam ? 'STEAM' : 'PC',
-        status: 'Instalado'
+        status: t.statusInstalled
       })
     }
 
@@ -171,13 +171,13 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
           name: s.name,
           cover: s.gridImageUrl || s.heroImageUrl || s.iconDataUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${s.appid}/library_600x900_2x.jpg`,
           badge: 'STEAM',
-          status: 'Instalado'
+          status: t.statusInstalled
         })
       }
     }
 
     return list
-  }, [games, steamLibrary])
+  }, [games, steamLibrary, t])
 
   if (!isOpen) return null
 
@@ -286,12 +286,12 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
 
           {/* Section: Recently installed */}
           <div className="ps-downloads-section">
-            <div className="ps-section-header">{language === 'en' ? 'Recently installed' : 'Instalados recientemente'}</div>
+            <div className="ps-section-header">{t.recentlyInstalled}</div>
 
             <div className="ps-section-list">
               {recentlyInstalledList.length === 0 ? (
                 <div className="ps-download-empty-card">
-                  <span className="ps-download-empty-text">{language === 'en' ? 'No recently installed games' : 'No hay juegos instalados recientemente'}</span>
+                  <span className="ps-download-empty-text">{t.noRecentlyInstalled}</span>
                 </div>
               ) : (
                 recentlyInstalledList.map((item) => (
@@ -331,7 +331,7 @@ export const DownloadsModal: React.FC<DownloadsModalProps> = ({
 
                       {/* Status */}
                       <div className="ps-card-status">
-                        <span className="ps-status-text">{language === 'en' ? 'Installed' : 'Instalado'}</span>
+                        <span className="ps-status-text">{t.statusInstalled}</span>
                       </div>
                     </div>
                   </div>

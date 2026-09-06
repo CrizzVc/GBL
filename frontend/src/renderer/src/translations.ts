@@ -138,6 +138,9 @@ export interface TranslationSchema {
   itemSingular: string
   cmGoToGame: string
   cmHideFromList: string
+  recentlyInstalled: string
+  noRecentlyInstalled: string
+  statusInstalled: string
 
   // Notifications
   installedSuccessfully: string
@@ -417,6 +420,9 @@ export const translations: Record<Language, TranslationSchema> = {
     itemSingular: '1 elemento',
     cmGoToGame: 'Ir al juego',
     cmHideFromList: 'Ocultar de la lista',
+    recentlyInstalled: 'Instalados recientemente',
+    noRecentlyInstalled: 'No hay juegos instalados recientemente',
+    statusInstalled: 'Instalado',
 
     installedSuccessfully: 'instalado correctamente',
     readyToPlay: 'Listo para jugar',
@@ -665,6 +671,9 @@ export const translations: Record<Language, TranslationSchema> = {
     itemSingular: '1 item',
     cmGoToGame: 'Go to game',
     cmHideFromList: 'Hide from list',
+    recentlyInstalled: 'Recently installed',
+    noRecentlyInstalled: 'No recently installed games',
+    statusInstalled: 'Installed',
 
     installedSuccessfully: 'installed successfully',
     readyToPlay: 'Ready to play',

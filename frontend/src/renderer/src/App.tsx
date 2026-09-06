@@ -5311,6 +5311,7 @@ function App(): React.JSX.Element {
         }}
         games={games}
         steamLibrary={steamLibrary}
+        language={language}
         onSelectGame={(gameId) => {
           setLibraryView(false)
           setDetailGameId(gameId)
