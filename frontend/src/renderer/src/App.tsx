@@ -821,7 +821,7 @@ function App(): React.JSX.Element {
 
   // ── Friends card: música actual para botón Fecha + estado del control ──
   const { nowPlaying: friendsNowPlaying } = useSystemMedia(isGameRunning)
-  const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : 'Sin música'
+  const friendsMusicTitle = friendsNowPlaying?.title?.trim() ? friendsNowPlaying.title : t.noMusic
   const [isControllerConnected, setIsControllerConnected] = useState(false)
 
   // ── Friend notifications: detect when friends start playing games ──
@@ -3033,7 +3033,7 @@ function App(): React.JSX.Element {
               {profileName.trim() ? profileName.trim() : 'HASHI'}
             </span>
             <span className="header-greeting-sub">
-              {games.length} {games.length === 1 ? 'juego' : 'juegos'}
+              {games.length} {games.length === 1 ? t.gameSingular : t.gamePlural}
             </span>
           </div>
         </div>
@@ -3068,7 +3068,7 @@ function App(): React.JSX.Element {
                 <>
                   <div className="hero-meta-dot" />
                   <span>
-                    Última vez:{' '}
+                    {t.lastTime}:{' '}
                     {new Date(selectedGame.lastPlayed).toLocaleDateString('es', {
                       day: 'numeric',
                       month: 'short'
@@ -3698,7 +3698,7 @@ function App(): React.JSX.Element {
                 {detailGame.lastPlayed && (
                   <>
                     {' '}
-                    · Última vez:{' '}
+                    · {t.lastTime}:{' '}
                     {new Date(detailGame.lastPlayed).toLocaleDateString('es', {
                       day: 'numeric',
                       month: 'short'
@@ -4441,11 +4441,11 @@ function App(): React.JSX.Element {
                 {editGameTab === 'detalles' && (
                   <div className="settings-tab-panel">
                     <div className="edit-game-field-block">
-                      <label className="edit-game-field-title">Detalles de instalación</label>
-                      <span className="edit-game-field-subtitle">Información del archivo ejecutable y estado de almacenamiento</span>
+                      <label className="edit-game-field-title">{t.settingsInstallationTitle}</label>
+                      <span className="edit-game-field-subtitle">{t.settingsInstallationDescription}</span>
                       <div className="settings-app-stats-grid" style={{ marginTop: '16px' }}>
                         <div className="settings-stat-box">
-                          <span className="settings-stat-label">Tipo de plataforma</span>
+                          <span className="settings-stat-label">{t.tipeDefaultInstallation}</span>
                           <span className="settings-stat-val">{isSteamEdit ? 'Steam' : 'Local / Manual'}</span>
                         </div>
                         <div className="settings-stat-box">
@@ -4461,9 +4461,9 @@ function App(): React.JSX.Element {
                 {editGameTab === 'eliminar' && (
                   <div className="settings-tab-panel">
                     <div className="edit-game-field-block danger-block">
-                      <label className="edit-game-field-title" style={{ color: '#ff5c5c' }}>Eliminar juego</label>
+                      <label className="edit-game-field-title" style={{ color: '#ff5c5c' }}>{t.deleteGame}</label>
                       <span className="edit-game-field-subtitle">
-                        Esta acción quitará el juego "{formName}" de tu biblioteca de HASHI. Tus archivos del juego en el disco no serán eliminados.
+                        {t.deleteGameSubtitle1}" {formName} " {t.deleteGameSubtitle2}
                       </span>
                       <div style={{ marginTop: '20px' }}>
                         <button
@@ -4476,7 +4476,7 @@ function App(): React.JSX.Element {
                             resetForm()
                           }}
                         >
-                          <TrashIcon size={16} /> Eliminar juego de la biblioteca
+                          <TrashIcon size={16} /> {t.deleteBtnLibrary}
                         </button>
                       </div>
                     </div>

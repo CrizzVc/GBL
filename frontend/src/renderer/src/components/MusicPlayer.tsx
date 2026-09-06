@@ -341,7 +341,7 @@ export default function MusicPlayer({ isVisible, isIdle = false, isGameRunning =
           <div className="music-player-main">
             <div className="music-player-info">
               <span className="music-player-title muted">{t.noMusicPlaying}</span>
-              <span className="music-player-artist">{isIdle ? (language === 'en' ? 'Play something on PC' : 'Reproduce algo en el PC') : (language === 'en' ? 'Play in Spotify/YouTube' : 'reproduce en Spotify/YouTube')}</span>
+              <span className="music-player-artist">{isIdle ? t.noMusicPlaying : t.noMusicPlayingDesc}</span>
               {systemActive && <span className="music-player-source">{headerLabel}</span>}
             </div>
           </div>

@@ -1,3 +1,5 @@
+import { describe } from "node:test"
+
 export type Language = 'es' | 'en'
 
 export interface TranslationSchema {
@@ -19,6 +21,7 @@ export interface TranslationSchema {
   gamePlural: string
   loadingGames: string
   minutesPlayed: string
+  lastTime: string
   searchPlaceholder: string
   refresh: string
   musicPlayer: string
@@ -138,6 +141,7 @@ export interface TranslationSchema {
 
   // Music Player
   noMusicPlaying: string
+  noMusicPlayingDesc: string
   controllingSystem: string
   selectTrack: string
 
@@ -189,6 +193,19 @@ export interface TranslationSchema {
   backgroundCountSingular: string
   backgroundCountPlural: string
 
+  // Settings - Installation Tab
+  settingsInstallationTitle: string
+  settingsInstallationSubtitle: string
+  settingsInstallationDescription: string
+  tipeDefaultInstallation: string
+
+  // settings - delete tab
+  deleteGame: string
+  deleteGameSubtitle1: string
+  deleteGameSubtitle2: string
+  deleteBtnLibrary: string
+
+
   // Settings - Help Tab
   helpTitle: string
   helpSubtitle: string
@@ -231,6 +248,7 @@ export const translations: Record<Language, TranslationSchema> = {
     gamePlural: 'juegos',
     loadingGames: 'Cargando juegos...',
     minutesPlayed: 'jugados',
+    lastTime: 'Última vez',
     searchPlaceholder: 'Buscar juegos...',
     refresh: 'Refrescar',
     musicPlayer: 'Reproductor de música',
@@ -311,6 +329,16 @@ export const translations: Record<Language, TranslationSchema> = {
     btnBack: 'Volver',
     deleteGameWarning: '¿Estás seguro de que deseas eliminar este juego de tu biblioteca?',
 
+    settingsInstallationTitle: 'Instalación',
+    settingsInstallationSubtitle: 'Configura la ubicación de tus juegos',
+    settingsInstallationDescription: 'Aquí puedes cambiar la carpeta predeterminada donde se instalarán tus juegos',
+    tipeDefaultInstallation: 'TIPO DE PLATAFORMA',
+
+    deleteGame: 'Eliminar juego',
+    deleteBtnLibrary: 'Eliminar juego de la biblioteca',
+    deleteGameSubtitle1: 'Esta acción quitará el juego ',
+    deleteGameSubtitle2: 'de tu biblioteca de HASHI. Tus archivos del juego en el disco no serán eliminados',
+
     backToLibrary: 'VOLVER A LA BIBLIOTECA',
     buyOrViewInStore: 'VER EN TIENDA',
     lastPlayed: 'Última sesión',
@@ -342,6 +370,7 @@ export const translations: Record<Language, TranslationSchema> = {
     readyToPlay: 'Listo para jugar',
 
     noMusicPlaying: 'Sin música en reproducción',
+    noMusicPlayingDesc: 'reproduce en Spotify/YouTube',
     controllingSystem: 'Controlando sistema',
     selectTrack: 'Seleccionar pista',
 
@@ -428,6 +457,7 @@ export const translations: Record<Language, TranslationSchema> = {
     gamePlural: 'games',
     loadingGames: 'Loading games...',
     minutesPlayed: 'played',
+    lastTime: 'Last played',
     searchPlaceholder: 'Search games...',
     refresh: 'Refresh',
     musicPlayer: 'Music player',
@@ -508,6 +538,16 @@ export const translations: Record<Language, TranslationSchema> = {
     btnBack: 'Back',
     deleteGameWarning: 'Are you sure you want to delete this game from your library?',
 
+    settingsInstallationTitle: 'Installation',
+    settingsInstallationSubtitle: 'Configure the location of your games',
+    settingsInstallationDescription: 'Here you can change the default folder where your games will be installed',
+    tipeDefaultInstallation: 'PLATFORM TYPE',
+
+    deleteGame: 'Delete game',
+    deleteGameSubtitle1: 'This action will remove the game ',
+    deleteGameSubtitle2: ' from your HASHI library. Your game files on disk will not be deleted.',
+    deleteBtnLibrary: 'Delete from library',
+
     backToLibrary: 'BACK TO LIBRARY',
     buyOrViewInStore: 'VIEW IN STORE',
     lastPlayed: 'Last played',
@@ -539,6 +579,7 @@ export const translations: Record<Language, TranslationSchema> = {
     readyToPlay: 'Ready to play',
 
     noMusicPlaying: 'No music playing',
+    noMusicPlayingDesc: 'Play in Spotify/YouTube',
     controllingSystem: 'Controlling system',
     selectTrack: 'Select track',
 
