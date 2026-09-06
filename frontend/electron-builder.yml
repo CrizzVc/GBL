@@ -1,5 +1,6 @@
-appId: com.electron.app
-productName: temp-project
+appId: com.hashi.app
+productName: HASHI
+icon: src/renderer/src/assets/images/icono.png
 directories:
   buildResources: build
 files:
@@ -23,7 +24,8 @@ extraResources:
 asarUnpack:
   - resources/**
 win:
-  executableName: temp-project
+  executableName: HASHI
+  icon: src/renderer/src/assets/images/icono.png
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
