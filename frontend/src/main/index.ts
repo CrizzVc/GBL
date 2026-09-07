@@ -52,6 +52,7 @@ interface LauncherExtension {
   description: string
   version: string
   entryUrl: string
+  sidebar: boolean
 }
 
 // Las extensiones son declarativas: no se carga código de terceros dentro del
@@ -69,8 +70,7 @@ function isSafeExtensionUrl(value: unknown): value is string {
   }
 }
 
-function readExtensions(): LauncherExtension[] {
-  const extensionsDir = getExtensionsDirectory()
+function readExtensionsFrom(extensionsDir: string): LauncherExtension[] {
   if (!fs.existsSync(extensionsDir)) return []
 
   try {
@@ -85,9 +85,10 @@ function readExtensions(): LauncherExtension[] {
           const description = typeof manifest.description === 'string' ? manifest.description : ''
           const version = typeof manifest.version === 'string' ? manifest.version : ''
           const entryUrl = manifest.entryUrl
+          const sidebar = manifest.sidebar === true
 
           if (!/^[a-z0-9][a-z0-9-]{1,63}$/i.test(id) || !name || !version || !isSafeExtensionUrl(entryUrl)) return []
-          return [{ id, name: name.slice(0, 80), description: description.slice(0, 240), version: version.slice(0, 32), entryUrl }]
+          return [{ id, name: name.slice(0, 80), description: description.slice(0, 240), version: version.slice(0, 32), entryUrl, sidebar }]
         } catch {
           return []
         }
@@ -96,6 +97,10 @@ function readExtensions(): LauncherExtension[] {
     console.warn('[Extensions] No se pudo leer el directorio:', error)
     return []
   }
+}
+
+function readExtensions(): LauncherExtension[] {
+  return readExtensionsFrom(getExtensionsDirectory())
 }
 
 /**

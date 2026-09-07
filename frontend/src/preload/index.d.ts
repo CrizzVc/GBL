@@ -54,6 +54,7 @@ declare global {
         description: string
         version: string
         entryUrl: string
+        sidebar: boolean
       }>>
       openExtensionsDirectory: () => Promise<{ success: boolean; error?: string }>
       // Steam account APIs

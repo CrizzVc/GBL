@@ -123,6 +123,7 @@ interface LauncherExtension {
   description: string
   version: string
   entryUrl: string
+  sidebar: boolean
 }
 
 interface Store {
@@ -537,6 +538,15 @@ function App(): React.JSX.Element {
     setModal('extensions')
     void loadExtensions()
   }, [loadExtensions])
+
+  useEffect(() => {
+    void loadExtensions()
+  }, [loadExtensions])
+
+  const sidebarExtensions = useMemo(
+    () => extensions.filter((extension) => extension.sidebar),
+    [extensions]
+  )
 
   const handleLanguageChange = (newLang: Language): void => {
     setLanguage(newLang)
@@ -2588,7 +2598,7 @@ function App(): React.JSX.Element {
         if (e.key === 'ArrowDown') {
           e.preventDefault()
           setSidebarIndex((prev) => {
-            const next = Math.min(prev + 1, 6)
+            const next = Math.min(prev + 1, 6 + sidebarExtensions.length)
             if (next !== prev) playMove()
             return next
           })
@@ -2607,8 +2617,11 @@ function App(): React.JSX.Element {
           else if (sidebarIndex === 2) handleOpenSpecs()
           else if (sidebarIndex === 3) setShowDownloadsModal(true)
           else if (sidebarIndex === 4) openExtensions()
-          else if (sidebarIndex === 5) setModal('settings')
-          else if (sidebarIndex === 6) window.api.quitApp()
+          else if (sidebarIndex >= 5 && sidebarIndex < 5 + sidebarExtensions.length) {
+            const extension = sidebarExtensions[sidebarIndex - 5]
+            if (extension) void window.api.openExternal(extension.entryUrl)
+          } else if (sidebarIndex === 5 + sidebarExtensions.length) setModal('settings')
+          else if (sidebarIndex === 6 + sidebarExtensions.length) window.api.quitApp()
           setSidebarOpen(false)
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
           e.preventDefault()
@@ -2794,7 +2807,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -3108,11 +3121,20 @@ function App(): React.JSX.Element {
         <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { openExtensions(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><ExtensionIcon size={18} /></div> {t.extensions}
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 5 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
+        {sidebarExtensions.map((extension, index) => (
+          <button
+            className={`sidebar-item ${sidebarIndex === 5 + index ? 'focused' : ''}`}
+            key={extension.id}
+            onClick={() => { void window.api.openExternal(extension.entryUrl); setSidebarOpen(false) }}
+          >
+            <div className="sidebar-item-icon"><GlobeIcon size={18} /></div> {extension.name}
+          </button>
+        ))}
+        <button className={`sidebar-item ${sidebarIndex === 5 + sidebarExtensions.length ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> {t.settings}
         </button>
         <div style={{ marginTop: 'auto' }}>
-          <button className={`sidebar-item ${sidebarIndex === 6 ? 'focused' : ''}`} onClick={() => window.api.quitApp()}>
+          <button className={`sidebar-item ${sidebarIndex === 6 + sidebarExtensions.length ? 'focused' : ''}`} onClick={() => window.api.quitApp()}>
             <div className="sidebar-item-icon"><PowerIcon size={18} /></div> {t.exit}
           </button>
         </div>
