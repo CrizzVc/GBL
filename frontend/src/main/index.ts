@@ -97,12 +97,13 @@ function createTray(): void {
         click: () => {
           if (mainWindowRef && !mainWindowRef.isDestroyed()) {
             mainWindowRef.removeAllListeners('close')
+            mainWindowRef.close()
           }
           tray?.destroy()
           tray = null
           stopBackend()
           stopMediaSessionsBridge()
-          app.quit()
+          app.exit(0)
         }
       }
     ])
@@ -950,15 +951,17 @@ app.whenReady().then(() => {
 
   // ── Quit app — cierre explícito solicitado por el usuario desde "Salir"
   ipcMain.handle('quit-app', () => {
-    // Eliminar el listener 'close' para que app.quit() fluya sin preventDefault
+    // Limpiar listeners de 'close' para que app.quit() no quede bloqueado
     if (mainWindowRef && !mainWindowRef.isDestroyed()) {
       mainWindowRef.removeAllListeners('close')
+      mainWindowRef.close()
     }
     tray?.destroy()
     tray = null
     stopBackend()
     stopMediaSessionsBridge()
-    app.quit()
+    // app.exit() termina el proceso sin esperar eventos de ventana
+    app.exit(0)
   })
 
   ipcMain.handle('get-background-image', async () => {
