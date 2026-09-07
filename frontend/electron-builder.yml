@@ -31,6 +31,7 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  uninstallerIcon: src/renderer/src/assets/images/iconoDark.ico
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
