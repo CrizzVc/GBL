@@ -196,6 +196,25 @@ const DEFAULT_FEATURED_GAMES: FeaturedLibraryGame[] = [
   }
 ]
 
+const heroItem = {
+  title: 'Ecos del Vacío',
+  rating: '16+',
+  genre: 'Ciencia ficción',
+  year: '2024',
+  description: 'Una tripulación despierta de un sueño criogénico para descubrir que la nave lleva décadas a la deriva.',
+  backdrop: '/img/ecos-del-vacio-backdrop.jpg',
+};
+
+const continueWatching = [
+  { id: 1, title: 'Ciudad de Cristal', subtitle: 'T1 · E4', progress: 62 },
+  { id: 2, title: 'El Último Faro', subtitle: 'Recién añadido', progress: 0 },
+  { id: 3, title: 'Rutas Perdidas', subtitle: 'Continuar · T2 E7', progress: 35 },
+  { id: 4, title: 'Marea Negra', subtitle: 'Recién añadido', progress: 0 },
+  { id: 5, title: 'Sombra de Acero', subtitle: 'Continuar · T1 E1', progress: 80 },
+];
+
+
+
 interface SteamAccount {
   linked: boolean
   apiKey: string
@@ -624,6 +643,50 @@ function App(): React.JSX.Element {
     logos: null,
     icons: null
   })
+
+  // Arriba del componente, junto a tus otros datos/estado:
+  const heroSlides = [
+    {
+      id: 1,
+      title: 'Chainsaw Man - The Movie: Reze Arc',
+      rating: '18+',
+      genre: 'Anime, Acción, Terror',
+      year: '2025',
+      description: 'En el caótico corazón de Tokio, Denji, un adolescente acosado por las deudas, une su cuerpo con un demonio motosierra para sobrevivir. Como Chainsaw Man, una bestia híbrida que puede cortar cualquier cosa, se embarca en una brutal misión para cazar demonios y ganarse la vida, enfrentándose a fuerzas sobrenaturales que amenazan con desgarrar la realidad.',
+      backdrop: 'https://image.tmdb.org/t/p/original/wWQ3l19pcRrAJzqZ5Etq0RimDFf.jpg',
+    },
+    {
+      id: 2,
+      title: 'Jujutsu Kaisen',
+      rating: '18+',
+      genre: 'Anime, Acción, Sobrenatural',
+      year: '2020',
+      description: 'Yuji Itadori, un estudiante de secundaria con una fuerza física increíble, se traga un objeto maldito para salvar a sus amigos y se convierte en el anfitrión de un poderoso maldición, Ryomen Sukuna. Ahora, junto a un grupo de hechiceros, deberá navegar por un mundo oculto lleno de maldiciones y demonios, mientras lucha por controlar a Sukuna y proteger a la humanidad.',
+      backdrop: 'https://image.tmdb.org/t/p/original/bbkuD7JQAEOmLr6fnM6Vvwc2Xgy.jpg',
+    },
+    {
+      id: 3,
+      title: 'Re:ZERO -Starting Life in Another World',
+      rating: '18+',
+      genre: 'Anime, Drama, Fantasía',
+      year: '2016',
+      description: 'En un mundo donde la magia es real, Subaru Natsuki es transportado misteriosamente y descubre que puede "Retornar por la muerte", reviviendo en puntos clave tras morir. Ahora debe usar esta habilidad para salvar a Emilia, una hermosa híbrido de elfo, y a sus amigos de un destino terrible.',
+      backdrop: 'https://image.tmdb.org/t/p/original/j6K2ugp5ZrnQtSRS1hg7PxwCMkM.jpg',
+    },
+  ];
+
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+
+  useEffect(() => {
+    if (nativeView !== 'multimedia' || isHeroPaused) return;
+    const id = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 7000);
+    return () => clearInterval(id);
+  }, [nativeView, isHeroPaused, heroSlides.length]);
+
+  const heroItem = heroSlides[activeSlide];
 
   // Computes the 3 most recently added games dynamically
   const last3AddedGames = useMemo(() => {
@@ -3216,23 +3279,60 @@ function App(): React.JSX.Element {
 
       {nativeView === 'multimedia' && (
         <main className="multimedia-view" aria-label="Multimedia">
-          <div className="multimedia-hero">
-            <button type="button" className="multimedia-back" onClick={() => setNativeView(null)}>← Volver a HASHI</button>
-            <span className="multimedia-kicker">MULTIMEDIA</span>
-            <h1>Tu pantalla para series y películas.</h1>
-            <p>Una vista nativa preparada para conectar servicios de contenido autorizados.</p>
-            <div className="multimedia-actions">
-              <button type="button" className="multimedia-primary">Explorar catálogo</button>
-              <button type="button" className="multimedia-secondary">Mi lista</button>
+          <div
+            className="multimedia-hero"
+            style={{ backgroundImage: `url(${heroItem.backdrop})` }}
+            onMouseEnter={() => setIsHeroPaused(true)}
+            onMouseLeave={() => setIsHeroPaused(false)}
+          >
+            <div className="multimedia-hero-nav">
+              <button type="button" className="multimedia-back" onClick={() => setNativeView(null)}>
+                ← Volver a HASHI
+              </button>
+            </div>
+
+            <div className="multimedia-hero-body" key={heroItem.id}>
+              <span className="multimedia-kicker">DESTACADO</span>
+              <h1>{heroItem.title}</h1>
+              <div className="multimedia-meta">
+                <span className="tag">{heroItem.rating}</span>
+                <span>{heroItem.genre}</span>
+                <span>·</span>
+                <span>{heroItem.year}</span>
+              </div>
+              <p>{heroItem.description}</p>
+              <div className="multimedia-actions">
+                <button type="button" className="multimedia-primary">Ir al título</button>
+                <button type="button" className="multimedia-secondary">Mi lista</button>
+              </div>
+            </div>
+
+            <div className="multimedia-dots">
+              {heroSlides.map((slide, i) => (
+                <span
+                  key={slide.id}
+                  className={i === activeSlide ? 'is-active' : ''}
+                  onClick={() => setActiveSlide(i)}
+                />
+              ))}
             </div>
           </div>
+
           <section className="multimedia-rail">
-            <div className="multimedia-rail-heading"><h2>Seguir viendo</h2><span>Próximamente</span></div>
+            <div className="multimedia-rail-heading">
+              <h2>Continuar viendo</h2>
+              <span>Próximamente</span>
+            </div>
             <div className="multimedia-cards">
-              {['Tu lista', 'Series', 'Películas', 'Canales en vivo', 'Documentales'].map((label, index) => (
-                <article className={`multimedia-card card-${index + 1}`} key={label}>
-                  <div className="multimedia-card-shine" />
-                  <span>{label}</span>
+              {continueWatching.map((item, index) => (
+                <article className={`multimedia-card card-${(index % 5) + 1}`} key={item.id}>
+                  <div className="multimedia-card-thumb">
+                    <div className="multimedia-card-progress">
+                      <i style={{ width: `${item.progress}%` }} />
+                    </div>
+                  </div>
+                  <p className="multimedia-card-title">{item.title}</p>
+                  <p className="multimedia-card-subtitle">{item.subtitle}</p>
                 </article>
               ))}
             </div>
