@@ -429,6 +429,23 @@ function ensureSteamOpenIdServer(): void {
   steamOpenIdServer.listen(8765, '127.0.0.1')
 }
 
+// ── Single-instance lock — evita que arrancar el exe dos veces (p.ej. acceso
+// directo de inicio de Windows con la app ya abierta) genere una segunda ventana.
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // Si alguien intenta abrir una segunda instancia, foca la existente.
+    if (mainWindowRef) {
+      if (mainWindowRef.isMinimized()) mainWindowRef.restore()
+      mainWindowRef.setSkipTaskbar(false)
+      mainWindowRef.show()
+      mainWindowRef.focus()
+    }
+  })
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -477,6 +494,18 @@ function createWindow(): void {
       mainWindow.webContents.send('force-resize-recalc')
     }, 30)
   }
+
+  // ── Interceptar cierre: nunca destruir la ventana, solo minimizar y ocultar
+  // el ícono de la barra de tareas. El usuario sale desde el botón "Salir"
+  // explícito (que llama a window.api.quitApp()) o cerrando desde la barra
+  // de tareas del propio sistema si lo minimiza completamente.
+  mainWindow.on('close', (e) => {
+    if (!mainWindow.isDestroyed()) {
+      e.preventDefault()
+      mainWindow.setSkipTaskbar(true)
+      mainWindow.minimize()
+    }
+  })
 
   mainWindow.on('enter-full-screen', forceLayoutRefresh)
   mainWindow.on('leave-full-screen', forceLayoutRefresh)
@@ -859,6 +888,26 @@ app.whenReady().then(() => {
 
   ipcMain.handle('set-omniconsole', (_event, enabled: boolean) => {
     omniconsoleEnabled = enabled
+  })
+
+  // ── Minimize window — oculta launcher sin cerrarlo
+  ipcMain.handle('minimize-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && !win.isDestroyed()) {
+      win.setSkipTaskbar(true)
+      win.minimize()
+    }
+  })
+
+  // ── Quit app — cierre explícito solicitado por el usuario desde "Salir"
+  ipcMain.handle('quit-app', () => {
+    // Eliminar el listener 'close' para que app.quit() fluya sin preventDefault
+    if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+      mainWindowRef.removeAllListeners('close')
+    }
+    stopBackend()
+    stopMediaSessionsBridge()
+    app.quit()
   })
 
   ipcMain.handle('get-background-image', async () => {

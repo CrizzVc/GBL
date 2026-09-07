@@ -80,7 +80,10 @@ const api = {
     return () => ipcRenderer.removeListener('media-sessions-changed', sub)
   },
   // Omniconsole — prevent launcher from hiding when a game is launched
-  setOmniconsole: (enabled: boolean) => ipcRenderer.invoke('set-omniconsole', enabled)
+  setOmniconsole: (enabled: boolean) => ipcRenderer.invoke('set-omniconsole', enabled),
+  // Window control — minimizeWindow oculta sin cerrar; quitApp cierra de verdad
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  quitApp: () => ipcRenderer.invoke('quit-app')
 }
 
 // Compat: WPS5 referencia usa window.electronAPI

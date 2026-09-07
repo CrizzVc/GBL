@@ -2561,7 +2561,7 @@ function App(): React.JSX.Element {
           else if (sidebarIndex === 3) setShowDownloadsModal(true)
           else if (sidebarIndex === 4) { /* TODO: abrir extensiones */ }
           else if (sidebarIndex === 5) setModal('settings')
-          else if (sidebarIndex === 6) window.close()
+          else if (sidebarIndex === 6) window.api.quitApp()
           setSidebarOpen(false)
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
           e.preventDefault()
@@ -3065,7 +3065,7 @@ function App(): React.JSX.Element {
           <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> {t.settings}
         </button>
         <div style={{ marginTop: 'auto' }}>
-          <button className={`sidebar-item ${sidebarIndex === 6 ? 'focused' : ''}`} onClick={() => window.close()}>
+          <button className={`sidebar-item ${sidebarIndex === 6 ? 'focused' : ''}`} onClick={() => window.api.quitApp()}>
             <div className="sidebar-item-icon"><PowerIcon size={18} /></div> {t.exit}
           </button>
         </div>
@@ -3492,7 +3492,7 @@ function App(): React.JSX.Element {
                     >
                       <ImageIcon size={16} />
                     </button>
-                    <button className="friends-btn salir-btn" onClick={() => window.close()}>
+                    <button className="friends-btn salir-btn" onClick={() => window.api.quitApp()}>
                       Salir
                     </button>
                   </div>
@@ -3518,7 +3518,7 @@ function App(): React.JSX.Element {
                     <button className="friends-btn es-btn" onClick={(e) => { e.stopPropagation(); handleLanguageToggle() }}>
                       {language === 'es' ? 'ES' : 'EN'}
                     </button>
-                    <button className="friends-btn salir-btn" onClick={() => window.close()}>
+                    <button className="friends-btn salir-btn" onClick={() => window.api.quitApp()}>
                       {t.exit}
                     </button>
                   </div>
