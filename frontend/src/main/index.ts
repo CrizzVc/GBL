@@ -192,7 +192,70 @@ function getWinMediaControlModule(): Promise<any> {
   if (process.platform !== 'win32') return Promise.resolve(null)
   if (!winMediaControlModulePromise) {
     winMediaControlModulePromise = import('win-media-control')
-      .then((m) => m)
+      .then((m) => {
+        // En producción, win-media-control resuelve sus scripts con import.meta.url
+        // que apunta dentro del ASAR — PowerShell no puede leer rutas virtuales del ASAR.
+        // Monkey-patch: reemplazamos el módulo con un wrapper que ejecuta los mismos
+        // scripts .ps1 pero desde la ruta desempaquetada en app.asar.unpacked.
+        if (!is.dev) {
+          const unpacked = join(
+            process.resourcesPath,
+            'app.asar.unpacked',
+            'node_modules',
+            'win-media-control',
+            'scripts'
+          )
+          const { exec } = require('child_process') as typeof import('child_process')
+          const { promisify } = require('util') as typeof import('util')
+          const execAsync = promisify(exec)
+
+          const runPs1 = (script: string, params: Record<string, any> = {}): Promise<string> => {
+            const scriptPath = join(unpacked, script)
+            const hasArray = Object.values(params).some((v) => Array.isArray(v))
+            let cmd: string
+            if (hasArray) {
+              const parts = Object.entries(params).map(([k, v]) => {
+                if (Array.isArray(v)) {
+                  const arr = v.map((x: any) => `'${String(x).replace(/'/g, "''")}'`).join(',')
+                  return `-${k} @(${arr})`
+                }
+                return `-${k} '${String(v).replace(/'/g, "''")}'`
+              })
+              cmd = `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '${scriptPath.replace(/'/g, "''")}' ${parts.join(' ')}"`
+            } else {
+              const parts = Object.entries(params).map(([k, v]) => {
+                const esc = String(v).replace(/"/g, '`"')
+                return esc.includes(' ') || esc.includes('&') ? `-${k} "${esc}"` : `-${k} ${esc}`
+              })
+              cmd = `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}" ${parts.join(' ')}`
+            }
+            return execAsync(cmd, { windowsHide: true, timeout: 10000 }).then(({ stdout }) => stdout.trim())
+          }
+
+          const controlSession = async (action: string): Promise<{ success: string[]; failed: any[] }> => {
+            try {
+              await runPs1('control-current.ps1', { Action: action })
+              return { success: ['Current Session'], failed: [] }
+            } catch {
+              try {
+                await runPs1('simulate-media-key.ps1', { Action: action })
+                return { success: [action], failed: [] }
+              } catch (err2: any) {
+                return { success: [], failed: [{ app: 'MediaKey', reason: err2.message }] }
+              }
+            }
+          }
+
+          return {
+            togglePlayPause: (apps?: any) => apps === undefined ? controlSession('TogglePlayPause') : controlSession('TogglePlayPause'),
+            next: (apps?: any) => apps === undefined ? controlSession('SkipNext') : controlSession('SkipNext'),
+            previous: (apps?: any) => apps === undefined ? controlSession('SkipPrevious') : controlSession('SkipPrevious'),
+            play: (apps?: any) => apps === undefined ? controlSession('Play') : controlSession('Play'),
+            pause: (apps?: any) => apps === undefined ? controlSession('Pause') : controlSession('Pause'),
+          }
+        }
+        return m
+      })
       .catch((err) => {
         console.warn('[MediaControl] win-media-control no disponible:', (err as Error).message)
         winMediaControlModulePromise = null
