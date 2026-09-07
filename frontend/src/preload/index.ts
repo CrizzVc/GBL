@@ -51,6 +51,8 @@ const api = {
   getStores: () => ipcRenderer.invoke('get-stores'),
   openStore: (storeId: string) => ipcRenderer.invoke('open-store', storeId),
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
+  getExtensions: () => ipcRenderer.invoke('get-extensions'),
+  openExtensionsDirectory: () => ipcRenderer.invoke('open-extensions-directory'),
   // Steam account APIs
   getSteamAccount: () => ipcRenderer.invoke('get-steam-account'),
   saveSteamAccount: (steamAccount: {

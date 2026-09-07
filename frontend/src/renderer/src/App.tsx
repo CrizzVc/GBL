@@ -115,7 +115,15 @@ interface QuickApp {
   kind: QuickAppKind
 }
 
-type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | 'steamgrid' | null
+type ModalType = 'specs' | 'addGame' | 'editGame' | 'library' | 'settings' | 'steamgrid' | 'extensions' | null
+
+interface LauncherExtension {
+  id: string
+  name: string
+  description: string
+  version: string
+  entryUrl: string
+}
 
 interface Store {
   id: string
@@ -447,6 +455,8 @@ function App(): React.JSX.Element {
   const isGameRunningRef = useRef(false)
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
+  const [extensions, setExtensions] = useState<LauncherExtension[]>([])
+  const [extensionsLoading, setExtensionsLoading] = useState(false)
   const [showDownloadsModal, setShowDownloadsModal] = useState(false)
   const [libraryView, setLibraryView] = useState(false)
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null)
@@ -510,6 +520,23 @@ function App(): React.JSX.Element {
   })
 
   const t = translations[language] || translations.es
+
+  const loadExtensions = useCallback(async (): Promise<void> => {
+    setExtensionsLoading(true)
+    try {
+      setExtensions(await window.api.getExtensions())
+    } catch (error) {
+      console.error('No se pudieron cargar las extensiones:', error)
+      setExtensions([])
+    } finally {
+      setExtensionsLoading(false)
+    }
+  }, [])
+
+  const openExtensions = useCallback((): void => {
+    setModal('extensions')
+    void loadExtensions()
+  }, [loadExtensions])
 
   const handleLanguageChange = (newLang: Language): void => {
     setLanguage(newLang)
@@ -2579,7 +2606,7 @@ function App(): React.JSX.Element {
           else if (sidebarIndex === 1) handleOpenStore(defaultStore)
           else if (sidebarIndex === 2) handleOpenSpecs()
           else if (sidebarIndex === 3) setShowDownloadsModal(true)
-          else if (sidebarIndex === 4) { /* TODO: abrir extensiones */ }
+          else if (sidebarIndex === 4) openExtensions()
           else if (sidebarIndex === 5) setModal('settings')
           else if (sidebarIndex === 6) window.api.quitApp()
           setSidebarOpen(false)
@@ -2767,7 +2794,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -3078,7 +3105,7 @@ function App(): React.JSX.Element {
         <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setShowDownloadsModal(true); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><DownloadIcon size={18} /></div> {t.downloads}
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { /* TODO: abrir extensiones */ setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { openExtensions(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><ExtensionIcon size={18} /></div> {t.extensions}
         </button>
         <button className={`sidebar-item ${sidebarIndex === 5 ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
@@ -4829,6 +4856,64 @@ function App(): React.JSX.Element {
             </>
           )}
         </section>
+      )}
+
+      {/* ── Extensions Modal ── */}
+      {modal === 'extensions' && (
+        <div className="modal-overlay extensions-modal-overlay" onClick={() => setModal(null)}>
+          <section className="extensions-modal" onClick={(event) => event.stopPropagation()} aria-label="Extensiones">
+            <header className="extensions-header">
+              <div>
+                <p className="extensions-eyebrow">HASHI</p>
+                <h2>Extensiones</h2>
+                <p>Amplía tu launcher sin conceder acceso al sistema.</p>
+              </div>
+              <button className="extensions-close" type="button" onClick={() => setModal(null)} aria-label="Cerrar">×</button>
+            </header>
+
+            <div className="extensions-toolbar">
+              <button type="button" className="extensions-secondary-button" onClick={() => void loadExtensions()} disabled={extensionsLoading}>
+                {extensionsLoading ? 'Actualizando…' : 'Actualizar'}
+              </button>
+              <button
+                type="button"
+                className="extensions-primary-button"
+                onClick={() => void window.api.openExtensionsDirectory()}
+              >
+                Abrir carpeta de extensiones
+              </button>
+            </div>
+
+            <div className="extensions-list">
+              {extensionsLoading ? (
+                <p className="extensions-empty">Buscando extensiones…</p>
+              ) : extensions.length === 0 ? (
+                <div className="extensions-empty">
+                  <strong>Aún no hay extensiones instaladas.</strong>
+                  <span>Abre la carpeta y añade una extensión con su archivo <code>manifest.json</code>.</span>
+                </div>
+              ) : extensions.map((extension) => (
+                <article className="extension-card" key={extension.id}>
+                  <div className="extension-card-icon"><ExtensionIcon size={22} /></div>
+                  <div className="extension-card-content">
+                    <div className="extension-card-title-row">
+                      <h3>{extension.name}</h3>
+                      <span>v{extension.version}</span>
+                    </div>
+                    <p>{extension.description || 'Sin descripción.'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="extensions-secondary-button"
+                    onClick={() => void window.api.openExternal(extension.entryUrl)}
+                  >
+                    Abrir
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
       )}
 
       {/* ── Settings Modal ── */}

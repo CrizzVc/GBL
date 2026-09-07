@@ -48,6 +48,14 @@ declare global {
       getStores: () => Promise<{ id: string; name: string; installed: boolean; exePath: string | null }[]>
       openStore: (storeId: string) => Promise<{ success: boolean; error?: string }>
       openExternal: (url: string) => Promise<{ success: boolean; error?: string }>
+      getExtensions: () => Promise<Array<{
+        id: string
+        name: string
+        description: string
+        version: string
+        entryUrl: string
+      }>>
+      openExtensionsDirectory: () => Promise<{ success: boolean; error?: string }>
       // Steam account APIs
       getSteamAccount: () => Promise<{
         linked: boolean

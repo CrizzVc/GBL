@@ -46,6 +46,58 @@ let isGameRunning = false
 // ── Omniconsole — prevent launcher from hiding when a game launches ──
 let omniconsoleEnabled = false
 
+interface LauncherExtension {
+  id: string
+  name: string
+  description: string
+  version: string
+  entryUrl: string
+}
+
+// Las extensiones son declarativas: no se carga código de terceros dentro del
+// proceso del launcher. Cada manifiesto vive en userData/extensions/<id>.
+function getExtensionsDirectory(): string {
+  return join(app.getPath('userData'), 'extensions')
+}
+
+function isSafeExtensionUrl(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  try {
+    return new URL(value).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function readExtensions(): LauncherExtension[] {
+  const extensionsDir = getExtensionsDirectory()
+  if (!fs.existsSync(extensionsDir)) return []
+
+  try {
+    return fs.readdirSync(extensionsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .flatMap((entry): LauncherExtension[] => {
+        try {
+          const manifestPath = join(extensionsDir, entry.name, 'manifest.json')
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as Record<string, unknown>
+          const id = typeof manifest.id === 'string' ? manifest.id : ''
+          const name = typeof manifest.name === 'string' ? manifest.name : ''
+          const description = typeof manifest.description === 'string' ? manifest.description : ''
+          const version = typeof manifest.version === 'string' ? manifest.version : ''
+          const entryUrl = manifest.entryUrl
+
+          if (!/^[a-z0-9][a-z0-9-]{1,63}$/i.test(id) || !name || !version || !isSafeExtensionUrl(entryUrl)) return []
+          return [{ id, name: name.slice(0, 80), description: description.slice(0, 240), version: version.slice(0, 32), entryUrl }]
+        } catch {
+          return []
+        }
+      })
+  } catch (error) {
+    console.warn('[Extensions] No se pudo leer el directorio:', error)
+    return []
+  }
+}
+
 /**
  * Oculta el launcher mientras se juega.
  * - Con Omniconsole: minimiza normalmente (visible en barra de tareas).
@@ -1350,6 +1402,18 @@ app.whenReady().then(() => {
       return { success: true }
     } catch (err: any) {
       return { success: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('get-extensions', () => readExtensions())
+  ipcMain.handle('open-extensions-directory', async () => {
+    try {
+      const extensionsDir = getExtensionsDirectory()
+      fs.mkdirSync(extensionsDir, { recursive: true })
+      const error = await shell.openPath(extensionsDir)
+      return error ? { success: false, error } : { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
     }
   })
 
