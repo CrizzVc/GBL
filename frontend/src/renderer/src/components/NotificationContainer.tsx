@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import Notification from './Notification'
 import { playNotification } from '../services/soundService'
+import { Language } from '../translations'
 
 export interface NotificationItem {
   id: string
@@ -13,9 +14,10 @@ export interface NotificationItem {
 interface NotificationContainerProps {
   notifications: NotificationItem[]
   onDismiss: (id: string) => void
+  language?: Language
 }
 
-export default function NotificationContainer({ notifications, onDismiss }: NotificationContainerProps): React.JSX.Element {
+export default function NotificationContainer({ notifications, onDismiss, language = 'es' }: NotificationContainerProps): React.JSX.Element {
   const prevCountRef = useRef(notifications.length)
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function NotificationContainer({ notifications, onDismiss }: Noti
           key={notification.id}
           notification={notification}
           onDismiss={onDismiss}
+          language={language}
         />
       ))}
     </div>

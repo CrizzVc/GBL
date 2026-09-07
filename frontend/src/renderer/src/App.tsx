@@ -5323,6 +5323,7 @@ function App(): React.JSX.Element {
       <NotificationContainer
         notifications={notifications}
         onDismiss={dismissNotification}
+        language={language}
       />
 
       {/* ── Download Completion Notifications ── */}
@@ -5335,6 +5336,7 @@ function App(): React.JSX.Element {
               name={notif.name}
               iconUrl={notif.iconUrl}
               onDismiss={dismissDownloadNotification}
+              language={language}
             />
           ))}
         </div>
