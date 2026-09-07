@@ -9,7 +9,7 @@ import * as crypto from 'crypto'
 import { spawn, fork, execSync, type ChildProcess } from 'child_process'
 import * as http from 'http'
 import { URL } from 'url'
-import { translations, Language, t as tInterp } from '../renderer/src/translations'
+import { translations } from '../renderer/src/translations'
 
 const STEAM_API_KEY = 'B1F361EA3C07B455DC8B0D06ED179B00'
 const STEAM_OPENID_RETURN_URL = 'http://127.0.0.1:8765/steam-openid'
@@ -42,6 +42,33 @@ let isGameRunning = false
 
 // ── Omniconsole — prevent launcher from hiding when a game launches ──
 let omniconsoleEnabled = false
+
+/**
+ * Oculta el launcher mientras se juega.
+ * - Con Omniconsole: minimiza normalmente (visible en barra de tareas).
+ * - Sin Omniconsole: minimiza + saca de la barra de tareas para que parezca
+ *   oculto, pero sin usar win.hide() que hace que herramientas externas
+ *   (p.ej. Omniconsole de la comunidad) lo detecten como cerrado y lo
+ *   vuelvan a abrir, generando dos instancias al terminar el juego.
+ */
+function hideForGame(win: BrowserWindow): void {
+  if (omniconsoleEnabled) {
+    win.minimize()
+  } else {
+    win.setSkipTaskbar(true)
+    win.minimize()
+  }
+}
+
+/**
+ * Restaura el launcher tras finalizar una sesión de juego.
+ * Devuelve el ícono a la barra de tareas si se había ocultado.
+ */
+function showAfterGame(win: BrowserWindow): void {
+  win.setSkipTaskbar(false)
+  win.show()
+  win.focus()
+}
 
 function startBackend(): void {
   if (is.dev) return // En dev se corre manualmente con "npm run dev" en backend/
@@ -425,10 +452,12 @@ function createWindow(): void {
     }
   })
 
-  // Guard: prevent window from being shown while a game is running
+  // Guard: prevent window from being shown while a game is running.
+  // Usamos hideForGame() en vez de hide() para que herramientas externas
+  // no detecten la ventana como cerrada y la vuelvan a abrir.
   mainWindow.on('show', () => {
     if (isGameRunning && !omniconsoleEnabled) {
-      mainWindow.hide()
+      hideForGame(mainWindow)
     }
   })
 
@@ -656,8 +685,7 @@ app.whenReady().then(() => {
           isGameRunning = false
           resumeActivities()
           if (win && !win.isDestroyed()) {
-            win.show()
-            win.focus()
+            showAfterGame(win)
             const durationMinutes = Math.round((Date.now() - startTime) / 60000)
             win.webContents.send('game-exited', { gameId, durationMinutes: Math.max(1, durationMinutes) })
           }
@@ -688,11 +716,7 @@ app.whenReady().then(() => {
         isGameRunning = true
         suspendActivities()
         if (win && !win.isDestroyed()) {
-          if (omniconsoleEnabled) {
-            win.minimize()
-          } else {
-            win.hide()
-          }
+          hideForGame(win)
         }
         if (win && !win.isDestroyed()) {
           win.webContents.send('game-session-start', { gameId })
@@ -710,8 +734,7 @@ app.whenReady().then(() => {
           isGameRunning = false
           resumeActivities()
           if (win && !win.isDestroyed()) {
-            win.show()
-            win.focus()
+            showAfterGame(win)
             const durationMinutes = Math.round((Date.now() - startTime) / 60000)
             win.webContents.send('game-exited', { gameId, durationMinutes: Math.max(1, durationMinutes) })
           }
@@ -731,11 +754,7 @@ app.whenReady().then(() => {
         isGameRunning = true
         suspendActivities()
         if (win && !win.isDestroyed()) {
-          if (omniconsoleEnabled) {
-            win.minimize()
-          } else {
-            win.hide()
-          }
+          hideForGame(win)
         }
         if (win && !win.isDestroyed()) {
           win.webContents.send('game-session-start', { gameId })
@@ -746,11 +765,7 @@ app.whenReady().then(() => {
         for (const delay of [0, 500, 1500, 3000]) {
           setTimeout(() => {
             if (isGameRunning && win && !win.isDestroyed()) {
-              if (omniconsoleEnabled) {
-                win.minimize()
-              } else {
-                win.hide()
-              }
+              hideForGame(win)
             }
           }, delay)
         }
