@@ -81,16 +81,16 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             <button type="button" className="multimedia-primary">Ir al título</button>
             <button type="button" className="multimedia-secondary">Mi lista</button>
           </div>
-        </div>
 
-        <div className="multimedia-dots">
-          {heroSlides.map((slide, i) => (
-            <span
-              key={slide.id}
-              className={i === activeSlide ? 'is-active' : ''}
-              onClick={() => setActiveSlide(i)}
-            />
-          ))}
+          <div className="multimedia-dots">
+            {heroSlides.map((slide, i) => (
+              <span
+                key={slide.id}
+                className={i === activeSlide ? 'is-active' : ''}
+                onClick={() => setActiveSlide(i)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

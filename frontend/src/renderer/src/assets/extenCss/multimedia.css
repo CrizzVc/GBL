@@ -12,13 +12,17 @@
 .multimedia-hero {
   position: relative;
   min-height: 78vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 32px 8vw 56px;
   background-size: cover;
   background-position: center 22%;
   transition: min-height .3s ease;
+}
+
+/* Cuando el foco pasa a "Continuar viendo", el fondo del hero se recorta
+   un poco para que la fila crezca sin salirse de la pantalla. El título
+   NO vive dentro de este flujo (ver .multimedia-hero-nav / -body más abajo),
+   así que no se mueve cuando esto cambia. */
+.multimedia-hero.is-collapsed {
+  min-height: 64vh;
 }
 
 .multimedia-hero::before {
@@ -31,12 +35,13 @@
 }
 
 .multimedia-hero-nav {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  z-index: 2;
+  top: 32px;
+  left: 8vw;
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: auto;
 }
 
 .multimedia-hero-nav .header-greeting-name {
@@ -44,8 +49,11 @@
 }
 
 .multimedia-hero-body {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  z-index: 2;
+  top: 31vh;
+  left: 8vw;
+  right: 8vw;
   max-width: 560px;
 }
 
@@ -89,13 +97,13 @@
   font-size: 14.5px;
   line-height: 1.55;
   opacity: 1;
-  overflow: hidden;
-  transition: opacity .25s ease, max-height .3s ease, margin .3s ease;
+  visibility: visible;
+  transition: opacity .25s ease;
 }
 
 .multimedia-description.is-hidden {
-  max-height: 0;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
 }
 
@@ -103,22 +111,15 @@
   display: flex;
   gap: 10px;
   margin-top: 22px;
-  max-height: 60px;
   opacity: 1;
-  overflow: hidden;
-  transition: opacity .25s ease, max-height .3s ease, margin .3s ease;
+  visibility: visible;
+  transition: opacity .25s ease;
 }
 
 .multimedia-actions.is-hidden {
-  max-height: 0;
   opacity: 0;
-  margin-top: 0;
+  visibility: hidden;
   pointer-events: none;
-}
-
-/* ---------- Hero colapsado (foco en "Continuar viendo") ---------- */
-.multimedia-hero.is-collapsed {
-  min-height: 46vh;
 }
 
 .multimedia-primary,
@@ -181,12 +182,16 @@
 }
 
 .multimedia-rail.is-focused {
-  padding-top: 12px;
-  padding-bottom: 56px;
+  padding-top: 8px;
+  padding-bottom: 64px;
+}
+
+.multimedia-rail.is-focused .multimedia-cards {
+  gap: 22px;
 }
 
 .multimedia-rail.is-focused .multimedia-card {
-  width: clamp(190px, 19vw, 260px);
+  width: clamp(240px, 22vw, 320px);
 }
 
 .multimedia-rail.is-focused .multimedia-card-thumb {
@@ -215,19 +220,22 @@
   display: flex;
   gap: 18px;
   overflow-x: auto;
-  padding-bottom: 6px;
+  overflow-y: visible;
+  padding: 14px 14px 10px;
+  margin: -14px -14px 0;
+  transition: gap .3s ease;
 }
 
 /* Tarjeta con miniatura arriba y texto debajo, como una fila "seguir viendo" */
 .multimedia-card {
   flex: 0 0 auto;
-  width: clamp(150px, 15vw, 200px);
+  width: clamp(190px, 16vw, 230px);
   cursor: pointer;
-  transition: width .25s ease, transform .2s ease;
+  transition: width .3s ease, transform .2s ease;
 }
 
 .multimedia-card.is-focused {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
 .multimedia-card.is-focused .multimedia-card-thumb {
