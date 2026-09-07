@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeImage, Tray, Menu } from 'electron'
 import { join, dirname, extname, basename } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import steamLogoAsset from '../renderer/src/assets/tiendas/steamLogo.png?asset'
@@ -34,6 +34,9 @@ let mediaSessionsPollTimer: NodeJS.Timeout | null = null
 let windowsMediaSessionsModule: any = null
 let winMediaControlModulePromise: Promise<any> | null = null
 
+// ── System tray ──
+let tray: Tray | null = null
+
 // ── Backend Express server (proceso hijo) ──
 let backendProcess: ChildProcess | null = null
 
@@ -68,6 +71,52 @@ function showAfterGame(win: BrowserWindow): void {
   win.setSkipTaskbar(false)
   win.show()
   win.focus()
+}
+
+function createTray(): void {
+  if (tray) return // ya existe
+
+  tray = new Tray(appIconAsset)
+  tray.setToolTip('HASHI Launcher')
+
+  const buildMenu = (): Electron.Menu =>
+    Menu.buildFromTemplate([
+      {
+        label: 'Mostrar HASHI',
+        click: () => {
+          if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+            mainWindowRef.setSkipTaskbar(false)
+            mainWindowRef.show()
+            mainWindowRef.focus()
+          }
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Salir',
+        click: () => {
+          if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+            mainWindowRef.removeAllListeners('close')
+          }
+          tray?.destroy()
+          tray = null
+          stopBackend()
+          stopMediaSessionsBridge()
+          app.quit()
+        }
+      }
+    ])
+
+  tray.setContextMenu(buildMenu())
+
+  // Doble clic en el icono del tray → mostrar ventana
+  tray.on('double-click', () => {
+    if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+      mainWindowRef.setSkipTaskbar(false)
+      mainWindowRef.show()
+      mainWindowRef.focus()
+    }
+  })
 }
 
 function startBackend(): void {
@@ -905,6 +954,8 @@ app.whenReady().then(() => {
     if (mainWindowRef && !mainWindowRef.isDestroyed()) {
       mainWindowRef.removeAllListeners('close')
     }
+    tray?.destroy()
+    tray = null
     stopBackend()
     stopMediaSessionsBridge()
     app.quit()
@@ -1781,6 +1832,7 @@ app.whenReady().then(() => {
 
   startBackend()
   startMediaSessionsBridge()
+  createTray()
   createWindow()
 
   app.on('activate', function () {
@@ -1802,6 +1854,8 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  tray?.destroy()
+  tray = null
   stopBackend()
   stopMediaSessionsBridge()
 })
