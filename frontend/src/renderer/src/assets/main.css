@@ -1177,6 +1177,7 @@
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
   cursor: default;
   pointer-events: none;
+  scroll-snap-align: start;
 }
 
 @keyframes skeleton-shimmer {
@@ -1413,19 +1414,14 @@
 }
 
 .library-view-grid {
-  flex: 1;
-  min-height: 0;
   width: 100%;
   margin: 0 auto;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: max-content;
-  min-height: 260px;
   gap: 16px;
   align-content: start;
-  max-height: none;
-  overflow-y: auto;
-  padding: 0 2px 24px 0;
-  scrollbar-gutter: stable;
+  overflow: visible;
+  padding: 8px 2px 24px 0;
 }
 
 .library-view-grid .library-item {
@@ -1534,7 +1530,22 @@
   flex: 1;
   min-height: 0;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
   animation: library-source-enter 320ms ease;
+}
+
+/* Sombra superior que indica contenido oculto arriba (igual que en el código de referencia) */
+.library-source-panel.has-scrolled::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(12, 12, 12, 0.92) 0%, transparent 100%);
+  z-index: 10;
+  pointer-events: none;
 }
 
 @keyframes library-source-enter {

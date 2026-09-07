@@ -630,6 +630,8 @@ function App(): React.JSX.Element {
 
   const gamesRowRef = useRef<HTMLDivElement>(null)
   const libraryGridRef = useRef<HTMLDivElement>(null)
+  // Offset actual del grid (translateY en px, negativo = scrolleado hacia abajo)
+  const libraryTranslateYRef = useRef<number>(0)
   const previousLibraryIndexRef = useRef<number | null>(null)
   const wipeDirectionRef = useRef<1 | -1>(1)
   const previousHomeSelectedGameIdRef = useRef<string | null>(null)
@@ -2664,6 +2666,22 @@ function App(): React.JSX.Element {
           setHomeCardMode('main')
         }
       } else {
+        // Si el detail está abierto, solo procesar Escape para cerrarlo
+        if (detailGameId) {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            playClose()
+            if (detailFromLibraryRef.current) {
+              detailFromLibraryRef.current = false
+              setDetailGameId(null)
+              setLibraryView(true)
+            } else {
+              setDetailGameId(null)
+            }
+          }
+          return
+        }
+
         const gameIds = ['library', ...visibleGames.map(g => g.id)]
         const currentIndex = gameIds.indexOf(selectedGameId || 'library')
         const now = performance.now()
@@ -2697,16 +2715,6 @@ function App(): React.JSX.Element {
           } else if (selectedGameId) {
             playEnter()
             setDetailGameId(selectedGameId)
-          }
-        } else if (e.key === 'Escape' && detailGameId) {
-          e.preventDefault()
-          playClose()
-          if (detailFromLibraryRef.current) {
-            detailFromLibraryRef.current = false
-            setDetailGameId(null)
-            setLibraryView(true)
-          } else {
-            setDetailGameId(null)
           }
         }
       }
@@ -2766,7 +2774,13 @@ function App(): React.JSX.Element {
   useEffect(() => {
     if (!libraryView) return
     previousLibraryIndexRef.current = null
-    libraryGridRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    // Resetear translateY al cambiar fuente o entrar a la biblioteca
+    libraryTranslateYRef.current = 0
+    if (libraryGridRef.current) {
+      libraryGridRef.current.style.transition = 'none'
+      libraryGridRef.current.style.transform = 'translateY(0px)'
+      libraryGridRef.current.parentElement?.classList.remove('has-scrolled')
+    }
   }, [libraryView, librarySource])
 
   useEffect(() => {
@@ -2786,18 +2800,55 @@ function App(): React.JSX.Element {
     const previousIndex = previousLibraryIndexRef.current
     previousLibraryIndexRef.current = currentIndex
     const columnCount = getComputedStyle(grid).gridTemplateColumns.split(' ').length
+
+    // Solo actuamos al cambiar de fila
     if (previousIndex === null || Math.floor(previousIndex / columnCount) === Math.floor(currentIndex / columnCount)) return
 
-    const previousItem = currentLibraryItems[previousIndex]
-    const previousId = librarySource === 'steam'
-      ? String((previousItem as SteamLibraryGame)?.appid)
-      : (previousItem as Game)?.id
-    const previousTarget = previousId
-      ? document.getElementById(`library-game-${previousId}`)
-      : null
-    const rowDistance = previousTarget ? target.offsetTop - previousTarget.offsetTop : target.offsetHeight
-    const nextScrollTop = Math.max(0, grid.scrollTop + rowDistance)
-    grid.scrollTo({ top: nextScrollTop, behavior: 'smooth' })
+    // ── Lógica igual al código React Native de referencia ──────────────────
+    // Calculamos el rowHeight desde el propio item (incluye gap implícitamente
+    // comparando el offsetTop de dos items consecutivos de distinta fila).
+    const firstItem = grid.querySelector('.library-item') as HTMLElement | null
+    if (!firstItem) return
+    const secondRowItem = grid.querySelectorAll('.library-item')[columnCount] as HTMLElement | undefined
+    const rowHeight = secondRowItem
+      ? secondRowItem.offsetTop - firstItem.offsetTop
+      : firstItem.offsetHeight + 16 // fallback: altura + gap
+
+    const currentRow = Math.floor(currentIndex / columnCount)
+    const panelHeight = grid.parentElement?.clientHeight ?? 0
+    const visibleRows = Math.floor(panelHeight / rowHeight)
+
+    // Offset actual (positivo: cuántos px se desplazó hacia arriba)
+    const currentOffset = -libraryTranslateYRef.current
+    const firstVisibleRow = currentOffset / rowHeight
+    const lastVisibleRow = firstVisibleRow + visibleRows - 1
+
+    let targetTranslateY = libraryTranslateYRef.current
+
+    if (currentRow > lastVisibleRow) {
+      // Item por debajo del viewport: scrollear lo mínimo para que entre
+      targetTranslateY = -((currentRow - visibleRows + 1) * rowHeight)
+    } else if (currentRow < firstVisibleRow) {
+      // Item por encima del viewport: alinear al tope
+      targetTranslateY = -(currentRow * rowHeight)
+    }
+    // Si ya es visible → no mover nada
+
+    if (targetTranslateY !== libraryTranslateYRef.current) {
+      libraryTranslateYRef.current = targetTranslateY
+      grid.style.transition = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+      grid.style.transform = `translateY(${targetTranslateY}px)`
+    }
+
+    // Clase que activa la sombra superior cuando el grid está scrolleado
+    const panel = grid.parentElement
+    if (panel) {
+      if (libraryTranslateYRef.current < 0) {
+        panel.classList.add('has-scrolled')
+      } else {
+        panel.classList.remove('has-scrolled')
+      }
+    }
   }, [currentLibraryItems, librarySource, libraryView, selectedGameId, selectedSteamAppId])
 
   const handlePrevShot = useCallback(() => {
