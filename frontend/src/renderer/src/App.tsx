@@ -678,6 +678,8 @@ function App(): React.JSX.Element {
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
+  const [multimediaFocus, setMultimediaFocus] = useState<'hero' | 'continue'>('hero');
+  const [continueWatchingIndex, setContinueWatchingIndex] = useState(0);
 
   useEffect(() => {
     if (nativeView !== 'multimedia' || isHeroPaused) return;
@@ -686,6 +688,26 @@ function App(): React.JSX.Element {
     }, 7000);
     return () => clearInterval(id);
   }, [nativeView, isHeroPaused, heroSlides.length]);
+
+  // Reinicia el foco de la vista multimedia cada vez que se abre
+  useEffect(() => {
+    if (nativeView === 'multimedia') {
+      setMultimediaFocus('hero')
+      setContinueWatchingIndex(0)
+    }
+  }, [nativeView])
+
+  // Evita que el resto de vistas (fondo, hero del launcher, etc.) se muevan
+  // mientras la vista multimedia está abierta encima
+  useEffect(() => {
+    if (nativeView) {
+      const previousOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = previousOverflow
+      }
+    }
+  }, [nativeView])
 
   const heroItem = heroSlides[activeSlide];
 
@@ -2657,8 +2679,58 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (nativeView === 'multimedia') {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          playClose()
+          setNativeView(null)
+          return
+        }
+
+        if (multimediaFocus === 'hero') {
+          if (e.key === 'ArrowRight') {
+            e.preventDefault()
+            playMove()
+            setIsHeroPaused(true)
+            setActiveSlide((prev) => (prev + 1) % heroSlides.length)
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            playMove()
+            setIsHeroPaused(true)
+            setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            if (continueWatching.length > 0) {
+              playMove()
+              setMultimediaFocus('continue')
+            }
+          }
+        } else {
+          if (e.key === 'ArrowRight') {
+            e.preventDefault()
+            const next = Math.min(continueWatchingIndex + 1, continueWatching.length - 1)
+            if (next !== continueWatchingIndex) {
+              playMove()
+              setContinueWatchingIndex(next)
+            }
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            const previous = Math.max(continueWatchingIndex - 1, 0)
+            if (previous !== continueWatchingIndex) {
+              playMove()
+              setContinueWatchingIndex(previous)
+            }
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            playMove()
+            setMultimediaFocus('hero')
+          }
+        }
+        return
+      }
+
       if (nativeView) {
-        if (e.key === 'Escape' || e.key === 'ArrowLeft') {
+        if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
           setNativeView(null)
@@ -2900,7 +2972,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, nativeView, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, openExtension, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, nativeView, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, openExtension, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp, multimediaFocus, continueWatchingIndex, heroSlides.length, continueWatching.length])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -3278,18 +3350,23 @@ function App(): React.JSX.Element {
         </div>
       </header>
 
-{nativeView === 'multimedia' && (
-  <MultimediaView
-    heroItem={heroItem}
-    heroSlides={heroSlides}
-    activeSlide={activeSlide}
-    setActiveSlide={setActiveSlide}
-    continueWatching={continueWatching}
-    setNativeView={setNativeView}
-    isHeroPaused={isHeroPaused}
-    setIsHeroPaused={setIsHeroPaused}
-  />
-)}
+      {nativeView === 'multimedia' && (
+        <MultimediaView
+          heroItem={heroItem}
+          heroSlides={heroSlides}
+          activeSlide={activeSlide}
+          setActiveSlide={setActiveSlide}
+          continueWatching={continueWatching}
+          setNativeView={setNativeView}
+          isHeroPaused={isHeroPaused}
+          setIsHeroPaused={setIsHeroPaused}
+          profileAvatar={profileAvatar || appDefaultIcon}
+          profileName={profileName.trim() ? profileName.trim() : 'HASHI'}
+          onProfileClick={() => { if (!sidebarOpen) { playEnter(); setSidebarOpen(true) } else { playClose(); setSidebarOpen(false) } }}
+          focusedSection={multimediaFocus}
+          continueWatchingIndex={continueWatchingIndex}
+        />
+      )}
 
       {/* ── Hero section ── */}
       <section className="hero-section">
