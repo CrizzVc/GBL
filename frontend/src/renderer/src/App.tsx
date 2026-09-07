@@ -473,6 +473,10 @@ function App(): React.JSX.Element {
   const [selectedFriend, setSelectedFriend] = useState<SteamFriend | null>(null)
   const [selectedFriendBackground, setSelectedFriendBackground] = useState<string | null>(null)
   const [steamLibrary, setSteamLibrary] = useState<SteamLibraryGame[]>([])
+  // Ref para acceder al valor actual de steamLibrary dentro de callbacks memoizados
+  // sin generar dependencias circulares en useCallback
+  const steamLibraryRef = useRef<SteamLibraryGame[]>([])
+  useEffect(() => { steamLibraryRef.current = steamLibrary }, [steamLibrary])
   const [steamLibraryLoading, setSteamLibraryLoading] = useState(false)
 
   // Background image state
@@ -1192,10 +1196,21 @@ function App(): React.JSX.Element {
       const installStatus = window.api?.getSteamInstallationStatus
         ? await window.api.getSteamInstallationStatus(appIds)
         : {}
-      const finalGames = normalizedGames.map((game) => ({
-        ...game,
-        installed: Boolean(installStatus?.[game.appid]) || Boolean(game.installed)
-      }))
+      const finalGames = normalizedGames.map((game) => {
+        // Preservar artwork que estaba en memoria pero no en localStorage
+        // (ej. URLs de CDN de Steam asignadas dinámicamente o de SteamGridDB en sesiones previas)
+        const inMemory = steamLibraryRef.current.find((g) => g.appid === game.appid)
+        const storedArtwork = getStoredSteamArtwork()[String(game.appid)] || {}
+        return {
+          ...game,
+          installed: Boolean(installStatus?.[game.appid]) || Boolean(game.installed),
+          gridImageUrl: storedArtwork.gridImageUrl ?? inMemory?.gridImageUrl ?? game.gridImageUrl,
+          squareGridImageUrl: storedArtwork.squareGridImageUrl ?? inMemory?.squareGridImageUrl ?? game.squareGridImageUrl,
+          heroImageUrl: storedArtwork.heroImageUrl ?? inMemory?.heroImageUrl ?? game.heroImageUrl,
+          logoImageUrl: storedArtwork.logoImageUrl ?? inMemory?.logoImageUrl ?? game.logoImageUrl,
+          iconDataUrl: storedArtwork.iconDataUrl ?? inMemory?.iconDataUrl ?? game.iconDataUrl,
+        }
+      })
 
       let hidden: string[] = []
       try {
@@ -1336,9 +1351,14 @@ function App(): React.JSX.Element {
 
   // ── Listen for game-session-start (launcher hides, suspend activities) ──
   useEffect(() => {
-    const unsubscribe = window.api.onGameSessionStart(() => {
+    const unsubscribe = window.api.onGameSessionStart((data) => {
       isGameRunningRef.current = true
       setIsGameRunning(true)
+      // Navegar al detail del juego que acaba de iniciar
+      if (data?.gameId) {
+        setLibraryView(false)
+        setDetailGameId(data.gameId)
+      }
     })
     return unsubscribe
   }, [])
