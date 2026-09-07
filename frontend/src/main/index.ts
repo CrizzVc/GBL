@@ -51,14 +51,40 @@ interface LauncherExtension {
   name: string
   description: string
   version: string
-  entryUrl: string
+  type: 'external' | 'native'
+  entryUrl: string | null
+  nativeView: 'multimedia' | null
   sidebar: boolean
+  enabled: boolean
 }
 
 // Las extensiones son declarativas: no se carga código de terceros dentro del
 // proceso del launcher. Cada manifiesto vive en userData/extensions/<id>.
 function getExtensionsDirectory(): string {
   return join(app.getPath('userData'), 'extensions')
+}
+
+function getBundledExtensionsDirectory(): string {
+  return is.dev
+    ? join(app.getAppPath(), 'resources', 'extensions')
+    : join(process.resourcesPath, 'extensions')
+}
+
+function getExtensionsStatePath(): string {
+  return join(app.getPath('userData'), 'extensions-state.json')
+}
+
+function readExtensionsState(): Record<string, boolean> {
+  try {
+    const raw = JSON.parse(fs.readFileSync(getExtensionsStatePath(), 'utf8')) as Record<string, unknown>
+    const state: Record<string, boolean> = {}
+    for (const [id, value] of Object.entries(raw)) {
+      if (typeof value === 'boolean') state[id] = value
+    }
+    return state
+  } catch {
+    return {}
+  }
 }
 
 function isSafeExtensionUrl(value: unknown): value is string {
@@ -84,11 +110,24 @@ function readExtensionsFrom(extensionsDir: string): LauncherExtension[] {
           const name = typeof manifest.name === 'string' ? manifest.name : ''
           const description = typeof manifest.description === 'string' ? manifest.description : ''
           const version = typeof manifest.version === 'string' ? manifest.version : ''
+          const type = manifest.type === 'native' ? 'native' : 'external'
           const entryUrl = manifest.entryUrl
+          const nativeView = manifest.nativeView === 'multimedia' ? 'multimedia' : null
           const sidebar = manifest.sidebar === true
 
-          if (!/^[a-z0-9][a-z0-9-]{1,63}$/i.test(id) || !name || !version || !isSafeExtensionUrl(entryUrl)) return []
-          return [{ id, name: name.slice(0, 80), description: description.slice(0, 240), version: version.slice(0, 32), entryUrl, sidebar }]
+          const validEntry = type === 'external' ? isSafeExtensionUrl(entryUrl) : nativeView !== null
+          if (!/^[a-z0-9][a-z0-9-]{1,63}$/i.test(id) || !name || !version || !validEntry) return []
+          return [{
+            id,
+            name: name.slice(0, 80),
+            description: description.slice(0, 240),
+            version: version.slice(0, 32),
+            type,
+            entryUrl: type === 'external' && typeof entryUrl === 'string' ? entryUrl : null,
+            nativeView,
+            sidebar,
+            enabled: true
+          }]
         } catch {
           return []
         }
@@ -100,7 +139,11 @@ function readExtensionsFrom(extensionsDir: string): LauncherExtension[] {
 }
 
 function readExtensions(): LauncherExtension[] {
-  return readExtensionsFrom(getExtensionsDirectory())
+  const state = readExtensionsState()
+  const extensions = new Map<string, LauncherExtension>()
+  for (const extension of readExtensionsFrom(getBundledExtensionsDirectory())) extensions.set(extension.id, extension)
+  for (const extension of readExtensionsFrom(getExtensionsDirectory())) extensions.set(extension.id, extension)
+  return [...extensions.values()].map((extension) => ({ ...extension, enabled: state[extension.id] ?? true }))
 }
 
 /**
@@ -1411,6 +1454,19 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('get-extensions', () => readExtensions())
+  ipcMain.handle('set-extension-enabled', (_event, id: string, enabled: boolean) => {
+    if (typeof id !== 'string' || typeof enabled !== 'boolean' || !readExtensions().some((extension) => extension.id === id)) {
+      return { success: false, error: 'Extensión no válida' }
+    }
+    try {
+      const state = readExtensionsState()
+      state[id] = enabled
+      fs.writeFileSync(getExtensionsStatePath(), JSON.stringify(state, null, 2), 'utf8')
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
   ipcMain.handle('open-extensions-directory', async () => {
     try {
       const extensionsDir = getExtensionsDirectory()

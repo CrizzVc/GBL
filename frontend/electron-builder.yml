@@ -21,6 +21,10 @@ extraResources:
       - "!**/.DS_Store"
       - "!**/.git/**"
       - "node_modules/**"
+  - from: ./resources/extensions
+    to: extensions
+    filter:
+      - "**/*"
 asarUnpack:
   - resources/**
   - node_modules/windows-media-sessions/bin/**

@@ -53,9 +53,13 @@ declare global {
         name: string
         description: string
         version: string
-        entryUrl: string
+        type: 'external' | 'native'
+        entryUrl: string | null
+        nativeView: 'multimedia' | null
         sidebar: boolean
+        enabled: boolean
       }>>
+      setExtensionEnabled: (id: string, enabled: boolean) => Promise<{ success: boolean; error?: string }>
       openExtensionsDirectory: () => Promise<{ success: boolean; error?: string }>
       // Steam account APIs
       getSteamAccount: () => Promise<{

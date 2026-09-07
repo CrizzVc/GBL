@@ -122,8 +122,11 @@ interface LauncherExtension {
   name: string
   description: string
   version: string
-  entryUrl: string
+  type: 'external' | 'native'
+  entryUrl: string | null
+  nativeView: 'multimedia' | null
   sidebar: boolean
+  enabled: boolean
 }
 
 interface Store {
@@ -456,6 +459,7 @@ function App(): React.JSX.Element {
   const isGameRunningRef = useRef(false)
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
+  const [nativeView, setNativeView] = useState<'multimedia' | null>(null)
   const [extensions, setExtensions] = useState<LauncherExtension[]>([])
   const [extensionsLoading, setExtensionsLoading] = useState(false)
   const [showDownloadsModal, setShowDownloadsModal] = useState(false)
@@ -539,12 +543,28 @@ function App(): React.JSX.Element {
     void loadExtensions()
   }, [loadExtensions])
 
+  const openExtension = useCallback((extension: LauncherExtension): void => {
+    if (extension.type === 'native' && extension.nativeView) {
+      setNativeView(extension.nativeView)
+      return
+    }
+    if (extension.entryUrl) void window.api.openExternal(extension.entryUrl)
+  }, [])
+
+  const toggleExtension = useCallback(async (extension: LauncherExtension): Promise<void> => {
+    const result = await window.api.setExtensionEnabled(extension.id, !extension.enabled)
+    if (result.success) {
+      setExtensions((current) => current.map((item) => item.id === extension.id ? { ...item, enabled: !item.enabled } : item))
+      if (extension.enabled && nativeView === extension.nativeView) setNativeView(null)
+    }
+  }, [nativeView])
+
   useEffect(() => {
     void loadExtensions()
   }, [loadExtensions])
 
   const sidebarExtensions = useMemo(
-    () => extensions.filter((extension) => extension.sidebar),
+    () => extensions.filter((extension) => extension.sidebar && extension.enabled),
     [extensions]
   )
 
@@ -2573,6 +2593,15 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (nativeView) {
+        if (e.key === 'Escape' || e.key === 'ArrowLeft') {
+          e.preventDefault()
+          playClose()
+          setNativeView(null)
+        }
+        return
+      }
+
       if (e.key === 'ContextMenu') {
         e.preventDefault()
 
@@ -2619,7 +2648,7 @@ function App(): React.JSX.Element {
           else if (sidebarIndex === 4) openExtensions()
           else if (sidebarIndex >= 5 && sidebarIndex < 5 + sidebarExtensions.length) {
             const extension = sidebarExtensions[sidebarIndex - 5]
-            if (extension) void window.api.openExternal(extension.entryUrl)
+            if (extension) openExtension(extension)
           } else if (sidebarIndex === 5 + sidebarExtensions.length) setModal('settings')
           else if (sidebarIndex === 6 + sidebarExtensions.length) window.api.quitApp()
           setSidebarOpen(false)
@@ -2807,7 +2836,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, nativeView, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, openExtension, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -3125,7 +3154,7 @@ function App(): React.JSX.Element {
           <button
             className={`sidebar-item ${sidebarIndex === 5 + index ? 'focused' : ''}`}
             key={extension.id}
-            onClick={() => { void window.api.openExternal(extension.entryUrl); setSidebarOpen(false) }}
+            onClick={() => { openExtension(extension); setSidebarOpen(false) }}
           >
             <div className="sidebar-item-icon"><GlobeIcon size={18} /></div> {extension.name}
           </button>
@@ -3184,6 +3213,32 @@ function App(): React.JSX.Element {
           <span className="header-clock">{clock}</span>
         </div>
       </header>
+
+      {nativeView === 'multimedia' && (
+        <main className="multimedia-view" aria-label="Multimedia">
+          <div className="multimedia-hero">
+            <button type="button" className="multimedia-back" onClick={() => setNativeView(null)}>← Volver a HASHI</button>
+            <span className="multimedia-kicker">MULTIMEDIA</span>
+            <h1>Tu pantalla para series y películas.</h1>
+            <p>Una vista nativa preparada para conectar servicios de contenido autorizados.</p>
+            <div className="multimedia-actions">
+              <button type="button" className="multimedia-primary">Explorar catálogo</button>
+              <button type="button" className="multimedia-secondary">Mi lista</button>
+            </div>
+          </div>
+          <section className="multimedia-rail">
+            <div className="multimedia-rail-heading"><h2>Seguir viendo</h2><span>Próximamente</span></div>
+            <div className="multimedia-cards">
+              {['Tu lista', 'Series', 'Películas', 'Canales en vivo', 'Documentales'].map((label, index) => (
+                <article className={`multimedia-card card-${index + 1}`} key={label}>
+                  <div className="multimedia-card-shine" />
+                  <span>{label}</span>
+                </article>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
 
       {/* ── Hero section ── */}
       <section className="hero-section">
@@ -4927,9 +4982,18 @@ function App(): React.JSX.Element {
                   <button
                     type="button"
                     className="extensions-secondary-button"
-                    onClick={() => void window.api.openExternal(extension.entryUrl)}
+                    onClick={() => openExtension(extension)}
+                    disabled={!extension.enabled}
                   >
-                    Abrir
+                    {extension.type === 'native' ? 'Abrir vista' : 'Abrir'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`extensions-toggle ${extension.enabled ? 'enabled' : ''}`}
+                    onClick={() => void toggleExtension(extension)}
+                    aria-pressed={extension.enabled}
+                  >
+                    {extension.enabled ? 'Activa' : 'Inactiva'}
                   </button>
                 </article>
               ))}

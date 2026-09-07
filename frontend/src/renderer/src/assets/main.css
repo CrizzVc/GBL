@@ -6731,3 +6731,48 @@
 .extension-card h3 { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .extension-card-title-row span { color: rgba(255, 255, 255, 0.38); font-size: 11px; white-space: nowrap; }
 .extension-card p { margin: 5px 0 0; color: rgba(255, 255, 255, 0.55); font-size: 12px; line-height: 1.35; }
+
+.extensions-toggle {
+  min-width: 70px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  padding: 9px 10px;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.extensions-toggle.enabled { color: #95f0a5; border-color: rgba(104, 221, 126, 0.38); background: rgba(86, 212, 108, 0.1); }
+
+/* ── Multimedia native extension ── */
+.multimedia-view {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 76% 18%, rgba(201, 51, 81, 0.36), transparent 30%),
+    radial-gradient(circle at 14% 73%, rgba(52, 61, 126, 0.3), transparent 36%),
+    #0b0b0e;
+  color: #fff;
+}
+.multimedia-hero { min-height: 54vh; display: flex; flex-direction: column; justify-content: center; max-width: 620px; padding: 10vh 8vw 4vh; }
+.multimedia-back { width: max-content; margin-bottom: 42px; border: 0; padding: 0; color: rgba(255,255,255,.7); background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.multimedia-back:hover { color: #fff; }
+.multimedia-kicker { color: #ff7184; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
+.multimedia-hero h1 { max-width: 540px; margin: 12px 0; font-size: clamp(36px, 5vw, 68px); line-height: 1.02; letter-spacing: -.06em; }
+.multimedia-hero p { max-width: 470px; margin: 0; color: rgba(255,255,255,.64); font-size: 15px; line-height: 1.55; }
+.multimedia-actions { display: flex; gap: 10px; margin-top: 28px; }
+.multimedia-primary, .multimedia-secondary { border-radius: 9px; padding: 11px 17px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.multimedia-primary { border: 1px solid #fff; color: #0a0a0c; background: #fff; }
+.multimedia-secondary { border: 1px solid rgba(255,255,255,.25); color: #fff; background: rgba(255,255,255,.08); }
+.multimedia-rail { padding: 0 8vw 48px; }
+.multimedia-rail-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.multimedia-rail h2 { margin: 0; font-size: 19px; }
+.multimedia-rail-heading span { color: rgba(255,255,255,.42); font-size: 12px; }
+.multimedia-cards { display: flex; gap: 13px; overflow-x: auto; padding-bottom: 10px; }
+.multimedia-card { position: relative; display: flex; align-items: end; width: clamp(155px, 17vw, 230px); aspect-ratio: 16 / 10; flex: 0 0 auto; overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: linear-gradient(140deg, #574a68, #191d34 80%); box-shadow: 0 14px 36px rgba(0,0,0,.3); }
+.multimedia-card span { position: relative; z-index: 1; padding: 14px; font-size: 14px; font-weight: 700; }
+.multimedia-card-shine { position: absolute; inset: -30%; transform: rotate(28deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,.26), transparent); }
+.multimedia-card.card-2 { background: linear-gradient(145deg, #792e4b, #261628 80%); }.multimedia-card.card-3 { background: linear-gradient(145deg, #2e6279, #142032 80%); }.multimedia-card.card-4 { background: linear-gradient(145deg, #725b28, #1e1910 80%); }.multimedia-card.card-5 { background: linear-gradient(145deg, #435944, #111d18 80%); }

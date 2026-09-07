@@ -23,8 +23,10 @@ Ejemplo:
 }
 ```
 
-`id` debe contener entre 2 y 64 caracteres alfanuméricos o guiones. `entryUrl` debe ser una URL HTTPS. HASHI valida los manifiestos y abre la URL en el navegador predeterminado; no carga código de extensiones dentro de Electron ni les expone archivos, Node.js o IPC.
+`id` debe contener entre 2 y 64 caracteres alfanuméricos o guiones. Las extensiones externas usan `entryUrl`, que debe ser HTTPS. HASHI también puede incluir extensiones nativas de confianza mediante `"type": "native"` y una vista aprobada, como `"nativeView": "multimedia"`; no se permite que extensiones externas inyecten código dentro de Electron.
 
 `sidebar` es opcional (por defecto `false`). Al activarlo, HASHI añade un botón con el nombre de la extensión al menú lateral, justo debajo de **Extensiones**.
+
+Desde el catálogo puedes activar o desactivar cualquier extensión. Su estado se guarda en el perfil local del usuario.
 
 Este formato es deliberadamente limitado mientras se diseña un modelo de permisos para extensiones con interfaces propias.
