@@ -275,6 +275,28 @@ const sortGamesByNewestFirst = (items: Game[]): Game[] =>
 
 const getRecentGames = (items: Game[]): Game[] => sortGamesByNewestFirst(items).slice(0, RECENT_GAMES_LIMIT)
 
+// Cuenta las columnas reales del grid midiendo el offsetTop de los items ya
+// renderizados (todos los de la primera fila comparten el mismo offsetTop).
+// Es más confiable que parsear getComputedStyle(...).gridTemplateColumns:
+// ese string cambia de formato entre breakpoints responsive (5 columnas vs
+// 2 en pantallas chicas) y puede leerse en un instante en que el layout
+// todavía no terminó de asentarse, dando un columnCount desincronizado
+// entre el handler de teclado y el efecto de scroll — eso es lo que hacía
+// que la navegación funcionara bien en la 1ra fila (sin necesidad de
+// desplazamiento) y se rompiera al entrar a la 2da (donde sí se dispara el
+// cálculo de scroll con un columnCount potencialmente distinto).
+function getGridColumnCount(grid: HTMLElement): number {
+  const items = grid.querySelectorAll<HTMLElement>('.library-item')
+  if (items.length === 0) return 1
+  const firstTop = items[0].offsetTop
+  let count = 0
+  for (const item of items) {
+    if (item.offsetTop !== firstTop) break
+    count++
+  }
+  return count || 1
+}
+
 const STORE_IMAGES: Record<string, { banner: string; logo: string }> = {
   steam: { banner: steamBanner, logo: steamLogo },
   epic: { banner: epicBanner, logo: epicLogo },
@@ -632,7 +654,6 @@ function App(): React.JSX.Element {
   const libraryGridRef = useRef<HTMLDivElement>(null)
   // Offset actual del grid (translateY en px, negativo = scrolleado hacia abajo)
   const libraryTranslateYRef = useRef<number>(0)
-  const previousLibraryIndexRef = useRef<number | null>(null)
   const wipeDirectionRef = useRef<1 | -1>(1)
   const previousHomeSelectedGameIdRef = useRef<string | null>(null)
   const detailFromLibraryRef = useRef(false)
@@ -2441,7 +2462,7 @@ function App(): React.JSX.Element {
             ? Math.max(0, currentLibraryItems.findIndex((game) => String((game as SteamLibraryGame).appid) === selectedSteamAppId))
             : Math.max(0, currentLibraryItems.findIndex((game) => 'id' in game && game.id === selectedGameId))
           const columnCount = libraryGridRef.current
-            ? getComputedStyle(libraryGridRef.current).gridTemplateColumns.split(' ').length
+            ? getGridColumnCount(libraryGridRef.current)
             : 1
           const step = e.key === 'ArrowUp' ? -columnCount : e.key === 'ArrowDown' ? columnCount : e.key === 'ArrowLeft' ? -1 : 1
           const nextIndex = Math.max(0, Math.min(currentLibraryItems.length - 1, currentIndex + step))
@@ -2451,13 +2472,17 @@ function App(): React.JSX.Element {
             const nextAppId = String(nextGame.appid)
             setSelectedSteamAppId(nextAppId)
             const target = document.getElementById(`library-game-${nextAppId}`)
-            target?.focus()
+            // preventScroll: el contenedor de la grilla usa scroll manual vía
+            // transform (translateY); si el focus dispara el auto-scroll
+            // nativo del navegador sobre el ancestro con overflow:hidden,
+            // ambos desplazamientos se pisan y la grilla queda desalineada.
+            target?.focus({ preventScroll: true })
           } else {
             const nextGame = currentLibraryItems[nextIndex] as Game
             if (nextGame?.id) {
               setSelectedGameId(nextGame.id)
               const target = document.getElementById(`library-game-${nextGame.id}`)
-              target?.focus()
+              target?.focus({ preventScroll: true })
             }
           }
         }
@@ -2773,7 +2798,6 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     if (!libraryView) return
-    previousLibraryIndexRef.current = null
     // Resetear translateY al cambiar fuente o entrar a la biblioteca
     libraryTranslateYRef.current = 0
     if (libraryGridRef.current) {
@@ -2794,47 +2818,35 @@ function App(): React.JSX.Element {
       : currentLibraryItems.findIndex((game) => 'id' in game && game.id === selectedId)
     if (currentIndex < 0) return
 
-    const target = document.getElementById(`library-game-${selectedId}`)
-    if (!target) return
-
-    const previousIndex = previousLibraryIndexRef.current
-    previousLibraryIndexRef.current = currentIndex
-    const columnCount = getComputedStyle(grid).gridTemplateColumns.split(' ').length
-
-    // Solo actuamos al cambiar de fila
-    if (previousIndex === null || Math.floor(previousIndex / columnCount) === Math.floor(currentIndex / columnCount)) return
-
-    // ── Lógica igual al código React Native de referencia ──────────────────
-    // Calculamos el rowHeight desde el propio item (incluye gap implícitamente
-    // comparando el offsetTop de dos items consecutivos de distinta fila).
-    const firstItem = grid.querySelector('.library-item') as HTMLElement | null
+    const columnCount = getGridColumnCount(grid)
+    const items = grid.querySelectorAll<HTMLElement>('.library-item')
+    const firstItem = items[0]
     if (!firstItem) return
-    const secondRowItem = grid.querySelectorAll('.library-item')[columnCount] as HTMLElement | undefined
+    const secondRowItem = items[columnCount] as HTMLElement | undefined
     const rowHeight = secondRowItem
       ? secondRowItem.offsetTop - firstItem.offsetTop
       : firstItem.offsetHeight + 16 // fallback: altura + gap
 
     const currentRow = Math.floor(currentIndex / columnCount)
     const panelHeight = grid.parentElement?.clientHeight ?? 0
-    const visibleRows = Math.floor(panelHeight / rowHeight)
+    const visibleRows = Math.max(1, Math.floor(panelHeight / rowHeight))
 
-    // Offset actual (positivo: cuántos px se desplazó hacia arriba)
-    const currentOffset = -libraryTranslateYRef.current
-    const firstVisibleRow = currentOffset / rowHeight
-    const lastVisibleRow = firstVisibleRow + visibleRows - 1
+    // Cálculo DIRECTO (no acumulativo): la fila que queda arriba del
+    // viewport se deriva solo de currentRow/visibleRows, sin depender de
+    // "cuánto se había scrolleado antes". La versión anterior arrastraba
+    // el translateY previo como punto de partida (firstVisibleRow =
+    // currentOffset / rowHeight) y con un rowHeight medido un frame antes
+    // de que el layout terminara de asentarse (p.ej. durante la animación
+    // de entrada de .library-source-panel) ese arrastre podía quedar
+    // pegado en un valor que no correspondía a ningún múltiplo real de
+    // fila (de ahí el -8px inicial en vez de 0). Recalculando siempre
+    // desde cero, el resultado siempre es un múltiplo exacto de rowHeight:
+    // 0 mientras currentRow entra en la ventana visible desde la fila 0, y
+    // -(currentRow - visibleRows + 1) * rowHeight en cuanto se sale de ella.
+    const topVisibleRow = currentRow < visibleRows ? 0 : currentRow - visibleRows + 1
+    const targetTranslateY = -(topVisibleRow * rowHeight)
 
-    let targetTranslateY = libraryTranslateYRef.current
-
-    if (currentRow > lastVisibleRow) {
-      // Item por debajo del viewport: scrollear lo mínimo para que entre
-      targetTranslateY = -((currentRow - visibleRows + 1) * rowHeight)
-    } else if (currentRow < firstVisibleRow) {
-      // Item por encima del viewport: alinear al tope
-      targetTranslateY = -(currentRow * rowHeight)
-    }
-    // Si ya es visible → no mover nada
-
-    if (targetTranslateY !== libraryTranslateYRef.current) {
+    if (Math.round(targetTranslateY) !== Math.round(libraryTranslateYRef.current)) {
       libraryTranslateYRef.current = targetTranslateY
       grid.style.transition = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'
       grid.style.transform = `translateY(${targetTranslateY}px)`
@@ -4649,8 +4661,14 @@ function App(): React.JSX.Element {
                             const firstArticle = libraryGridRef.current?.querySelector('.library-item') as HTMLElement | null
                             if (firstArticle) {
                               firstArticle.tabIndex = 0
-                              firstArticle.focus()
-                              firstArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                              // Sin scrollIntoView manual: la grilla ya se
+                              // reposiciona sola vía transform (translateY)
+                              // en el useEffect que sigue a selectedGameId /
+                              // selectedSteamAppId. Llamar scrollIntoView acá
+                              // además haría que el navegador mueva el
+                              // scrollTop nativo del panel (aunque tenga
+                              // overflow:hidden), duplicando el desplazamiento.
+                              firstArticle.focus({ preventScroll: true })
                             }
                           }
                         }}

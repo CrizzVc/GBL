@@ -1420,6 +1420,12 @@
   grid-auto-rows: max-content;
   gap: 16px;
   align-content: start;
+  /* Anula el max-height:400px / overflow-y:auto heredados de .library-grid
+     (esa clase es para el modal chico de biblioteca, no para esta vista a
+     pantalla completa). Sin esto, la grilla queda con un alto fijo de
+     400px y todo lo que cae debajo de la primera fila termina recortado
+     por el overflow:hidden de .library-source-panel. */
+  max-height: none;
   overflow: visible;
   padding: 8px 2px 24px 0;
 }
