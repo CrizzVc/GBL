@@ -160,11 +160,28 @@ function stopBackend(): void {
 
 function getWindowsMediaSessionsModule(): any {
   if (windowsMediaSessionsModule) return windowsMediaSessionsModule
-  const candidates = ['windows-media-sessions', join(__dirname, '..', '..', 'node_modules', 'windows-media-sessions')]
+  const candidates = [
+    'windows-media-sessions',
+    join(__dirname, '..', '..', 'node_modules', 'windows-media-sessions'),
+    // En producción con asarUnpack, los binarios van a app.asar.unpacked
+    join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'windows-media-sessions')
+  ]
   for (const cand of candidates) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       windowsMediaSessionsModule = require(cand)
+      // Sobreescribir la ruta del .exe para apuntar a la copia desempaquetada
+      if (windowsMediaSessionsModule && !is.dev) {
+        process.env.WINDOWS_MEDIA_SESSIONS_BACKEND = join(
+          process.resourcesPath,
+          'app.asar.unpacked',
+          'node_modules',
+          'windows-media-sessions',
+          'bin',
+          'win-x64',
+          'windows-media-sessions-backend.exe'
+        )
+      }
       return windowsMediaSessionsModule
     } catch { }
   }

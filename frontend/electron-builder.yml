@@ -23,6 +23,8 @@ extraResources:
       - "node_modules/**"
 asarUnpack:
   - resources/**
+  - node_modules/windows-media-sessions/bin/**
+  - node_modules/win-media-control/scripts/**
 win:
   executableName: HASHI
   icon: src/renderer/src/assets/images/icono.png
