@@ -110,15 +110,15 @@
 .multimedia-hero-body {
   position: absolute;
   z-index: 2;
-  top: 31vh;
+  bottom: 20px;
   left: 36px;
   right: 36px;
   max-width: 560px;
-  transition: top .3s ease;
+  transition: bottom .3s ease;
 }
 
 .multimedia-hero.is-collapsed .multimedia-hero-body {
-  top: 37vh;
+  bottom: 20px;
 }
 
 .multimedia-kicker {
@@ -135,6 +135,10 @@
   line-height: .98;
   letter-spacing: -.04em;
   font-weight: 800;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
 }
 
 .multimedia-meta {
@@ -254,6 +258,7 @@
 
 /* ---------- Rieles ---------- */
 .multimedia-rail {
+  margin-top: 16px;
   padding: 0 36px 40px;
   transition: padding .3s ease;
 }
@@ -316,25 +321,32 @@
 
 /* La última tarjeta seleccionada sigue abierta aunque el riel pierda el foco. */
 .multimedia-card.is-selected {
+  position: relative;
   display: flex;
-  width: clamp(230px, 24vw, 300px);
+  width: clamp(330px, 34vw, 460px);
+  overflow: hidden;
   background: #171720;
   border-radius: 10px;
 }
 
 .multimedia-card.is-selected .multimedia-card-thumb {
-  width: 42%;
-  border-radius: 10px 0 0 10px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
 }
 
 .multimedia-card.is-selected .multimedia-card-info {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  justify-content: flex-end;
   gap: 8px;
-  min-width: 0;
-  padding: 12px;
+  padding: 46px 20px 18px;
+  background: linear-gradient(180deg, transparent 0%, rgba(6, 6, 10, .82) 72%);
 }
 
 .multimedia-card.is-selected .multimedia-card-title {
@@ -347,21 +359,10 @@
 }
 
 .multimedia-card.is-focused {
-  position: relative;
-  width: clamp(330px, 34vw, 460px);
-  overflow: hidden;
   outline: 3px solid #ff7184;
   outline-offset: 3px;
   transform: scale(1.02);
   box-shadow: 0 14px 30px rgba(0, 0, 0, .45);
-}
-
-.multimedia-card.is-focused .multimedia-card-thumb {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 10px;
 }
 
 .multimedia-card-thumb {
@@ -411,18 +412,6 @@
   display: none;
 }
 
-.multimedia-card.is-focused .multimedia-card-info {
-  position: absolute;
-  z-index: 1;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 46px 20px 18px;
-  background: linear-gradient(180deg, transparent 0%, rgba(6, 6, 10, .82) 72%);
-}
-
 .multimedia-card-title {
   margin: 0;
   font-size: clamp(18px, 1.8vw, 25px);
@@ -448,7 +437,7 @@
   font-size: clamp(18px, 1.8vw, 25px);
 }
 
-.multimedia-view.hide-focused-card-title .multimedia-card.is-focused .multimedia-card-title {
+.multimedia-view.hide-focused-card-title .multimedia-card.is-selected .multimedia-card-title {
   display: none;
 }
 

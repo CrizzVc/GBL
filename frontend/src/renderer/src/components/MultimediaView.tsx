@@ -58,6 +58,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   const [focusedCardOffset, setFocusedCardOffset] = React.useState(0);
   const [isSourcePickerOpen, setIsSourcePickerOpen] = React.useState(false);
   const activeSource = sources.find((source) => source.id === activeSourceId) || sources[0];
+  const selectedAnime = continueWatching[continueWatchingIndex];
 
   React.useLayoutEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -92,16 +93,13 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
 
         <div className="multimedia-hero-body" key={heroItem.id}>
           <span className="multimedia-kicker">DESTACADO</span>
-          <h1>{heroItem.title}</h1>
+          <h1>{selectedAnime?.title || heroItem.title}</h1>
           <div className="multimedia-meta">
             <span className="tag">{heroItem.rating}</span>
             <span>{heroItem.genre}</span>
             <span>·</span>
             <span>{heroItem.year}</span>
           </div>
-          <p className={`multimedia-description ${isContinueFocused ? 'is-hidden' : ''}`}>
-            {heroItem.description}
-          </p>
           {/* <div className={`multimedia-actions ${isContinueFocused ? 'is-hidden' : ''}`}>
             <button type="button" className="multimedia-primary">Ir al título</button>
             <button type="button" className="multimedia-secondary">Mi lista</button>
