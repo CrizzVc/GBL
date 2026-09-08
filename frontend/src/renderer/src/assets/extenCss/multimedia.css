@@ -48,107 +48,343 @@
   color: #fff;
 }
 
+/* ═══════════════════════════════════════════════════════
+   MEDIA DETAIL VIEW — Netflix-style layout
+   ═══════════════════════════════════════════════════════ */
+
 .media-detail-view {
   position: fixed;
   inset: 0;
   z-index: 40;
-  overflow-y: auto;
-  background: #09090c;
+  overflow: hidden;
+  background: #06060a;
   color: #fff;
 }
 
+/* ── Full-bleed background ────────────────────────────── */
 .media-detail-background {
   position: absolute;
-  inset: 0 0 35%;
-  background-position: center;
+  inset: 0;
+  background-position: center 20%;
   background-size: cover;
-  opacity: .72;
+  /* Two overlapping gradients: left-side vignette + bottom fade */
+  -webkit-mask-image:
+    linear-gradient(90deg, rgba(0,0,0,0) 38%, rgba(0,0,0,1) 68%);
+  mask-image:
+    linear-gradient(90deg, rgba(0,0,0,0) 38%, rgba(0,0,0,1) 68%);
+  opacity: .88;
 }
 
-.media-detail-background::after {
+/* Deep left vignette so the text is always readable */
+.media-detail-view::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(9, 9, 12, .15), #09090c 100%);
+  z-index: 1;
+  background:
+    linear-gradient(90deg,
+      #06060a 0%,
+      rgba(6, 6, 10, .96) 26%,
+      rgba(6, 6, 10, .68) 46%,
+      rgba(6, 6, 10, 0) 70%
+    ),
+    linear-gradient(180deg,
+      rgba(6, 6, 10, .45) 0%,
+      rgba(6, 6, 10, 0) 30%,
+      rgba(6, 6, 10, .6) 82%,
+      #06060a 100%
+    );
+  pointer-events: none;
 }
 
-.media-detail-back,
-.media-detail-close {
+/* ── Back button ──────────────────────────────────────── */
+.media-detail-back {
+  position: absolute;
+  z-index: 10;
+  top: 28px;
+  left: 36px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .42);
+  color: rgba(255, 255, 255, .9);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  backdrop-filter: blur(10px);
+  transition: border-color .15s, background .15s;
+}
+
+.media-detail-back:hover {
+  border-color: rgba(255, 255, 255, .55);
+  background: rgba(0, 0, 0, .62);
+}
+
+/* ── Main content column (left side) ─────────────────── */
+.media-detail-content {
   position: absolute;
   z-index: 2;
-  top: 28px;
-  border: 1px solid rgba(255, 255, 255, .25);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, .35);
-  color: #fff;
-  cursor: pointer;
-}
-
-.media-detail-back {
-  left: 36px;
-  padding: 9px 14px;
-}
-
-.media-detail-close {
-  right: 36px;
-  width: 38px;
-  height: 38px;
-  font-size: 24px;
-}
-
-.media-detail-hero {
-  position: relative;
-  z-index: 1;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(520px, 50vw);
   display: flex;
-  align-items: end;
-  gap: 26px;
-  min-height: 67vh;
-  padding: 0 7vw 80px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 0 0 7vw;
+  /* Slight bottom offset so it sits at the visual center */
+  padding-top: 10vh;
 }
 
-.media-detail-poster {
-  width: min(220px, 22vw);
-  max-height: 315px;
-  border-radius: 12px;
-  object-fit: cover;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, .5);
+/* ── Logo (fanart.tv) ─────────────────────────────────── */
+.media-detail-logo {
+  display: block;
+  max-width: min(380px, 44vw);
+  max-height: 140px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+  margin: 0 0 18px;
+  /* Drop-shadow para legibilidad sobre cualquier fondo */
+  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, .7));
 }
 
+/* Placeholder mientras carga el logo (evita saltos de layout) */
+.media-detail-title-placeholder {
+  width: min(280px, 36vw);
+  height: 80px;
+  margin: 0 0 18px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, .06) 0%,
+    rgba(255, 255, 255, .13) 40%,
+    rgba(255, 255, 255, .06) 100%
+  );
+  background-size: 200% 100%;
+  animation: media-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes media-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Título texto (fallback cuando no hay logo) ────────── */
 .media-detail-title {
-  max-width: min(980px, calc(100vw - 420px));
+  margin: 0 0 14px;
+  font-weight: 900;
+  line-height: .95;
+  letter-spacing: -.03em;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, .55);
+  /* Tamaño base — se sobreescribe con data-length */
+  font-size: clamp(36px, 5.2vw, 72px);
 }
 
-.media-detail-hero h1 {
-  max-width: 100%;
-  margin: 0 0 10px;
-  font-size: clamp(34px, 5vw, 64px);
+/* Título corto (≤15 chars): tamaño máximo */
+.media-detail-title[data-length='sm'] {
+  font-size: clamp(42px, 6vw, 80px);
+}
+
+/* Título medio (16-25 chars): tamaño estándar */
+.media-detail-title[data-length='md'] {
+  font-size: clamp(34px, 4.8vw, 64px);
+}
+
+/* Título largo (26-40 chars): reducido */
+.media-detail-title[data-length='lg'] {
+  font-size: clamp(26px, 3.6vw, 48px);
+  letter-spacing: -.02em;
   line-height: 1;
 }
 
-.media-detail-hero span {
-  color: rgba(255, 255, 255, .72);
+/* Título muy largo (>40 chars): compacto */
+.media-detail-title[data-length='xl'] {
+  font-size: clamp(18px, 2.6vw, 34px);
+  font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1.08;
 }
+
+/* Metadata row: year · genre · episode count · badges */
+.media-detail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, .72);
+  font-size: 13px;
+}
+
+.media-detail-meta-year {
+  font-weight: 600;
+  color: rgba(255, 255, 255, .88);
+}
+
+.media-detail-meta-dot {
+  color: rgba(255, 255, 255, .35);
+}
+
+.media-detail-meta-badge {
+  padding: 1px 6px;
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, .85);
+  letter-spacing: .04em;
+}
+
+/* Current episode short description */
+.media-detail-ep-desc {
+  margin: 0 0 28px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, .68);
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+.media-detail-ep-desc strong {
+  color: rgba(255, 255, 255, .92);
+  font-weight: 600;
+}
+
+/* ── Action buttons (vertical stack) ─────────────────── */
+.media-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.media-detail-action {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 18px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  backdrop-filter: blur(6px);
+  transition: background .15s, border-color .15s, transform .15s;
+  overflow: hidden;
+}
+
+/* Primary action — solid white fill like Netflix's "Reanudar" */
+.media-detail-action--primary {
+  background: rgba(255, 255, 255, .15);
+  border-color: rgba(255, 255, 255, .35);
+}
+
+.media-detail-action-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  opacity: .9;
+}
+
+/* Progress bar inside the primary button (bottom edge) */
+.media-detail-action-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, .15);
+}
+
+.media-detail-action-progress-bar i {
+  display: block;
+  height: 100%;
+  width: 35%; /* static placeholder — replace with dynamic width if needed */
+  background: #e50914;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Focused state (keyboard / remote) */
+.media-detail-action.is-focused {
+  background: rgba(255, 255, 255, .22);
+  border-color: #fff;
+  transform: translateX(6px);
+  box-shadow: -4px 0 0 0 #fff;
+}
+
+.media-detail-action:hover:not(.is-focused) {
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .36);
+}
+
+/* ═══════════════════════════════════════════════════════
+   EPISODES DRAWER — slides up from the bottom
+   ═══════════════════════════════════════════════════════ */
 
 .media-detail-episodes {
-  position: relative;
-  z-index: 1;
-  padding: 0 7vw 60px;
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 7vw 36px;
+  background: linear-gradient(0deg, #06060a 60%, rgba(6, 6, 10, 0) 100%);
+  /* Hidden by default */
+  transform: translateY(110%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .35s cubic-bezier(.4, 0, .2, 1), opacity .28s ease;
 }
 
-.media-detail-episodes h2 {
-  margin: 0 0 20px;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: .02em;
-  color: rgba(255, 255, 255, .9);
+.media-detail-episodes.is-open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
+.media-detail-episodes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.media-detail-episodes-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.media-detail-episodes-close {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .7);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  transition: background .14s, color .14s;
+}
+
+.media-detail-episodes-close:hover {
+  background: rgba(255, 255, 255, .14);
+  color: #fff;
+}
+
+/* Row */
 .media-detail-episodes-row {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   overflow-x: auto;
-  padding: 10px 4px 16px;
-  /* Hide scrollbar across browsers */
+  padding: 6px 2px 10px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -158,71 +394,68 @@
 }
 
 .media-detail-episodes-row p {
-  color: rgba(255, 255, 255, .55);
-  font-size: 14px;
+  color: rgba(255, 255, 255, .5);
+  font-size: 13px;
 }
 
-/* ── Episode card ─────────────────────────────── */
+/* ── Episode card ─────────────────────────────────────── */
 .media-detail-episodes-row article {
-  flex: 0 0 240px;
+  flex: 0 0 220px;
   overflow: hidden;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, .04);
-  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .08);
   cursor: pointer;
   transition:
-    transform .22s cubic-bezier(.34, 1.4, .64, 1),
-    border-color .18s ease,
-    box-shadow .22s ease;
+    transform .2s cubic-bezier(.34, 1.4, .64, 1),
+    border-color .15s,
+    box-shadow .2s;
 }
 
 .media-detail-episodes-row article:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, .18);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, .45);
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, .2);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .5);
 }
 
-/* Current episode — accent border + subtle glow */
 .media-detail-episodes-row article.is-current {
-  border-color: #ff7184;
-  box-shadow: 0 0 0 1px #ff7184, 0 8px 28px rgba(255, 113, 132, .25);
+  border-color: #e50914;
+  box-shadow: 0 0 0 1px #e50914, 0 6px 24px rgba(229, 9, 20, .25);
 }
 
-/* TV-remote focused episode */
 .media-detail-episodes-row article.is-focused {
-  transform: translateY(-5px) scale(1.03);
+  transform: translateY(-5px) scale(1.04);
   border-color: #fff;
-  box-shadow: 0 0 0 1px #fff, 0 12px 36px rgba(0, 0, 0, .55);
+  box-shadow: 0 0 0 1px #fff, 0 10px 30px rgba(0, 0, 0, .6);
 }
 
 .media-detail-episodes-row article.is-current.is-focused {
-  border-color: #ff7184;
-  box-shadow: 0 0 0 1px #ff7184, 0 12px 36px rgba(255, 113, 132, .3);
+  border-color: #e50914;
+  box-shadow: 0 0 0 1px #e50914, 0 10px 30px rgba(229, 9, 20, .3);
 }
 
-/* ── Thumbnail ─────────────────────────────────── */
+/* Thumbnail */
 .media-detail-episode-thumb {
   position: relative;
-  height: 140px;
-  background: #1e1e28 center / cover no-repeat;
+  height: 124px;
+  background: #1a1a24 center / cover no-repeat;
   overflow: hidden;
 }
 
-/* Dark gradient over thumbnail so overlays are readable */
 .media-detail-episode-thumb::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    160deg,
-    rgba(0, 0, 0, .52) 0%,
-    rgba(0, 0, 0, 0) 55%,
-    rgba(0, 0, 0, .38) 100%
+    155deg,
+    rgba(0,0,0,.48) 0%,
+    rgba(0,0,0,0) 52%,
+    rgba(0,0,0,.3) 100%
   );
   pointer-events: none;
 }
 
-/* Play icon — hidden by default, appears on hover/focus */
+/* Play icon on hover/focus */
 .media-detail-episode-play-icon {
   position: absolute;
   z-index: 2;
@@ -230,11 +463,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
-  color: rgba(255, 255, 255, .9);
+  font-size: 24px;
+  color: rgba(255, 255, 255, .92);
   opacity: 0;
-  transition: opacity .18s ease;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, .8);
+  transition: opacity .16s;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .9);
 }
 
 .media-detail-episodes-row article:hover .media-detail-episode-play-icon,
@@ -242,62 +475,66 @@
   opacity: 1;
 }
 
-/* Episode number badge — top-left */
+/* EP badge — top left */
 .media-detail-episode-num {
   position: absolute;
   z-index: 2;
-  top: 9px;
-  left: 10px;
-  padding: 3px 8px;
-  border-radius: 5px;
-  background: rgba(0, 0, 0, .62);
+  top: 8px;
+  left: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, .65);
   backdrop-filter: blur(4px);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  color: rgba(255, 255, 255, .88);
-  line-height: 1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  color: rgba(255, 255, 255, .85);
+  line-height: 1.4;
 }
 
-/* "Reproduciendo" badge — bottom-right, only on is-current */
+/* "Reproduciendo" badge — bottom right */
 .media-detail-episode-badge {
   position: absolute;
   z-index: 2;
-  bottom: 9px;
-  right: 10px;
-  padding: 3px 9px;
-  border-radius: 5px;
-  background: #ff7184;
-  font-size: 10px;
-  font-weight: 700;
+  bottom: 8px;
+  right: 9px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #e50914;
+  font-size: 9px;
+  font-weight: 800;
   letter-spacing: .05em;
   color: #fff;
-  line-height: 1;
+  line-height: 1.5;
   white-space: nowrap;
 }
 
-/* ── Info bar below thumbnail ──────────────────── */
+/* Info bar */
 .media-detail-episode-info {
-  padding: 10px 12px 11px;
+  padding: 9px 11px 10px;
 }
 
 .media-detail-episode-label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, .78);
+  color: rgba(255, 255, 255, .72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .media-detail-episodes-row article.is-current .media-detail-episode-label {
-  color: #ff9aa5;
+  color: #ff8a8a;
 }
 
 .media-detail-episodes-row article.is-focused .media-detail-episode-label {
   color: #fff;
 }
+
+/* ═══════════════════════════════════════════════════════
+   PLAYER OVERLAY
+   ═══════════════════════════════════════════════════════ */
 
 .media-detail-player {
   position: fixed;
@@ -306,7 +543,7 @@
   background: #000;
 }
 
-.media-detail-player>div,
+.media-detail-player > div,
 .media-detail-player video,
 .media-detail-player iframe {
   width: 100%;
@@ -330,12 +567,17 @@
   cursor: pointer;
   font: inherit;
   backdrop-filter: blur(8px);
+  transition: border-color .15s, background .15s;
 }
 
 .media-detail-player-back:hover {
-  border-color: #ff7184;
-  background: rgba(255, 113, 132, .2);
+  border-color: #e50914;
+  background: rgba(229, 9, 20, .2);
 }
+
+/* ═══════════════════════════════════════════════════════
+   SERVER PICKER MODAL
+   ═══════════════════════════════════════════════════════ */
 
 .media-server-modal-backdrop {
   position: fixed;
@@ -344,71 +586,83 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(0, 0, 0, .7);
-  backdrop-filter: blur(7px);
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(8px);
 }
 
 .media-server-modal {
-  width: min(520px, 100%);
+  width: min(500px, 100%);
   padding: 28px;
-  border: 1px solid rgba(255, 255, 255, .15);
-  border-radius: 16px;
-  background: #181820;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  background: #14141c;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .6);
 }
 
-.media-server-modal>p {
+.media-server-modal > p {
   margin: 0;
-  color: #ff7184;
-  font-size: 12px;
+  color: #e50914;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: .12em;
+  letter-spacing: .14em;
 }
 
 .media-server-modal h2 {
-  margin: 8px 0 22px;
-  font-size: 26px;
+  margin: 8px 0 20px;
+  font-size: 24px;
+  font-weight: 700;
 }
 
-.media-server-modal>span {
-  color: rgba(255, 255, 255, .65);
+.media-server-modal > span {
+  color: rgba(255, 255, 255, .6);
+  font-size: 14px;
 }
 
 .media-server-options {
   display: grid;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 9px;
+  margin-top: 16px;
 }
 
 .media-server-options button {
-  padding: 15px;
-  border: 1px solid rgba(255, 255, 255, .13);
-  border-radius: 9px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
   background: rgba(255, 255, 255, .05);
   color: #fff;
   cursor: pointer;
   font: inherit;
+  font-size: 14px;
   text-align: left;
+  transition: background .14s, border-color .14s;
 }
 
 .media-server-options button.is-focused,
 .media-server-options button:hover {
-  border-color: #ff7184;
-  background: rgba(255, 113, 132, .14);
+  border-color: #e50914;
+  background: rgba(229, 9, 20, .14);
 }
 
 .media-server-options button span {
-  color: #ff7184;
+  color: #e50914;
+  margin-right: 6px;
 }
 
 .media-server-cancel {
   width: 100%;
-  margin-top: 18px;
+  margin-top: 16px;
   padding: 10px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, .65);
+  color: rgba(255, 255, 255, .55);
   cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  transition: color .14s;
+}
+
+.media-server-cancel:hover {
+  color: rgba(255, 255, 255, .9);
 }
 
 .multimedia-source-picker {
