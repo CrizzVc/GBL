@@ -698,13 +698,6 @@ function App(): React.JSX.Element {
   const [multimediaFocus, setMultimediaFocus] = useState<'hero' | 'continue'>('hero');
   const [continueWatchingIndex, setContinueWatchingIndex] = useState(0);
 
-  useEffect(() => {
-    if (nativeView !== 'multimedia' || isHeroPaused) return;
-    const id = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 7000);
-    return () => clearInterval(id);
-  }, [nativeView, isHeroPaused, heroSlides.length]);
 
   useEffect(() => {
     if (nativeView !== 'multimedia' || multimediaExtensionId !== 'animeav1') return
@@ -3438,7 +3431,7 @@ function App(): React.JSX.Element {
       {nativeView === 'multimedia' && (
         <MultimediaView
           heroItem={heroItem}
-          heroSlides={heroSlides}
+          // heroSlides={heroSlides}
           activeSlide={activeSlide}
           setActiveSlide={setActiveSlide}
           continueWatching={multimediaCards}

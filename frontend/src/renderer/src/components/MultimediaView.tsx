@@ -12,7 +12,7 @@ interface HeroItem {
 
 interface MultimediaViewProps {
   heroItem: HeroItem;
-  heroSlides: HeroItem[];
+  // heroSlides: HeroItem[];
   activeSlide: number;
   setActiveSlide: (i: number) => void;
   continueWatching: { id: number; title: string; season: string; episode: string; progress: number; posterImage?: string | null; episodeImage?: string | null }[];
@@ -35,7 +35,7 @@ interface MultimediaViewProps {
 
 const MultimediaView: React.FC<MultimediaViewProps> = ({
   heroItem,
-  heroSlides,
+  // heroSlides,
   activeSlide,
   setActiveSlide,
   continueWatching,
@@ -125,7 +125,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             <button type="button" className="multimedia-secondary">Mi lista</button>
           </div> */}
 
-          <div className="multimedia-dots">
+          {/* <div className="multimedia-dots">
             {heroSlides.map((slide, i) => (
               <span
                 key={slide.id}
@@ -133,7 +133,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
                 onClick={() => setActiveSlide(i)}
               />
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -173,11 +173,11 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             style={{ transform: `translateX(-${focusedCardOffset}px)` }}
           >
             {continueWatching.map((item, index) => (
-            <article
+              <article
                 className={`multimedia-card card-${(index % 5) + 1} ${index === continueWatchingIndex ? 'is-selected' : ''} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
                 key={item.id}
-              ref={index === continueWatchingIndex ? focusedCardRef : null}
-              onClick={() => onEpisodeClick(item)}
+                ref={index === continueWatchingIndex ? focusedCardRef : null}
+                onClick={() => onEpisodeClick(item)}
               >
                 <div
                   className="multimedia-card-thumb"
