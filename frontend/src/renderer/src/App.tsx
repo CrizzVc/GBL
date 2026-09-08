@@ -2679,11 +2679,11 @@ function App(): React.JSX.Element {
         return
       }
 
-      if (nativeView === 'multimedia') {
+      if (nativeView === 'multimedia' && !sidebarOpen) {
         if (e.key === 'Escape') {
           e.preventDefault()
-          playClose()
-          setNativeView(null)
+          playEnter()
+          setSidebarOpen(true)
           return
         }
 
@@ -2729,7 +2729,7 @@ function App(): React.JSX.Element {
         return
       }
 
-      if (nativeView) {
+      if (nativeView && !sidebarOpen) {
         if (e.key === 'Escape') {
           e.preventDefault()
           playClose()
@@ -2763,7 +2763,7 @@ function App(): React.JSX.Element {
         if (e.key === 'ArrowDown') {
           e.preventDefault()
           setSidebarIndex((prev) => {
-            const next = Math.min(prev + 1, 6 + sidebarExtensions.length)
+            const next = Math.min(prev + 1, 7 + sidebarExtensions.length)
             if (next !== prev) playMove()
             return next
           })
@@ -2777,16 +2777,17 @@ function App(): React.JSX.Element {
         } else if (e.key === 'Enter') {
           e.preventDefault()
           playEnter()
-          if (sidebarIndex === 0) openAddGameModal()
-          else if (sidebarIndex === 1) handleOpenStore(defaultStore)
-          else if (sidebarIndex === 2) handleOpenSpecs()
-          else if (sidebarIndex === 3) setShowDownloadsModal(true)
-          else if (sidebarIndex === 4) openExtensions()
-          else if (sidebarIndex >= 5 && sidebarIndex < 5 + sidebarExtensions.length) {
-            const extension = sidebarExtensions[sidebarIndex - 5]
+          if (sidebarIndex === 0) { setNativeView(null); playHome() }
+          else if (sidebarIndex === 1) openAddGameModal()
+          else if (sidebarIndex === 2) handleOpenStore(defaultStore)
+          else if (sidebarIndex === 3) handleOpenSpecs()
+          else if (sidebarIndex === 4) setShowDownloadsModal(true)
+          else if (sidebarIndex === 5) openExtensions()
+          else if (sidebarIndex >= 6 && sidebarIndex < 6 + sidebarExtensions.length) {
+            const extension = sidebarExtensions[sidebarIndex - 6]
             if (extension) openExtension(extension)
-          } else if (sidebarIndex === 5 + sidebarExtensions.length) setModal('settings')
-          else if (sidebarIndex === 6 + sidebarExtensions.length) window.api.quitApp()
+          } else if (sidebarIndex === 6 + sidebarExtensions.length) setModal('settings')
+          else if (sidebarIndex === 7 + sidebarExtensions.length) window.api.quitApp()
           setSidebarOpen(false)
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Escape') {
           e.preventDefault()
@@ -2966,6 +2967,10 @@ function App(): React.JSX.Element {
             playEnter()
             setDetailGameId(selectedGameId)
           }
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          playEnter()
+          setSidebarOpen(true)
         }
       }
     }
@@ -3271,35 +3276,38 @@ function App(): React.JSX.Element {
             HASHI
           </h1>
         </div>
-        <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 0 ? 'focused' : ''}`} onClick={() => { setNativeView(null); playHome(); setSidebarOpen(false); }}>
+          <div className="sidebar-item-icon"><HomeIcon size={18} /></div> {t.home}
+        </button>
+        <button className={`sidebar-item ${sidebarIndex === 1 ? 'focused' : ''}`} onClick={() => { openAddGameModal(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><PlusIcon size={18} /></div> {t.addGame}
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 1 ? 'focused' : ''}`} onClick={() => { handleOpenStore(defaultStore); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 2 ? 'focused' : ''}`} onClick={() => { handleOpenStore(defaultStore); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><StoreIcon size={18} /></div> {t.store}
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 2 ? 'focused' : ''}`} onClick={() => { handleOpenSpecs(); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { handleOpenSpecs(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><SystemIcon size={18} /></div> {t.specs}
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 3 ? 'focused' : ''}`} onClick={() => { setShowDownloadsModal(true); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { setShowDownloadsModal(true); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><DownloadIcon size={18} /></div> {t.downloads}
         </button>
-        <button className={`sidebar-item ${sidebarIndex === 4 ? 'focused' : ''}`} onClick={() => { openExtensions(); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 5 ? 'focused' : ''}`} onClick={() => { openExtensions(); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><ExtensionIcon size={18} /></div> {t.extensions}
         </button>
         {sidebarExtensions.map((extension, index) => (
           <button
-            className={`sidebar-item ${sidebarIndex === 5 + index ? 'focused' : ''}`}
+            className={`sidebar-item ${sidebarIndex === 6 + index ? 'focused' : ''}`}
             key={extension.id}
             onClick={() => { openExtension(extension); setSidebarOpen(false) }}
           >
             <div className="sidebar-item-icon"><GlobeIcon size={18} /></div> {extension.name}
           </button>
         ))}
-        <button className={`sidebar-item ${sidebarIndex === 5 + sidebarExtensions.length ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
+        <button className={`sidebar-item ${sidebarIndex === 6 + sidebarExtensions.length ? 'focused' : ''}`} onClick={() => { setModal('settings'); setSidebarOpen(false); }}>
           <div className="sidebar-item-icon"><SettingsIcon size={18} /></div> {t.settings}
         </button>
         <div style={{ marginTop: 'auto' }}>
-          <button className={`sidebar-item ${sidebarIndex === 6 + sidebarExtensions.length ? 'focused' : ''}`} onClick={() => window.api.quitApp()}>
+          <button className={`sidebar-item ${sidebarIndex === 7 + sidebarExtensions.length ? 'focused' : ''}`} onClick={() => window.api.quitApp()}>
             <div className="sidebar-item-icon"><PowerIcon size={18} /></div> {t.exit}
           </button>
         </div>

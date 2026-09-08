@@ -77,10 +77,10 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
           <p className={`multimedia-description ${isContinueFocused ? 'is-hidden' : ''}`}>
             {heroItem.description}
           </p>
-          <div className={`multimedia-actions ${isContinueFocused ? 'is-hidden' : ''}`}>
+          {/* <div className={`multimedia-actions ${isContinueFocused ? 'is-hidden' : ''}`}>
             <button type="button" className="multimedia-primary">Ir al título</button>
             <button type="button" className="multimedia-secondary">Mi lista</button>
-          </div>
+          </div> */}
 
           <div className="multimedia-dots">
             {heroSlides.map((slide, i) => (
