@@ -59,8 +59,26 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   const focusedCardRef = React.useRef<HTMLElement | null>(null);
   const [focusedCardOffset, setFocusedCardOffset] = React.useState(0);
   const [isSourcePickerOpen, setIsSourcePickerOpen] = React.useState(false);
+  const [selectedBackdrop, setSelectedBackdrop] = React.useState<string | null>(null);
   const activeSource = sources.find((source) => source.id === activeSourceId) || sources[0];
   const selectedAnime = continueWatching[continueWatchingIndex];
+
+  React.useEffect(() => {
+    if (!selectedAnime?.title) {
+      setSelectedBackdrop(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    setSelectedBackdrop(null);
+    void fetch(`http://localhost:3000/api/tmdb/backdrop?query=${encodeURIComponent(selectedAnime.title)}`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { backdrop?: string | null } | null) => setSelectedBackdrop(data?.backdrop || null))
+      .catch((error: unknown) => {
+        if ((error as { name?: string }).name !== 'AbortError') console.error('No se pudo cargar el fondo del anime:', error);
+      });
+    return () => controller.abort();
+  }, [selectedAnime?.title]);
 
   React.useLayoutEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -75,7 +93,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
     <main className={`multimedia-view ${hideFocusedCardTitle ? 'hide-focused-card-title' : ''}`} aria-label="Multimedia">
       <div
         className={`multimedia-hero ${isContinueFocused ? 'is-collapsed' : ''}`}
-        style={{ backgroundImage: `url(${heroItem.backdrop})` }}
+        style={{ backgroundImage: `url(${selectedBackdrop || selectedAnime?.episodeImage || selectedAnime?.posterImage || heroItem.backdrop})` }}
         onMouseEnter={() => setIsHeroPaused(true)}
         onMouseLeave={() => setIsHeroPaused(false)}
       >

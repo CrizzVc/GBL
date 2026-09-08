@@ -116,6 +116,9 @@ const MediaDetailView: React.FC<MediaDetailViewProps> = ({ item, onClose }) => {
       )}
       {playerEpisode && (
         <div className="media-detail-player">
+          <button type="button" className="media-detail-player-back" onClick={() => setPlayerEpisode(null)}>
+            ‹ Volver al detalle
+          </button>
           <VideoPlayer
             src={playerEpisode.url}
             title={`${item.title} · Episodio ${playerEpisode.episode}`}
