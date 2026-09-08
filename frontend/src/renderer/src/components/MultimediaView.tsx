@@ -30,6 +30,7 @@ interface MultimediaViewProps {
   sources: { id: string; name: string }[];
   onSourceChange: (sourceId: string) => void;
   hideFocusedCardTitle?: boolean;
+  onEpisodeClick: (item: { id: number; title: string; episode: string; posterImage?: string | null; episodeImage?: string | null; animeUrl?: string | null }) => void;
 }
 
 const MultimediaView: React.FC<MultimediaViewProps> = ({
@@ -52,6 +53,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   sources,
   onSourceChange,
   hideFocusedCardTitle = false,
+  onEpisodeClick,
 }) => {
   const isContinueFocused = focusedSection === 'continue';
   const focusedCardRef = React.useRef<HTMLElement | null>(null);
@@ -153,10 +155,11 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             style={{ transform: `translateX(-${focusedCardOffset}px)` }}
           >
             {continueWatching.map((item, index) => (
-              <article
+            <article
                 className={`multimedia-card card-${(index % 5) + 1} ${index === continueWatchingIndex ? 'is-selected' : ''} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
                 key={item.id}
-                ref={index === continueWatchingIndex ? focusedCardRef : null}
+              ref={index === continueWatchingIndex ? focusedCardRef : null}
+              onClick={() => onEpisodeClick(item)}
               >
                 <div
                   className="multimedia-card-thumb"

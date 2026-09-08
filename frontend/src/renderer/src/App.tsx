@@ -32,6 +32,7 @@ import { DownloadsModal } from './components/DownloadsModal'
 import { ModalHelper } from './components/ModalHelper'
 
 import MultimediaView from './components/MultimediaView';
+import MediaDetailView, { MediaItem } from './components/MediaDetailView';
 import { useFriendNotifications } from './hooks/useFriendNotifications'
 import { useSteamDownloads } from './hooks/useSteamDownloads'
 
@@ -138,6 +139,7 @@ interface MultimediaCard {
   progress: number
   posterImage?: string | null
   episodeImage?: string | null
+  animeUrl?: string | null
 }
 
 interface Store {
@@ -492,6 +494,7 @@ function App(): React.JSX.Element {
   const [nativeView, setNativeView] = useState<'multimedia' | null>(null)
   const [multimediaExtensionId, setMultimediaExtensionId] = useState<string | null>(null)
   const [animeAV1Latest, setAnimeAV1Latest] = useState<MultimediaCard[]>([])
+  const [mediaDetail, setMediaDetail] = useState<MediaItem | null>(null)
   const [extensions, setExtensions] = useState<LauncherExtension[]>([])
   const [extensionsLoading, setExtensionsLoading] = useState(false)
   const [showDownloadsModal, setShowDownloadsModal] = useState(false)
@@ -710,7 +713,7 @@ function App(): React.JSX.Element {
     void fetch('http://localhost:3000/api/animeav1/latest', { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`AnimeAV1 respondió con ${response.status}`)
-        return response.json() as Promise<{ success?: boolean; data?: Array<{ title?: string; episode?: string; posterImage?: string | null; episodeImage?: string | null }> }>
+        return response.json() as Promise<{ success?: boolean; data?: Array<{ title?: string; episode?: string; posterImage?: string | null; episodeImage?: string | null; animeUrl?: string | null }> }>
       })
       .then((payload) => {
         if (!payload.success || !Array.isArray(payload.data)) return
@@ -723,7 +726,8 @@ function App(): React.JSX.Element {
             episode: String(item.episode || '—').replace(/^episodio\s*/i, ''),
             progress: 0,
             posterImage: item.posterImage || null,
-            episodeImage: item.episodeImage || null
+            episodeImage: item.episodeImage || null,
+            animeUrl: item.animeUrl || null
           }))
         if (latest.length > 0) setAnimeAV1Latest(latest)
       })
@@ -3452,8 +3456,10 @@ function App(): React.JSX.Element {
           activeSourceId={multimediaExtensionId || 'multimedia'}
           sources={multimediaSources}
           onSourceChange={(sourceId) => { setMultimediaExtensionId(sourceId); setContinueWatchingIndex(0) }}
+          onEpisodeClick={(item) => setMediaDetail(item)}
         />
       )}
+      {mediaDetail && <MediaDetailView item={mediaDetail} onClose={() => setMediaDetail(null)} />}
 
       {/* ── Hero section ── */}
       <section className="hero-section">

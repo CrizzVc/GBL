@@ -66,3 +66,21 @@ export async function getLatestAnimeAV1() {
 
   return latest;
 }
+
+export async function getAnimeAV1Episodes(animeUrl) {
+  const $ = cheerio.load(await fetchPage(animeUrl));
+  const episodes = [];
+  const seen = new Set();
+  $('a[href*="/media/"]').each((_index, element) => {
+    const href = $(element).attr('href');
+    const parts = (href || '').split('/').filter(Boolean);
+    if (parts.length !== 3 || seen.has(href)) return;
+    seen.add(href);
+    episodes.push({
+      episode: parts[2],
+      episodeUrl: toAbsoluteUrl(href),
+      image: toAbsoluteUrl($(element).find('img').first().attr('src'))
+    });
+  });
+  return episodes.sort((a, b) => Number(a.episode) - Number(b.episode));
+}
