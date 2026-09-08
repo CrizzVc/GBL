@@ -3270,6 +3270,26 @@ function App(): React.JSX.Element {
         onClick={() => setSidebarOpen(false)}
       />
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{}}>
+
+        {/* <section className={`sidebar-bottom ${sidebarOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', position: 'fixed', top: '20px', left: '340px', gap: '10px' }}>
+          <button className={`sidebar-item ${sidebarIndex === 9 ? 'focused' : ''}`}
+            onClick={() => { setNativeView(null); setSidebarOpen(false); }}
+            style={{
+              border: '1px solid black', width: "50px", height: "50px", borderRadius: "100px", padding: "15px"
+            }}>
+
+            <div className="sidebar-item-icon"><HomeIcon size={18} /></div>
+          </button>
+
+          <button className={`sidebar-item ${sidebarIndex === 10 ? 'focused' : ''}`}
+            onClick={() => { openAddGameModal(); setSidebarOpen(false); }}
+            style={{
+              border: '1px solid black', width: "50px", height: "50px", borderRadius: "100px", padding: "15px"
+            }}>
+            <div className="sidebar-item-icon"><PlusIcon size={18} /></div>
+          </button>
+        </section> */}
+
         <div className="sidebar-title" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <img src={hashiLogo} alt="Hashi" className="app-icon" style={{ width: '64px', height: '64px' }} />
           <h1 style={{ fontWeight: 'bold' }}>
