@@ -207,11 +207,11 @@ const heroItem = {
 };
 
 const continueWatching = [
-  { id: 1, title: 'Ciudad de Cristal', subtitle: 'T1 · E4', progress: 62 },
-  { id: 2, title: 'El Último Faro', subtitle: 'Recién añadido', progress: 0 },
-  { id: 3, title: 'Rutas Perdidas', subtitle: 'Continuar · T2 E7', progress: 35 },
-  { id: 4, title: 'Marea Negra', subtitle: 'Recién añadido', progress: 0 },
-  { id: 5, title: 'Sombra de Acero', subtitle: 'Continuar · T1 E1', progress: 80 },
+  { id: 1, title: 'Ciudad de Cristal', season: '1', episode: '4', progress: 62 },
+  { id: 2, title: 'El Último Faro', season: '1', episode: '1', progress: 0 },
+  { id: 3, title: 'Rutas Perdidas', season: '2', episode: '7', progress: 35 },
+  { id: 4, title: 'Marea Negra', season: '1', episode: '1', progress: 0 },
+  { id: 5, title: 'Sombra de Acero', season: '1', episode: '1', progress: 80 },
 ];
 
 
@@ -3269,9 +3269,8 @@ function App(): React.JSX.Element {
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(false)}
       />
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{}}>
-
-        {/* <section className={`sidebar-bottom ${sidebarOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', position: 'fixed', top: '20px', left: '340px', gap: '10px' }}>
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <section className={`sidebar-bottom ${sidebarOpen ? 'open' : ''}`}>
           <button className={`sidebar-item ${sidebarIndex === 9 ? 'focused' : ''}`}
             onClick={() => { setNativeView(null); setSidebarOpen(false); }}
             style={{
@@ -3288,7 +3287,7 @@ function App(): React.JSX.Element {
             }}>
             <div className="sidebar-item-icon"><PlusIcon size={18} /></div>
           </button>
-        </section> */}
+        </section>
 
         <div className="sidebar-title" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <img src={hashiLogo} alt="Hashi" className="app-icon" style={{ width: '64px', height: '64px' }} />

@@ -15,7 +15,7 @@ interface MultimediaViewProps {
   heroSlides: HeroItem[];
   activeSlide: number;
   setActiveSlide: (i: number) => void;
-  continueWatching: { id: number; title: string; subtitle: string; progress: number }[];
+  continueWatching: { id: number; title: string; season: string; episode: string; progress: number }[];
   setNativeView: (view: 'multimedia' | null) => void;
   isHeroPaused: boolean;
   setIsHeroPaused: (p: boolean) => void;
@@ -42,6 +42,21 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   continueWatchingIndex,
 }) => {
   const isContinueFocused = focusedSection === 'continue';
+  const focusedCardRef = React.useRef<HTMLElement | null>(null);
+
+  React.useLayoutEffect(() => {
+    if (!isContinueFocused) return;
+
+    const frame = requestAnimationFrame(() => {
+      focusedCardRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'start',
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [continueWatchingIndex, isContinueFocused]);
 
   return (
     <main className="multimedia-view" aria-label="Multimedia">
@@ -104,14 +119,20 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             <article
               className={`multimedia-card card-${(index % 5) + 1} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
               key={item.id}
+              ref={isContinueFocused && index === continueWatchingIndex ? focusedCardRef : null}
             >
               <div className="multimedia-card-thumb">
                 <div className="multimedia-card-progress">
                   <i style={{ width: `${item.progress}%` }} />
                 </div>
               </div>
-              <p className="multimedia-card-title">{item.title}</p>
-              <p className="multimedia-card-subtitle">{item.subtitle}</p>
+              <div className="multimedia-card-info">
+                <p className="multimedia-card-title">{item.title}</p>
+                <div className="multimedia-card-meta">
+                  <span>Temp. {item.season}</span>
+                  <span>Ep. {item.episode}</span>
+                </div>
+              </div>
             </article>
           ))}
         </div>

@@ -208,10 +208,6 @@
   gap: 22px;
 }
 
-.multimedia-rail.is-focused .multimedia-card {
-  width: clamp(240px, 22vw, 320px);
-}
-
 .multimedia-rail.is-focused .multimedia-card-thumb {
   box-shadow: 0 14px 30px rgba(0, 0, 0, .45);
 }
@@ -241,6 +237,7 @@
   overflow-y: visible;
   padding: 14px 14px 10px;
   margin: -14px -14px 0;
+  scroll-padding-left: 14px;
   transition: gap .3s ease;
   scrollbar-width: none;
   /* Firefox */
@@ -253,27 +250,35 @@
   /* Chrome / Safari */
 }
 
-/* Tarjeta con miniatura arriba y texto debajo, como una fila "seguir viendo" */
+/* Las tarjetas sin foco son portadas verticales. */
 .multimedia-card {
   flex: 0 0 auto;
-  width: 300px;
-  /* width: clamp(190px, 16vw, 230px); */
+  width: clamp(130px, 12vw, 172px);
+  height: clamp(200px, 20vw, 280px);
   cursor: pointer;
-  transition: width .3s ease, transform .2s ease;
+  transition: width .3s ease, transform .2s ease, box-shadow .2s ease;
 }
 
 .multimedia-card.is-focused {
-  transform: scale(1.03);
+  display: flex;
+  width: clamp(330px, 34vw, 460px);
+  background: #171720;
+  border-radius: 10px;
+  outline: 3px solid #ff7184;
+  outline-offset: 3px;
+  transform: scale(1.02);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .45);
 }
 
 .multimedia-card.is-focused .multimedia-card-thumb {
-  outline: 3px solid #ff7184;
-  outline-offset: 3px;
+  width: 42%;
+  border-radius: 10px 0 0 10px;
 }
 
 .multimedia-card-thumb {
   position: relative;
-  aspect-ratio: 16 / 10;
+  width: 100%;
+  height: 100%;
   border-radius: 10px;
   overflow: hidden;
   background: linear-gradient(140deg, #574a68, #191d34 80%);
@@ -311,16 +316,39 @@
   background: #ff7184;
 }
 
-.multimedia-card-title {
-  margin: 9px 0 2px;
-  font-size: 13.5px;
-  font-weight: 600;
-  line-height: 1.3;
+.multimedia-card-info {
+  display: none;
 }
 
-.multimedia-card-subtitle {
-  color: rgba(255, 255, 255, .5);
-  font-size: 12px;
+.multimedia-card.is-focused .multimedia-card-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.multimedia-card-title {
+  margin: 0;
+  font-size: clamp(18px, 1.8vw, 25px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.multimedia-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: rgba(255, 255, 255, .68);
+  font-size: 13px;
+}
+
+.multimedia-card-meta span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
 }
 
 

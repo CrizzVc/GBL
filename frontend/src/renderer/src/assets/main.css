@@ -522,6 +522,25 @@
   left: 0;
 }
 
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 20px;
+  left: 340px;
+  gap: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-16px);
+  transition: opacity var(--gbl-transition-normal), transform var(--gbl-transition-normal);
+}
+
+.sidebar-bottom.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
 .sidebar-title {
   font-size: 20px;
   font-weight: 600;
