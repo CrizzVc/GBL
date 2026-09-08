@@ -306,6 +306,8 @@
   border-radius: 10px;
   overflow: hidden;
   background: linear-gradient(140deg, #574a68, #191d34 80%);
+  background-position: center;
+  background-size: cover;
   box-shadow: 0 10px 24px rgba(0, 0, 0, .35);
 }
 

@@ -15,7 +15,7 @@ interface MultimediaViewProps {
   heroSlides: HeroItem[];
   activeSlide: number;
   setActiveSlide: (i: number) => void;
-  continueWatching: { id: number; title: string; season: string; episode: string; progress: number }[];
+  continueWatching: { id: number; title: string; season: string; episode: string; progress: number; image?: string | null }[];
   setNativeView: (view: 'multimedia' | null) => void;
   isHeroPaused: boolean;
   setIsHeroPaused: (p: boolean) => void;
@@ -24,6 +24,8 @@ interface MultimediaViewProps {
   onProfileClick: () => void;
   focusedSection: 'hero' | 'continue';
   continueWatchingIndex: number;
+  railTitle?: string;
+  railSubtitle?: string;
 }
 
 const MultimediaView: React.FC<MultimediaViewProps> = ({
@@ -40,6 +42,8 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   onProfileClick,
   focusedSection,
   continueWatchingIndex,
+  railTitle = 'Continuar viendo',
+  railSubtitle = 'Próximamente',
 }) => {
   const isContinueFocused = focusedSection === 'continue';
   const focusedCardRef = React.useRef<HTMLElement | null>(null);
@@ -107,8 +111,8 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
 
       <section className={`multimedia-rail ${isContinueFocused ? 'is-focused' : ''}`}>
         <div className="multimedia-rail-heading">
-          <h2>Continuar viendo</h2>
-          <span>Próximamente</span>
+          <h2>{railTitle}</h2>
+          <span>{railSubtitle}</span>
         </div>
         <div className="multimedia-cards">
           <div
@@ -121,7 +125,10 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
               key={item.id}
               ref={index === continueWatchingIndex ? focusedCardRef : null}
             >
-              <div className="multimedia-card-thumb">
+              <div
+                className="multimedia-card-thumb"
+                style={item.image ? { backgroundImage: `url("${item.image}")` } : undefined}
+              >
                 <div className="multimedia-card-progress">
                   <i style={{ width: `${item.progress}%` }} />
                 </div>

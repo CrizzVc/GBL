@@ -130,6 +130,15 @@ interface LauncherExtension {
   enabled: boolean
 }
 
+interface MultimediaCard {
+  id: number
+  title: string
+  season: string
+  episode: string
+  progress: number
+  image?: string | null
+}
+
 interface Store {
   id: string
   name: string
@@ -206,7 +215,7 @@ const heroItem = {
   backdrop: '/img/ecos-del-vacio-backdrop.jpg',
 };
 
-const continueWatching = [
+const continueWatching: MultimediaCard[] = [
   { id: 1, title: 'Ciudad de Cristal', season: '1', episode: '4', progress: 62 },
   { id: 2, title: 'El Último Faro', season: '1', episode: '1', progress: 0 },
   { id: 3, title: 'Rutas Perdidas', season: '2', episode: '7', progress: 35 },
@@ -480,6 +489,8 @@ function App(): React.JSX.Element {
   const [clock, setClock] = useState('')
   const [modal, setModal] = useState<ModalType>(null)
   const [nativeView, setNativeView] = useState<'multimedia' | null>(null)
+  const [multimediaExtensionId, setMultimediaExtensionId] = useState<string | null>(null)
+  const [animeAV1Latest, setAnimeAV1Latest] = useState<MultimediaCard[]>([])
   const [extensions, setExtensions] = useState<LauncherExtension[]>([])
   const [extensionsLoading, setExtensionsLoading] = useState(false)
   const [showDownloadsModal, setShowDownloadsModal] = useState(false)
@@ -565,6 +576,7 @@ function App(): React.JSX.Element {
 
   const openExtension = useCallback((extension: LauncherExtension): void => {
     if (extension.type === 'native' && extension.nativeView) {
+      setMultimediaExtensionId(extension.id)
       setNativeView(extension.nativeView)
       return
     }
@@ -689,6 +701,36 @@ function App(): React.JSX.Element {
     return () => clearInterval(id);
   }, [nativeView, isHeroPaused, heroSlides.length]);
 
+  useEffect(() => {
+    if (nativeView !== 'multimedia' || multimediaExtensionId !== 'animeav1') return
+
+    const controller = new AbortController()
+    void fetch('http://localhost:3000/api/animeav1/latest', { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`AnimeAV1 respondió con ${response.status}`)
+        return response.json() as Promise<{ success?: boolean; data?: Array<{ title?: string; episode?: string; image?: string | null }> }>
+      })
+      .then((payload) => {
+        if (!payload.success || !Array.isArray(payload.data)) return
+        const latest = payload.data
+          .filter((item) => item.title)
+          .map((item, index): MultimediaCard => ({
+            id: index + 1,
+            title: item.title!.trim(),
+            season: '—',
+            episode: String(item.episode || '—').replace(/^episodio\s*/i, ''),
+            progress: 0,
+            image: item.image || null
+          }))
+        if (latest.length > 0) setAnimeAV1Latest(latest)
+      })
+      .catch((error: unknown) => {
+        if ((error as { name?: string }).name !== 'AbortError') console.error('No se pudo cargar AnimeAV1:', error)
+      })
+
+    return () => controller.abort()
+  }, [nativeView, multimediaExtensionId])
+
   // Reinicia el foco de la vista multimedia cada vez que se abre
   useEffect(() => {
     if (nativeView === 'multimedia') {
@@ -710,6 +752,9 @@ function App(): React.JSX.Element {
   }, [nativeView])
 
   const heroItem = heroSlides[activeSlide];
+  const multimediaCards = multimediaExtensionId === 'animeav1' && animeAV1Latest.length > 0
+    ? animeAV1Latest
+    : continueWatching
 
   // Computes the 3 most recently added games dynamically
   const last3AddedGames = useMemo(() => {
@@ -3383,7 +3428,7 @@ function App(): React.JSX.Element {
           heroSlides={heroSlides}
           activeSlide={activeSlide}
           setActiveSlide={setActiveSlide}
-          continueWatching={continueWatching}
+          continueWatching={multimediaCards}
           setNativeView={setNativeView}
           isHeroPaused={isHeroPaused}
           setIsHeroPaused={setIsHeroPaused}
@@ -3392,6 +3437,8 @@ function App(): React.JSX.Element {
           onProfileClick={() => { if (!sidebarOpen) { playEnter(); setSidebarOpen(true) } else { playClose(); setSidebarOpen(false) } }}
           focusedSection={multimediaFocus}
           continueWatchingIndex={continueWatchingIndex}
+          railTitle={multimediaExtensionId === 'animeav1' ? 'AnimeAV1' : undefined}
+          railSubtitle={multimediaExtensionId === 'animeav1' ? 'Últimos episodios' : undefined}
         />
       )}
 

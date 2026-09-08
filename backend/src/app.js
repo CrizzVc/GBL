@@ -4,6 +4,7 @@ import cors from 'cors';
 import storeRoutes from './routes/store.js';
 import steamgridRoutes from './routes/steamgrid.js';
 import steamRoutes from './routes/steam.js';
+import animeav1Routes from './routes/animeav1.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use('/api/store', storeRoutes);
 app.use('/api/steamgrid', steamgridRoutes);
 app.use('/api/steam', steamRoutes);
+app.use('/api/animeav1', animeav1Routes);
 
 app.listen(PORT, () => {
   console.log(`[GBL Backend] API running on http://localhost:${PORT}`);
