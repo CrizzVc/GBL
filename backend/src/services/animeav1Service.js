@@ -84,3 +84,19 @@ export async function getAnimeAV1Episodes(animeUrl) {
   });
   return episodes.sort((a, b) => Number(a.episode) - Number(b.episode));
 }
+
+export async function getAnimeAV1Servers(episodeUrl) {
+  const html = await fetchPage(episodeUrl);
+  const servers = [];
+  const seen = new Set();
+  const regex = /{server:"([^"]+)",url:"([^"]+)"}/g;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    const url = match[2].replace(/\\/g, '');
+    if (!seen.has(url)) {
+      seen.add(url);
+      servers.push({ name: match[1], url });
+    }
+  }
+  return servers;
+}

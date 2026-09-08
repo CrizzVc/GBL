@@ -26,6 +26,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "hls.js": "^1.7.2",
+    "lucide-react": "^1.42.0",
     "win-media-control": "^0.1.1",
     "windows-media-sessions": "^1.0.3"
   },

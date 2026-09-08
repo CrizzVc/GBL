@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAnimeAV1Episodes, getLatestAnimeAV1 } from '../services/animeav1Service.js';
+import { getAnimeAV1Episodes, getAnimeAV1Servers, getLatestAnimeAV1 } from '../services/animeav1Service.js';
 
 const router = Router();
 
@@ -23,6 +23,19 @@ router.get('/episodes', async (req, res) => {
   } catch (error) {
     console.error('[AnimeAV1] No se pudieron obtener los episodios:', error.message);
     res.status(502).json({ success: false, error: 'No se pudieron consultar los episodios.' });
+  }
+});
+
+router.get('/servers', async (req, res) => {
+  const { url } = req.query;
+  if (typeof url !== 'string' || !url.startsWith('https://animeav1.com/media/')) {
+    return res.status(400).json({ success: false, error: 'URL de episodio no válida.' });
+  }
+  try {
+    res.json({ success: true, data: await getAnimeAV1Servers(url) });
+  } catch (error) {
+    console.error('[AnimeAV1] No se pudieron obtener los servidores:', error.message);
+    res.status(502).json({ success: false, error: 'No se pudieron consultar los servidores.' });
   }
 });
 

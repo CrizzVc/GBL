@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Hls from 'hls.js';
 import VideoControls from './VideoControls';
 
+const EMPTY_SUBTITLES = [];
+
 const VideoPlayer = ({
     src,
     title,
-    subtitles: externalSubtitles = [],
+    subtitles: externalSubtitles = EMPTY_SUBTITLES,
     nextEpisode,
     onBack,
     onEnded,
@@ -546,7 +548,6 @@ const VideoPlayer = ({
                         key={iframeKey}
                         src={iframeSrc}
                         className="w-full h-full border-none"
-                        allowFullScreen
                         allow="autoplay; fullscreen"
                     ></iframe>
 
