@@ -132,56 +132,171 @@
 .media-detail-episodes {
   position: relative;
   z-index: 1;
-  padding: 0 7vw 50px;
+  padding: 0 7vw 60px;
 }
 
 .media-detail-episodes h2 {
-  margin: 0 0 16px;
-  font-size: 22px;
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: rgba(255, 255, 255, .9);
 }
 
 .media-detail-episodes-row {
   display: flex;
-  gap: 18px;
+  gap: 14px;
   overflow-x: auto;
-  padding: 6px;
+  padding: 10px 4px 16px;
+  /* Hide scrollbar across browsers */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.media-detail-episodes-row::-webkit-scrollbar {
+  display: none;
 }
 
 .media-detail-episodes-row p {
-  color: rgba(255, 255, 255, .65);
+  color: rgba(255, 255, 255, .55);
+  font-size: 14px;
 }
 
+/* ── Episode card ─────────────────────────────── */
 .media-detail-episodes-row article {
-  flex: 0 0 290px;
+  flex: 0 0 240px;
   overflow: hidden;
-  border-radius: 12px;
-  background: #16161d;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .07);
   cursor: pointer;
-  transition: transform .2s ease, outline-color .2s ease;
+  transition:
+    transform .22s cubic-bezier(.34, 1.4, .64, 1),
+    border-color .18s ease,
+    box-shadow .22s ease;
 }
 
+.media-detail-episodes-row article:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, .18);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .45);
+}
+
+/* Current episode — accent border + subtle glow */
 .media-detail-episodes-row article.is-current {
-  outline: 3px solid #ff7184;
+  border-color: #ff7184;
+  box-shadow: 0 0 0 1px #ff7184, 0 8px 28px rgba(255, 113, 132, .25);
 }
 
+/* TV-remote focused episode */
 .media-detail-episodes-row article.is-focused {
-  transform: scale(1.04);
-  outline: 3px solid #fff;
+  transform: translateY(-5px) scale(1.03);
+  border-color: #fff;
+  box-shadow: 0 0 0 1px #fff, 0 12px 36px rgba(0, 0, 0, .55);
 }
 
 .media-detail-episodes-row article.is-current.is-focused {
-  outline-color: #ff7184;
+  border-color: #ff7184;
+  box-shadow: 0 0 0 1px #ff7184, 0 12px 36px rgba(255, 113, 132, .3);
 }
 
-.media-detail-episodes-row article>div {
-  height: 164px;
-  background: #272733 center / cover;
+/* ── Thumbnail ─────────────────────────────────── */
+.media-detail-episode-thumb {
+  position: relative;
+  height: 140px;
+  background: #1e1e28 center / cover no-repeat;
+  overflow: hidden;
 }
 
-.media-detail-episodes-row article span {
+/* Dark gradient over thumbnail so overlays are readable */
+.media-detail-episode-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(0, 0, 0, .52) 0%,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, .38) 100%
+  );
+  pointer-events: none;
+}
+
+/* Play icon — hidden by default, appears on hover/focus */
+.media-detail-episode-play-icon {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: rgba(255, 255, 255, .9);
+  opacity: 0;
+  transition: opacity .18s ease;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .8);
+}
+
+.media-detail-episodes-row article:hover .media-detail-episode-play-icon,
+.media-detail-episodes-row article.is-focused .media-detail-episode-play-icon {
+  opacity: 1;
+}
+
+/* Episode number badge — top-left */
+.media-detail-episode-num {
+  position: absolute;
+  z-index: 2;
+  top: 9px;
+  left: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, .62);
+  backdrop-filter: blur(4px);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: rgba(255, 255, 255, .88);
+  line-height: 1;
+}
+
+/* "Reproduciendo" badge — bottom-right, only on is-current */
+.media-detail-episode-badge {
+  position: absolute;
+  z-index: 2;
+  bottom: 9px;
+  right: 10px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: #ff7184;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: #fff;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Info bar below thumbnail ──────────────────── */
+.media-detail-episode-info {
+  padding: 10px 12px 11px;
+}
+
+.media-detail-episode-label {
   display: block;
-  padding: 12px;
-  font-size: 15px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.media-detail-episodes-row article.is-current .media-detail-episode-label {
+  color: #ff9aa5;
+}
+
+.media-detail-episodes-row article.is-focused .media-detail-episode-label {
+  color: #fff;
 }
 
 .media-detail-player {

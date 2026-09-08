@@ -151,10 +151,21 @@ const MediaDetailView: React.FC<MediaDetailViewProps> = ({ item, onClose }) => {
               ref={(element) => { episodeRefs.current[index] = element }}
               onClick={() => void openServerSelector(episode)}
             >
-              <div style={(episode.image || item.episodeImage || item.posterImage) ? {
-                backgroundImage: `url("${episode.image || item.episodeImage || item.posterImage}")`
-              } : undefined} />
-              <span>Episodio {episode.episode}</span>
+              <div
+                className="media-detail-episode-thumb"
+                style={(episode.image || item.episodeImage || item.posterImage) ? {
+                  backgroundImage: `url("${episode.image || item.episodeImage || item.posterImage}")`
+                } : undefined}
+              >
+                <span className="media-detail-episode-num">EP {episode.episode}</span>
+                {episode.episode === item.episode && (
+                  <span className="media-detail-episode-badge">▶ Reproduciendo</span>
+                )}
+                <div className="media-detail-episode-play-icon" aria-hidden="true">▶</div>
+              </div>
+              <div className="media-detail-episode-info">
+                <span className="media-detail-episode-label">Episodio {episode.episode}</span>
+              </div>
             </article>
           ))}
         </div>
