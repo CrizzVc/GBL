@@ -155,29 +155,30 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             style={{ transform: `translateX(-${focusedCardOffset}px)` }}
           >
             {continueWatching.map((item, index) => (
-            <article
-              className={`multimedia-card card-${(index % 5) + 1} ${index === continueWatchingIndex ? 'is-selected' : ''} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
-              key={item.id}
-              ref={index === continueWatchingIndex ? focusedCardRef : null}
-            >
-              <div
-                className="multimedia-card-thumb"
-                style={(index === continueWatchingIndex ? item.episodeImage : item.posterImage) ? {
-                  backgroundImage: `url("${index === continueWatchingIndex ? item.episodeImage : item.posterImage}")`
-                } : undefined}
+              <article
+                className={`multimedia-card card-${(index % 5) + 1} ${index === continueWatchingIndex ? 'is-selected' : ''} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
+                key={item.id}
+                ref={index === continueWatchingIndex ? focusedCardRef : null}
               >
-                <div className="multimedia-card-progress">
-                  <i style={{ width: `${item.progress}%` }} />
+                <div
+                  className="multimedia-card-thumb"
+                  style={(index === continueWatchingIndex ? item.episodeImage : item.posterImage) ? {
+                    backgroundImage: `url("${index === continueWatchingIndex ? item.episodeImage : item.posterImage}")`
+                    , backgroundRepeat: 'no-repeat', backgroundSize: 'cover'
+                  } : undefined}
+                >
+                  <div className="multimedia-card-progress">
+                    <i style={{ width: `${item.progress}%` }} />
+                  </div>
                 </div>
-              </div>
-              <div className="multimedia-card-info">
-                <p className="multimedia-card-title">{item.title}</p>
-                <div className="multimedia-card-meta">
-                  <span>Temp. {item.season}</span>
-                  <span>Ep. {item.episode}</span>
+                <div className="multimedia-card-info">
+                  <p className="multimedia-card-title">{item.title}</p>
+                  <div className="multimedia-card-meta">
+                    <span>Temp. {item.season}</span>
+                    <span>Ep. {item.episode}</span>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
             ))}
           </div>
         </div>
