@@ -26,6 +26,9 @@ interface MultimediaViewProps {
   continueWatchingIndex: number;
   railTitle?: string;
   railSubtitle?: string;
+  activeSourceId: string;
+  sources: { id: string; name: string }[];
+  onSourceChange: (sourceId: string) => void;
 }
 
 const MultimediaView: React.FC<MultimediaViewProps> = ({
@@ -44,10 +47,15 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   continueWatchingIndex,
   railTitle = 'Continuar viendo',
   railSubtitle = 'Próximamente',
+  activeSourceId,
+  sources,
+  onSourceChange,
 }) => {
   const isContinueFocused = focusedSection === 'continue';
   const focusedCardRef = React.useRef<HTMLElement | null>(null);
   const [focusedCardOffset, setFocusedCardOffset] = React.useState(0);
+  const [isSourcePickerOpen, setIsSourcePickerOpen] = React.useState(false);
+  const activeSource = sources.find((source) => source.id === activeSourceId) || sources[0];
 
   React.useLayoutEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -113,6 +121,31 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
         <div className="multimedia-rail-heading">
           <h2>{railTitle}</h2>
           <span>{railSubtitle}</span>
+        </div>
+        <div className="multimedia-source-picker">
+          <button
+            type="button"
+            className="multimedia-source-button"
+            onClick={() => setIsSourcePickerOpen((open) => !open)}
+            aria-label={`Fuente actual: ${activeSource?.name || 'Multimedia'}`}
+            aria-expanded={isSourcePickerOpen}
+          >
+            {(activeSource?.name || 'M').slice(0, 3).toUpperCase()}
+          </button>
+          {isSourcePickerOpen && (
+            <div className="multimedia-source-menu">
+              {sources.map((source) => (
+                <button
+                  type="button"
+                  key={source.id}
+                  className={source.id === activeSourceId ? 'is-active' : ''}
+                  onClick={() => { onSourceChange(source.id); setIsSourcePickerOpen(false) }}
+                >
+                  {source.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="multimedia-cards">
           <div

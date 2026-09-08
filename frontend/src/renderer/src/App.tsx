@@ -576,12 +576,13 @@ function App(): React.JSX.Element {
 
   const openExtension = useCallback((extension: LauncherExtension): void => {
     if (extension.type === 'native' && extension.nativeView) {
-      setMultimediaExtensionId(extension.id)
+      const defaultSource = extensions.find((item) => item.id === 'animeav1' && item.enabled)
+      setMultimediaExtensionId(extension.id === 'multimedia' && defaultSource ? defaultSource.id : extension.id)
       setNativeView(extension.nativeView)
       return
     }
     if (extension.entryUrl) void window.api.openExternal(extension.entryUrl)
-  }, [])
+  }, [extensions])
 
   const toggleExtension = useCallback(async (extension: LauncherExtension): Promise<void> => {
     const result = await window.api.setExtensionEnabled(extension.id, !extension.enabled)
@@ -755,6 +756,12 @@ function App(): React.JSX.Element {
   const multimediaCards = multimediaExtensionId === 'animeav1' && animeAV1Latest.length > 0
     ? animeAV1Latest
     : continueWatching
+  const multimediaSources = useMemo(() => [
+    { id: 'multimedia', name: 'Multimedia' },
+    ...extensions
+      .filter((extension) => extension.nativeView === 'multimedia' && extension.id !== 'multimedia' && !extension.sidebar && extension.enabled)
+      .map((extension) => ({ id: extension.id, name: extension.name }))
+  ], [extensions])
 
   // Computes the 3 most recently added games dynamically
   const last3AddedGames = useMemo(() => {
@@ -2745,7 +2752,7 @@ function App(): React.JSX.Element {
             setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
           } else if (e.key === 'ArrowDown') {
             e.preventDefault()
-            if (continueWatching.length > 0) {
+            if (multimediaCards.length > 0) {
               playMove()
               setMultimediaFocus('continue')
             }
@@ -2753,7 +2760,7 @@ function App(): React.JSX.Element {
         } else {
           if (e.key === 'ArrowRight') {
             e.preventDefault()
-            const next = Math.min(continueWatchingIndex + 1, continueWatching.length - 1)
+            const next = Math.min(continueWatchingIndex + 1, multimediaCards.length - 1)
             if (next !== continueWatchingIndex) {
               playMove()
               setContinueWatchingIndex(next)
@@ -3022,7 +3029,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, nativeView, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, openExtension, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp, multimediaFocus, continueWatchingIndex, heroSlides.length, continueWatching.length])
+  }, [libraryView, games, librarySelectedGame, selectedGameId, sidebarOpen, sidebarIndex, modal, nativeView, visibleGames, handleLaunchGame, openLibraryView, openAddGameModal, handleOpenSpecs, openExtensions, openExtension, sidebarExtensions, isWallpaperMode, wallpaperImages.length, handleChooseWallpaperAsHome, detailGameId, librarySource, currentLibraryItems, selectedSteamAppId, steamLibrary, contextMenu.visible, selectedFriend, sortedSteamFriends, isHomeFocused, isHomeCardFocused, enterHomeIdle, quickAppFocusIndex, quickAppSlots, homeCardMode, bottomCardIndex, stores, currentStoreIndex, handleOpenStore, handleLaunchQuickApp, handleAddQuickApp, multimediaFocus, continueWatchingIndex, heroSlides.length, multimediaCards.length])
 
   // ── Detail view handlers (con sonidos) ──
   const handleCloseDetail = useCallback(() => {
@@ -3439,6 +3446,9 @@ function App(): React.JSX.Element {
           continueWatchingIndex={continueWatchingIndex}
           railTitle={multimediaExtensionId === 'animeav1' ? 'AnimeAV1' : undefined}
           railSubtitle={multimediaExtensionId === 'animeav1' ? 'Últimos episodios' : undefined}
+          activeSourceId={multimediaExtensionId || 'multimedia'}
+          sources={multimediaSources}
+          onSourceChange={(sourceId) => { setMultimediaExtensionId(sourceId); setContinueWatchingIndex(0) }}
         />
       )}
 
@@ -5187,7 +5197,7 @@ function App(): React.JSX.Element {
                     onClick={() => openExtension(extension)}
                     disabled={!extension.enabled}
                   >
-                    {extension.type === 'native' ? 'Abrir vista' : 'Abrir'}
+                    {extension.id === 'animeav1' ? 'Usar en Multimedia' : extension.type === 'native' ? 'Abrir vista' : 'Abrir'}
                   </button>
                   <button
                     type="button"
