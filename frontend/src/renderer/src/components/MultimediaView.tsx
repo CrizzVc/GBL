@@ -43,20 +43,16 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
 }) => {
   const isContinueFocused = focusedSection === 'continue';
   const focusedCardRef = React.useRef<HTMLElement | null>(null);
+  const [focusedCardOffset, setFocusedCardOffset] = React.useState(0);
 
   React.useLayoutEffect(() => {
-    if (!isContinueFocused) return;
-
     const frame = requestAnimationFrame(() => {
-      focusedCardRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'start',
-      });
+      const card = focusedCardRef.current;
+      if (card) setFocusedCardOffset(Math.max(0, card.offsetLeft - 14));
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [continueWatchingIndex, isContinueFocused]);
+  }, [continueWatchingIndex]);
 
   return (
     <main className="multimedia-view" aria-label="Multimedia">
@@ -115,11 +111,15 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
           <span>Próximamente</span>
         </div>
         <div className="multimedia-cards">
-          {continueWatching.map((item, index) => (
+          <div
+            className="multimedia-cards-track"
+            style={{ transform: `translateX(-${focusedCardOffset}px)` }}
+          >
+            {continueWatching.map((item, index) => (
             <article
-              className={`multimedia-card card-${(index % 5) + 1} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
+              className={`multimedia-card card-${(index % 5) + 1} ${index === continueWatchingIndex ? 'is-selected' : ''} ${isContinueFocused && index === continueWatchingIndex ? 'is-focused' : ''}`}
               key={item.id}
-              ref={isContinueFocused && index === continueWatchingIndex ? focusedCardRef : null}
+              ref={index === continueWatchingIndex ? focusedCardRef : null}
             >
               <div className="multimedia-card-thumb">
                 <div className="multimedia-card-progress">
@@ -134,7 +134,8 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
                 </div>
               </div>
             </article>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
     </main>

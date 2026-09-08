@@ -204,7 +204,7 @@
   padding-bottom: 64px;
 }
 
-.multimedia-rail.is-focused .multimedia-cards {
+.multimedia-rail.is-focused .multimedia-cards-track {
   gap: 22px;
 }
 
@@ -231,23 +231,19 @@
 }
 
 .multimedia-cards {
-  display: flex;
-  gap: 18px;
-  overflow-x: auto;
+  overflow: hidden;
   overflow-y: visible;
-  padding: 14px 14px 10px;
+  padding: 14px 0 10px;
   margin: -14px -14px 0;
-  scroll-padding-left: 14px;
-  transition: gap .3s ease;
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE / Edge */
 }
 
-.multimedia-cards::-webkit-scrollbar {
-  display: none;
-  /* Chrome / Safari */
+.multimedia-cards-track {
+  display: flex;
+  position: relative;
+  width: max-content;
+  gap: 18px;
+  padding: 0 14px;
+  transition: transform .3s ease, gap .3s ease;
 }
 
 /* Las tarjetas sin foco son portadas verticales. */
@@ -256,14 +252,43 @@
   width: clamp(130px, 12vw, 172px);
   height: clamp(200px, 20vw, 280px);
   cursor: pointer;
-  transition: width .3s ease, transform .2s ease, box-shadow .2s ease;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+/* La última tarjeta seleccionada sigue abierta aunque el riel pierda el foco. */
+.multimedia-card.is-selected {
+  display: flex;
+  width: clamp(230px, 24vw, 300px);
+  background: #171720;
+  border-radius: 10px;
+}
+
+.multimedia-card.is-selected .multimedia-card-thumb {
+  width: 42%;
+  border-radius: 10px 0 0 10px;
+}
+
+.multimedia-card.is-selected .multimedia-card-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.multimedia-card.is-selected .multimedia-card-title {
+  font-size: clamp(15px, 1.35vw, 19px);
+}
+
+.multimedia-card.is-selected .multimedia-card-meta {
+  gap: 5px;
+  font-size: 11px;
 }
 
 .multimedia-card.is-focused {
-  display: flex;
   width: clamp(330px, 34vw, 460px);
-  background: #171720;
-  border-radius: 10px;
   outline: 3px solid #ff7184;
   outline-offset: 3px;
   transform: scale(1.02);
@@ -272,7 +297,6 @@
 
 .multimedia-card.is-focused .multimedia-card-thumb {
   width: 42%;
-  border-radius: 10px 0 0 10px;
 }
 
 .multimedia-card-thumb {
@@ -321,12 +345,7 @@
 }
 
 .multimedia-card.is-focused .multimedia-card-info {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
   gap: 14px;
-  min-width: 0;
   padding: 20px;
 }
 
@@ -349,6 +368,15 @@
   padding: 5px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, .08);
+}
+
+.multimedia-card.is-focused .multimedia-card-title {
+  font-size: clamp(18px, 1.8vw, 25px);
+}
+
+.multimedia-card.is-focused .multimedia-card-meta {
+  gap: 8px;
+  font-size: 13px;
 }
 
 
