@@ -15,6 +15,18 @@ function toAbsoluteUrl(value) {
   }
 }
 
+function posterFromThumbnail(thumbnailUrl) {
+  if (!thumbnailUrl) return null;
+  try {
+    const url = new URL(thumbnailUrl);
+    if (!url.pathname.includes('/thumbnails/')) return null;
+    url.pathname = url.pathname.replace('/thumbnails/', '/covers/');
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 async function fetchPage(url) {
   const response = await fetch(url, { headers: REQUEST_HEADERS });
   if (!response.ok) throw new Error(`AnimeAV1 respondió con ${response.status}`);
@@ -37,7 +49,7 @@ export async function getLatestAnimeAV1() {
     const episode = parts.length >= 3 ? parts[2] : '';
     const title = card.find('header div, h3').first().text().trim()
       || link.text().replace('Ver ', '').trim();
-    const image = card.find('img[src*="poster"], img[src*="cover"], img').first().attr('src');
+    const episodeImage = toAbsoluteUrl(card.find('img').first().attr('src'));
     const episodeUrl = toAbsoluteUrl(href);
 
     if (!title || !episodeUrl || seen.has(episodeUrl)) return;
@@ -45,7 +57,8 @@ export async function getLatestAnimeAV1() {
     latest.push({
       title,
       episode: episode || card.find('.text-lead, div.text-xs').first().text().trim(),
-      image: toAbsoluteUrl(image),
+      posterImage: posterFromThumbnail(episodeImage),
+      episodeImage,
       animeUrl: slug ? `${BASE_URL}/media/${slug}` : episodeUrl,
       episodeUrl
     });

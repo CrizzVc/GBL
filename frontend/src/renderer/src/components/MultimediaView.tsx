@@ -15,7 +15,7 @@ interface MultimediaViewProps {
   heroSlides: HeroItem[];
   activeSlide: number;
   setActiveSlide: (i: number) => void;
-  continueWatching: { id: number; title: string; season: string; episode: string; progress: number; image?: string | null }[];
+  continueWatching: { id: number; title: string; season: string; episode: string; progress: number; posterImage?: string | null; episodeImage?: string | null }[];
   setNativeView: (view: 'multimedia' | null) => void;
   isHeroPaused: boolean;
   setIsHeroPaused: (p: boolean) => void;
@@ -29,6 +29,7 @@ interface MultimediaViewProps {
   activeSourceId: string;
   sources: { id: string; name: string }[];
   onSourceChange: (sourceId: string) => void;
+  hideFocusedCardTitle?: boolean;
 }
 
 const MultimediaView: React.FC<MultimediaViewProps> = ({
@@ -50,6 +51,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   activeSourceId,
   sources,
   onSourceChange,
+  hideFocusedCardTitle = false,
 }) => {
   const isContinueFocused = focusedSection === 'continue';
   const focusedCardRef = React.useRef<HTMLElement | null>(null);
@@ -67,7 +69,7 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
   }, [continueWatchingIndex]);
 
   return (
-    <main className="multimedia-view" aria-label="Multimedia">
+    <main className={`multimedia-view ${hideFocusedCardTitle ? 'hide-focused-card-title' : ''}`} aria-label="Multimedia">
       <div
         className={`multimedia-hero ${isContinueFocused ? 'is-collapsed' : ''}`}
         style={{ backgroundImage: `url(${heroItem.backdrop})` }}
@@ -160,7 +162,9 @@ const MultimediaView: React.FC<MultimediaViewProps> = ({
             >
               <div
                 className="multimedia-card-thumb"
-                style={item.image ? { backgroundImage: `url("${item.image}")` } : undefined}
+                style={(index === continueWatchingIndex ? item.episodeImage : item.posterImage) ? {
+                  backgroundImage: `url("${index === continueWatchingIndex ? item.episodeImage : item.posterImage}")`
+                } : undefined}
               >
                 <div className="multimedia-card-progress">
                   <i style={{ width: `${item.progress}%` }} />

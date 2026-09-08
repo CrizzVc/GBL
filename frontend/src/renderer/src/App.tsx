@@ -136,7 +136,8 @@ interface MultimediaCard {
   season: string
   episode: string
   progress: number
-  image?: string | null
+  posterImage?: string | null
+  episodeImage?: string | null
 }
 
 interface Store {
@@ -709,7 +710,7 @@ function App(): React.JSX.Element {
     void fetch('http://localhost:3000/api/animeav1/latest', { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`AnimeAV1 respondió con ${response.status}`)
-        return response.json() as Promise<{ success?: boolean; data?: Array<{ title?: string; episode?: string; image?: string | null }> }>
+        return response.json() as Promise<{ success?: boolean; data?: Array<{ title?: string; episode?: string; posterImage?: string | null; episodeImage?: string | null }> }>
       })
       .then((payload) => {
         if (!payload.success || !Array.isArray(payload.data)) return
@@ -721,7 +722,8 @@ function App(): React.JSX.Element {
             season: '—',
             episode: String(item.episode || '—').replace(/^episodio\s*/i, ''),
             progress: 0,
-            image: item.image || null
+            posterImage: item.posterImage || null,
+            episodeImage: item.episodeImage || null
           }))
         if (latest.length > 0) setAnimeAV1Latest(latest)
       })
@@ -3446,6 +3448,7 @@ function App(): React.JSX.Element {
           continueWatchingIndex={continueWatchingIndex}
           railTitle={multimediaExtensionId === 'animeav1' ? 'AnimeAV1' : undefined}
           railSubtitle={multimediaExtensionId === 'animeav1' ? 'Últimos episodios' : undefined}
+          hideFocusedCardTitle={multimediaExtensionId === 'animeav1'}
           activeSourceId={multimediaExtensionId || 'multimedia'}
           sources={multimediaSources}
           onSourceChange={(sourceId) => { setMultimediaExtensionId(sourceId); setContinueWatchingIndex(0) }}
